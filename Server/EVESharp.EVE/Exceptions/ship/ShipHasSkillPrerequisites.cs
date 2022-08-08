@@ -1,5 +1,4 @@
 ﻿using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

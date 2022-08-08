@@ -1,6 +1,4 @@
-﻿using EVESharp.EVE.Data;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Packets.Exceptions;
+﻿using EVESharp.EVE.Data.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 
 namespace EVESharp.EVE.Exceptions.character;

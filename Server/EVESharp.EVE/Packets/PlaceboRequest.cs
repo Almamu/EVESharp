@@ -20,7 +20,7 @@ public class PlaceboRequest
         PyTuple data = request as PyTuple;
 
         if (data.Count != 2)
-            throw new InvalidDataException($"Expected tuple of two items");
+            throw new InvalidDataException("Expected tuple of two items");
 
         return new PlaceboRequest(
             data[0] as PyString,

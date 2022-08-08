@@ -1,6 +1,4 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
-
-namespace EVESharp.EVE.Exceptions.corporationSvc;
+﻿namespace EVESharp.EVE.Exceptions.corporationSvc;
 
 public class MedalNameTooLong : UserError
 {

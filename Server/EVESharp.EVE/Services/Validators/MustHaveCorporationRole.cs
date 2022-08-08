@@ -14,7 +14,7 @@ public class MustHaveCorporationRole : CallValidator
     
     public MustHaveCorporationRole(long role)
     {
-        Roles               = new long [] {role};
+        Roles               = new [] {role};
         Exception           = typeof (CrpAccessDenied);
         ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
     }
@@ -38,7 +38,7 @@ public class MustHaveCorporationRole : CallValidator
     
     public MustHaveCorporationRole(long role, Type exception)
     {
-        Roles               = new long [] {role};
+        Roles               = new [] {role};
         Exception           = exception;
         ExceptionParameters = new object [] { };
     }
@@ -50,7 +50,7 @@ public class MustHaveCorporationRole : CallValidator
 
     public MustHaveCorporationRole (long role, string message)
     {
-        Roles               = new long [] {role};
+        Roles               = new [] {role};
         Exception           = typeof (CrpAccessDenied);
         ExceptionParameters = new object [] {message};
     }

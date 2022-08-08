@@ -1,5 +1,4 @@
 using System;
-using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 

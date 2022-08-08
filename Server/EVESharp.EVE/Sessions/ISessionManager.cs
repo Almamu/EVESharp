@@ -14,7 +14,7 @@ public interface ISessionManager
     /// <param name="newValues">The new values for the session</param>
     void PerformSessionUpdate (string idType, int id, Session newValues);
 
-    new void FreeSession (Session session);
+    void FreeSession (Session session);
 
     /// <summary>
     /// Searches for the requested session based on the idType and the value for that id

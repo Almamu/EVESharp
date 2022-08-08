@@ -1,6 +1,4 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
-
-namespace EVESharp.EVE.Exceptions.contractMgr;
+﻿namespace EVESharp.EVE.Exceptions.contractMgr;
 
 public class ConDurationZero : UserError
 {

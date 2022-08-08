@@ -43,10 +43,10 @@ public class IdentificationRsp
     public static implicit operator IdentificationRsp(PyPacket info)
     {
         if (info.Type != PyPacket.PacketType.IDENTIFICATION_RSP)
-            throw new InvalidDataException($"Expected packet of IdentificationRsp type");
+            throw new InvalidDataException("Expected packet of IdentificationRsp type");
             
         if (info.Payload.Count != 3)
-            throw new InvalidDataException($"Expected tuple with specific element count");
+            throw new InvalidDataException("Expected tuple with specific element count");
 
         IdentificationRsp result = new IdentificationRsp
         {

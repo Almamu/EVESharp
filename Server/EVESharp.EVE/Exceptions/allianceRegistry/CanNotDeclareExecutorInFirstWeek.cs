@@ -1,6 +1,4 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
-
-namespace EVESharp.EVE.Exceptions.allianceRegistry;
+﻿namespace EVESharp.EVE.Exceptions.allianceRegistry;
 
 public class CanNotDeclareExecutorInFirstWeek : UserError
 {

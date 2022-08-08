@@ -61,7 +61,7 @@ public abstract class Service
                 if (argumentIndex >= arguments.Count)
                 {
                     // check if the parameter is in the named payload and set it, otherwise resort to the default value
-                    if (namedArguments.TryGetValue (methodParameters [parameterIndex].Name, out PyDataType value) == true)
+                    if (namedArguments.TryGetValue (methodParameters [parameterIndex].Name, out PyDataType value))
                     {
                         parameters [parameterIndex] = value;
                         match = true;
@@ -80,7 +80,7 @@ public abstract class Service
                 {
                     PyDataType element = arguments[argumentIndex];
 
-                    if (element is null || methodParameters[parameterIndex].IsOptional == true)
+                    if (element is null || methodParameters[parameterIndex].IsOptional)
                         parameters[parameterIndex] = null;
                     else if (methodParameters[parameterIndex].ParameterType == element.GetType() ||
                              methodParameters[parameterIndex].ParameterType == element.GetType().BaseType)
@@ -93,7 +93,7 @@ public abstract class Service
                 }
             }
 
-            if (match == true)
+            if (match)
             {
                 matchingMethod = method;
                 return true;
@@ -118,7 +118,7 @@ public abstract class Service
         // ensure that the caller has the required roles
         List <CallValidator> requirements = this.GetType ().GetCustomAttributes <CallValidator> ().Concat (methodInfo.GetCustomAttributes <CallValidator> ()).ToList ();
 
-        if (requirements.Any () == true)
+        if (requirements.Any ())
         {
             foreach (CallValidator validator in requirements)
             {

@@ -6,7 +6,7 @@ namespace EVESharp.EVE.Packets;
 
 public class SessionChangeNotification
 {
-    private int                            mClueless = 0;
+    private int                            mClueless;
     public  PyDictionary<PyString,PyTuple> Changes { get; init; }
 
     /// <summary>

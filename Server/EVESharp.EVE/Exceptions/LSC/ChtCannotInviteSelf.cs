@@ -1,6 +1,4 @@
-﻿using EVESharp.EVE.Packets.Exceptions;
-
-namespace EVESharp.EVE.Exceptions.LSC;
+﻿namespace EVESharp.EVE.Exceptions.LSC;
 
 public class ChtCannotInviteSelf : UserError
 {

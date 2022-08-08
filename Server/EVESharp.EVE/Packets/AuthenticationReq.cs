@@ -6,23 +6,23 @@ namespace EVESharp.EVE.Packets;
 
 public class AuthenticationReq
 {
-    public double boot_version       = 0.0;
-    public string boot_region        = "";
-    public string user_password      = "";
-    public int    user_affiliateid   = 0;
+    public double boot_version;
+    public string boot_region   = "";
+    public string user_password = "";
+    public int    user_affiliateid;
     public string user_password_hash = "";
-    public int    macho_version      = 0;
-    public string boot_codename      = "";
-    public int    boot_build         = 0;
-    public string user_name          = "";
-    public string user_languageid    = "";
+    public int    macho_version;
+    public string boot_codename = "";
+    public int    boot_build;
+    public string user_name       = "";
+    public string user_languageid = "";
 
     public static implicit operator AuthenticationReq(PyDataType data)
     {
         PyTuple tuple = data as PyTuple;
 
         if (tuple.Count != 2)
-            throw new InvalidDataException($"Expected a tuple of two elements");
+            throw new InvalidDataException("Expected a tuple of two elements");
 
         PyDictionary info = tuple[1] as PyDictionary;
 

@@ -1,7 +1,5 @@
-using EVESharp.Common;
 using System;
 using System.IO;
-using EVESharp.EVE.Data;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

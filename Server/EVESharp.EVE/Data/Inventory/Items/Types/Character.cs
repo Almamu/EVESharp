@@ -371,7 +371,7 @@ public class Character : ItemInventory
 
         long skillLearningLevel = 0;
 
-        if (this.InjectedSkillsByTypeID.TryGetValue ((int) EVE.Data.Inventory.TypeID.Learning, out Skill learningSkill))
+        if (this.InjectedSkillsByTypeID.TryGetValue ((int) TypeID.Learning, out Skill learningSkill))
             skillLearningLevel = learningSkill.Level;
 
         double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
@@ -383,7 +383,7 @@ public class Character : ItemInventory
         return spPerMin;
     }
 
-    public long GetSkillLevel (EVE.Data.Inventory.TypeID skillTypeID)
+    public long GetSkillLevel (TypeID skillTypeID)
     {
         return this.GetSkillLevel ((int) skillTypeID);
     }
@@ -402,7 +402,7 @@ public class Character : ItemInventory
     /// <param name="skillTypeID">The skill to look for</param>
     /// <param name="level">The minimum level</param>
     /// <exception cref="SkillMissingException">If the skill requirement is not met</exception>
-    public void EnsureSkillLevel (EVE.Data.Inventory.TypeID skillTypeID, int level = 1)
+    public void EnsureSkillLevel (TypeID skillTypeID, int level = 1)
     {
         if (this.GetSkillLevel (skillTypeID) < level)
             throw new SkillRequired (skillTypeID);

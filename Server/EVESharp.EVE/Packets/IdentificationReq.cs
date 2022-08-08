@@ -43,10 +43,10 @@ public class IdentificationReq
     public static implicit operator IdentificationReq(PyPacket info)
     {
         if (info.Type != PyPacket.PacketType.IDENTIFICATION_REQ)
-            throw new InvalidDataException($"Expected packet of IdentificationReq type");
+            throw new InvalidDataException("Expected packet of IdentificationReq type");
 
         if (info.Payload.Count != 3)
-            throw new InvalidDataException($"Expected tuple with specific element count");
+            throw new InvalidDataException("Expected tuple with specific element count");
             
         IdentificationReq result = new IdentificationReq
         {

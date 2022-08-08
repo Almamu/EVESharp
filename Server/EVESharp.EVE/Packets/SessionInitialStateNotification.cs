@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Runtime.CompilerServices;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 
@@ -25,7 +24,7 @@ public class SessionInitialStateNotification
         if (origin[0] is PyDictionary == false)
             throw new InvalidDataException("The first element must be a dictionary");
 
-        return new SessionInitialStateNotification()
+        return new SessionInitialStateNotification
         {
             Session = Session.FromPyDictionary(origin[0] as PyDictionary)
         };

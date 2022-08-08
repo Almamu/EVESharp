@@ -271,7 +271,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
 
         // add the user to the authentication queue
         this.MachoNet.LoginQueue.Enqueue (
-            new LoginQueueEntry ()
+            new LoginQueueEntry
             {
                 Connection = this,
                 Request = request

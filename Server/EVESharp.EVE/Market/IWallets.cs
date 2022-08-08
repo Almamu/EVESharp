@@ -53,7 +53,7 @@ public interface IWallets
     /// <returns></returns>
     public bool IsAccessAllowed (Session session, int accountKey, int ownerID)
     {
-        return EVE.Permissions.Market.Wallet.IsAccessAllowed (session, accountKey, ownerID);
+        return Permissions.Market.Wallet.IsAccessAllowed (session, accountKey, ownerID);
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public interface IWallets
     /// <returns></returns>
     public bool IsTakeAllowed (Session session, int accountKey, int ownerID)
     {
-        return EVE.Permissions.Market.Wallet.IsTakeAllowed (session, accountKey, ownerID);
+        return Permissions.Market.Wallet.IsTakeAllowed (session, accountKey, ownerID);
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ public class UserError : PyException
     /// <summary>
     /// The type of argument used in the message (if any)
     /// </summary>
-    enum ArgumentType : int
+    enum ArgumentType
     {
         // unused, it's replaced by the index 2
         OWNERID_ = 1,
