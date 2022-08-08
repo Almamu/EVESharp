@@ -43,12 +43,12 @@ public class corpStationMgr : ClientBoundService
     private         ITypes              Types         => this.Items.Types;
     private         ISolarSystems       SolarSystems  { get; }
     private         IWalletManager      WalletManager { get; }
-    private         Constants           Constants     { get; }
+    private         IConstants           Constants     { get; }
     private         INotificationSender Notifications { get; }
     private         IDatabaseConnection Database      { get; }
 
     public corpStationMgr (
-        MarketDB            marketDB, StationDB     stationDb,     INotificationSender  notificationSender, IItems items, Constants constants,
+        MarketDB            marketDB, StationDB     stationDb,     INotificationSender  notificationSender, IItems items, IConstants constants,
         BoundServiceManager manager, ISolarSystems solarSystems, IWalletManager walletManager, IDatabaseConnection database, ItemDB itemDB
     ) : base (manager)
     {
@@ -65,7 +65,7 @@ public class corpStationMgr : ClientBoundService
 
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr (
-        MarketDB            marketDB, StationDB stationDb, INotificationSender notificationSender, IItems items, Constants constants,
+        MarketDB            marketDB, StationDB stationDb, INotificationSender notificationSender, IItems items, IConstants constants,
         BoundServiceManager manager,  IWalletManager walletManager, Session session, ItemDB itemDB
     ) : base (manager, session, 0)
     {

@@ -11,9 +11,9 @@ namespace EVESharp.Node.Database;
 
 public class ConfigDB : DatabaseAccessor
 {
-    private Constants Constants { get; }
+    private IConstants Constants { get; }
 
-    public ConfigDB (Constants constants, IDatabaseConnection db) : base (db)
+    public ConfigDB (IConstants constants, IDatabaseConnection db) : base (db)
     {
         Constants = constants;
     }

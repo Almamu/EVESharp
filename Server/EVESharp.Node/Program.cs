@@ -199,7 +199,7 @@ internal class Program
         container.Register <AgentManager> (Lifestyle.Singleton);
         container.Register <IAncestries, Ancestries> (Lifestyle.Singleton);
         container.Register <IBloodlines, Bloodlines> (Lifestyle.Singleton);
-        container.Register <Constants> (Lifestyle.Singleton);
+        container.Register <IConstants, Constants> (Lifestyle.Singleton);
         container.Register <IDogmaNotifications, DogmaNotifications> (Lifestyle.Singleton);
 
         // register the database accessors dependencies

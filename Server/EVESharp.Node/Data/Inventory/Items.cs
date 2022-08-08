@@ -68,7 +68,7 @@ public class Items : IItems
     public InsuranceDB           InsuranceDB          { get; }
     public SkillDB               SkillDB              { get; }
     public ILogger               Log                  { get; }
-    public Constants             Constants            { get; }
+    public IConstants             Constants            { get; }
     public IMachoNet             MachoNet             { get; }
 
     public EVESystem    OwnerBank         { get; private set; }
@@ -82,7 +82,7 @@ public class Items : IItems
     protected IDatabaseConnection Database { get; }
 
     public Items (
-        ILogger           logger, IMachoNet machoNet, IDatabaseConnection databaseConnection, Constants constants, MetaInventoryManager metaInventoryManager,
+        ILogger           logger, IMachoNet machoNet, IDatabaseConnection databaseConnection, IConstants constants, MetaInventoryManager metaInventoryManager,
         IExpressions expressions, ItemDB itemDB, CharacterDB characterDB, InsuranceDB insuranceDB, SkillDB skillDB, CorporationDB corporationDB,
         IAttributes attributes, IGroups groups, ICategories categories, ITypes types, IAncestries ancestries, IBloodlines bloodlines,
         IStations stations, ISolarSystems solarSystems, IFactions factions, IDogmaNotifications dogmaNotifications

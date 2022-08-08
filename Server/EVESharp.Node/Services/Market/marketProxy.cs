@@ -47,7 +47,7 @@ public class marketProxy : Service
     private IItems              Items              { get; }
     private ITypes             Types              => this.Items.Types;
     private SolarSystemDB      SolarSystemDB      { get; }
-    private Constants          Constants          { get; }
+    private IConstants          Constants          { get; }
     private ISolarSystems      SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
     private IWalletManager     WalletManager      { get; }
@@ -55,7 +55,7 @@ public class marketProxy : Service
 
     public marketProxy (
         MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, IItems items, CacheStorage cacheStorage,
-        Constants constants, INotificationSender notificationSender, IWalletManager walletManager, IDogmaNotifications dogmaNotifications, ClusterManager clusterManager,
+        IConstants constants, INotificationSender notificationSender, IWalletManager walletManager, IDogmaNotifications dogmaNotifications, ClusterManager clusterManager,
         ISolarSystems solarSystems
     )
     {

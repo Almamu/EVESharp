@@ -10,14 +10,14 @@ public class warRegistry : ClientBoundService
 {
     private         int         mObjectID;
     public override AccessLevel AccessLevel => AccessLevel.None;
-    private         Constants   Constants   { get; }
+    private         IConstants   Constants   { get; }
 
-    public warRegistry (Constants constants, BoundServiceManager manager) : base (manager)
+    public warRegistry (IConstants constants, BoundServiceManager manager) : base (manager)
     {
         Constants = constants;
     }
 
-    private warRegistry (Constants constants, BoundServiceManager manager, int objectID, Session session) : base (manager, session, objectID)
+    private warRegistry (IConstants constants, BoundServiceManager manager, int objectID, Session session) : base (manager, session, objectID)
     {
         Constants      = constants;
         this.mObjectID = objectID;

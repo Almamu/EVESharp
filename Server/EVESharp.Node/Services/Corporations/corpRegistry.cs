@@ -63,7 +63,7 @@ public class corpRegistry : MultiClientBoundService
     public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
     public  OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
     private IAncestries                Ancestries          { get; }
-    private Constants                  Constants           { get; }
+    private IConstants                  Constants           { get; }
     private SessionManager             SessionManager      { get; }
     private ClusterManager             ClusterManager      { get; }
 
@@ -73,7 +73,7 @@ public class corpRegistry : MultiClientBoundService
 
     public corpRegistry (
         CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, INotificationSender notificationSender,
-        MailManager   mailManager, IWalletManager      walletManager,      IItems items, Constants constants, BoundServiceManager manager,
+        MailManager   mailManager, IWalletManager      walletManager,      IItems items, IConstants constants, BoundServiceManager manager,
         IAncestries    ancestries,  SessionManager      sessionManager,     ClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
@@ -96,7 +96,7 @@ public class corpRegistry : MultiClientBoundService
 
     protected corpRegistry (
         CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, INotificationSender notificationSender,
-        MailManager    mailManager,    IWalletManager     walletManager,       Constants constants, IItems items, IAncestries ancestries,
+        MailManager    mailManager,    IWalletManager     walletManager,       IConstants constants, IItems items, IAncestries ancestries,
         SessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent, ItemDB itemDB
     ) : base (parent, corp.ID)
     {

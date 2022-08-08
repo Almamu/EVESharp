@@ -27,12 +27,12 @@ public class corporationSvc : Service
     private         IDatabaseConnection Database      { get; }
     private         CorporationDB      DB            { get; }
     private         IWalletManager     WalletManager { get; }
-    private         Constants          Constants     { get; }
+    private         IConstants          Constants     { get; }
     private         IItems        Items   { get; }
     private         INotificationSender Notifications { get; }
 
     public corporationSvc (
-        IDatabaseConnection databaseConnection, CorporationDB db, Constants constants, IWalletManager walletManager, IItems items,
+        IDatabaseConnection databaseConnection, CorporationDB db, IConstants constants, IWalletManager walletManager, IItems items,
         INotificationSender  notificationSender
     )
     {

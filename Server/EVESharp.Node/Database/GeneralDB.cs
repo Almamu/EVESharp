@@ -62,23 +62,6 @@ public class GeneralDB
         }
     }
 
-    public Dictionary <string, Constant> LoadConstants ()
-    {
-        IDbConnection   connection = null;
-        DbDataReader reader     = Database.Select (ref connection, "SELECT constantID, constantValue FROM eveConstants");
-
-        using (connection)
-        using (reader)
-        {
-            Dictionary <string, Constant> result = new Dictionary <string, Constant> ();
-
-            while (reader.Read ())
-                result [reader.GetString (0)] = new Constant (reader.GetString (0), reader.GetInt64 (1));
-
-            return result;
-        }
-    }
-
     public PyList <PyObjectData> FetchLiveUpdates ()
     {
         try
