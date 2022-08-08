@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -36,11 +38,11 @@ namespace EVESharp.Node.Database;
 
 public class InsuranceDB : DatabaseAccessor
 {
-    private TypeManager TypeManager { get; }
+    private ITypes Types { get; }
 
-    public InsuranceDB (TypeManager typeManager, IDatabaseConnection db) : base (db)
+    public InsuranceDB (ITypes types, IDatabaseConnection db) : base (db)
     {
-        TypeManager = typeManager;
+        this.Types = types;
     }
 
     public PyList <PyPackedRow> GetContractsForShipsOnStation (int characterID, int stationID)
@@ -155,7 +157,7 @@ public class InsuranceDB : DatabaseAccessor
 
             while (reader.Read ())
             {
-                Type shipType = TypeManager [reader.GetInt32 (4)];
+                Type shipType = this.Types [reader.GetInt32 (4)];
 
                 yield return new ExpiredContract
                 {
@@ -164,7 +166,7 @@ public class InsuranceDB : DatabaseAccessor
                     ShipID      = reader.GetInt32 (2),
                     ShipName    = reader.GetStringOrDefault (3, shipType.Name),
                     ShipType    = shipType,
-                    OwnerTypeID = TypeManager [reader.GetInt32 (5)],
+                    OwnerTypeID = this.Types [reader.GetInt32 (5)],
                     StartDate   = reader.GetInt64 (6)
                 };
             }

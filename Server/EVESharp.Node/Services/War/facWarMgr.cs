@@ -1,20 +1,22 @@
 using System;
-using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.facWarMgr;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Client.Notifications.Corporations;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.War;
@@ -29,23 +31,23 @@ internal enum FactionWarStatus
 [MustBeCharacter]
 public class facWarMgr : Service
 {
-    public override AccessLevel        AccessLevel    => AccessLevel.None;
-    private         ChatDB             ChatDB         { get; }
-    private         CharacterDB        CharacterDB    { get; }
-    private         CacheStorage       CacheStorage   { get; }
-    private         ItemFactory        ItemFactory    { get; }
-    private         NotificationSender Notifications  { get; }
-    private         SessionManager     SessionManager { get; }
+    public override AccessLevel         AccessLevel    => AccessLevel.None;
+    private         ChatDB              ChatDB         { get; }
+    private         CharacterDB         CharacterDB    { get; }
+    private         CacheStorage        CacheStorage   { get; }
+    private         IItems              Items          { get; }
+    private         INotificationSender Notifications  { get; }
+    private         SessionManager      SessionManager { get; }
 
     public facWarMgr (
-        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, ItemFactory itemFactory, NotificationSender notificationSender,
+        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, IItems items, INotificationSender notificationSender,
         SessionManager sessionManager
     )
     {
         ChatDB         = chatDB;
         CharacterDB    = characterDB;
         CacheStorage   = cacheStorage;
-        ItemFactory    = itemFactory;
+        this.Items     = items;
         Notifications  = notificationSender;
         SessionManager = sessionManager;
     }
@@ -95,7 +97,7 @@ public class facWarMgr : Service
 
     public PyInteger GetFactionMilitiaCorporation (CallInformation call, PyInteger factionID)
     {
-        return ItemFactory.GetStaticFaction (factionID).MilitiaCorporationId;
+        return this.Items.GetStaticFaction (factionID).MilitiaCorporationId;
     }
 
     public PyDataType GetFactionalWarStatus (CallInformation call)
@@ -132,8 +134,8 @@ public class facWarMgr : Service
             throw new FactionCharJoinDenied (MLS.UI_CORP_MILITIAJOIN_DENIED_TOOFREQUENT, TimeSpan.FromTicks (minimumDateTime - lastTime).Hours);
 
         // first join the character to the militia corporation
-        Faction   faction   = ItemFactory.Factions [factionID];
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Faction   faction   = this.Items.Factions [factionID];
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         // build the notification of corporation change
         OnCorporationMemberChanged change = new OnCorporationMemberChanged (character.ID, call.Session.CorporationID, faction.MilitiaCorporationId);
@@ -248,13 +250,13 @@ public class facWarMgr : Service
         {
             [0] = new PyDictionary
             {
-                [(int) Groups.Corporation] = values,
-                [(int) Groups.Character]   = values
+                [(int) GroupID.Corporation] = values,
+                [(int) GroupID.Character]   = values
             },
             [1] = new PyDictionary
             {
-                [(int) Groups.Corporation] = values,
-                [(int) Groups.Character]   = values
+                [(int) GroupID.Corporation] = values,
+                [(int) GroupID.Character]   = values
             }
         };
     }

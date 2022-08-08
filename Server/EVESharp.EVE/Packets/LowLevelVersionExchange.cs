@@ -1,7 +1,7 @@
 using EVESharp.Common;
 using System;
 using System.IO;
-using EVESharp.EVE.Client;
+using EVESharp.EVE.Data;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -33,15 +33,15 @@ public class LowLevelVersionExchange
             
         result.UserCount = exchange[2] as PyInteger;
             
-        if (result.Birthday != VersionInfo.BIRTHDAY)
+        if (result.Birthday != Data.Version.BIRTHDAY)
             throw new InvalidDataException("Wrong birthday in LowLevelVersionExchange");
-        if (result.Build != VersionInfo.BUILD)
+        if (result.Build != Data.Version.BUILD)
             throw new InvalidDataException("Wrong build in LowLevelVersionExchange");
-        if (result.Codename != VersionInfo.CODENAME + "@" + VersionInfo.REGION)
+        if (result.Codename != Data.Version.CODENAME + "@" + Data.Version.REGION)
             throw new InvalidDataException("Wrong codename in LowLevelVersionExchange");
-        if (result.MachoVersion != VersionInfo.MACHO_VERSION)
+        if (result.MachoVersion != Data.Version.MACHO_VERSION)
             throw new InvalidDataException("Wrong machoVersion in LowLevelVersionExchange");
-        if (Math.Abs(result.Version - VersionInfo.VERSION) > 0.001)
+        if (Math.Abs(result.Version - Data.Version.VERSION) > 0.001)
             throw new InvalidDataException("Wrong version in LowLevelVersionExchange");
 
         return result;

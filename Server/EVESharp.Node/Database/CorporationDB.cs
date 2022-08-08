@@ -6,8 +6,8 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.corpRegistry;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -757,7 +757,7 @@ public class CorporationDB : DatabaseAccessor
     {
         // create the item first
         int corporationID = (int) ItemDB.CreateItem (
-            name, (int) Types.Corporation, creatorID, stationID, Flags.None, false,
+            name, (int) TypeID.Corporation, creatorID, stationID, Flags.None, false,
             true, 1, 0, 0, 0, ""
         );
 
@@ -806,7 +806,7 @@ public class CorporationDB : DatabaseAccessor
         IDbConnection connection = null;
         DbDataReader reader = Database.Select (
             ref connection,
-            $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Corporation} AND itemName LIKE @corporationName",
+            $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) GroupID.Corporation} AND itemName LIKE @corporationName",
             new Dictionary <string, object> {{"@corporationName", corporationName}}
         );
 
@@ -842,7 +842,7 @@ public class CorporationDB : DatabaseAccessor
         IDbConnection connection = null;
         DbDataReader reader = Database.Select (
             ref connection,
-            $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) Groups.Alliance} AND itemName LIKE @corporationName",
+            $"SELECT COUNT(*) FROM eveNames WHERE groupID = {(int) GroupID.Alliance} AND itemName LIKE @corporationName",
             new Dictionary <string, object> {{"@corporationName", corporationName}}
         );
 

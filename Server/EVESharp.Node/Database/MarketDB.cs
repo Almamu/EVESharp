@@ -8,6 +8,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -17,11 +18,11 @@ namespace EVESharp.Node.Database;
 
 public class MarketDB : DatabaseAccessor
 {
-    private TypeManager TypeManager { get; }
+    private ITypes Types { get; }
 
-    public MarketDB (TypeManager typeManager, IDatabaseConnection db) : base (db)
+    public MarketDB (ITypes types, IDatabaseConnection db) : base (db)
     {
-        TypeManager = typeManager;
+        Types = types;
     }
 
     public Rowset GetNewTransactions (int entityID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice, int? accountKey)
@@ -490,7 +491,7 @@ public class MarketDB : DatabaseAccessor
         // preeliminary check, are items damaged?
         foreach ((int _, ItemQuantityEntry entry) in itemIDToQuantityLeft)
             if (entry.Damage > 0)
-                throw new RepairBeforeSelling (TypeManager [typeID]);
+                throw new RepairBeforeSelling (this.Types [typeID]);
 
         // now iterate all the itemIDs, the ones that have a quantity of 0 must be moved to the correct container
         foreach ((int itemID, ItemQuantityEntry entry) in itemIDToQuantityLeft)

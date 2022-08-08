@@ -1,26 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.EVE.Account;
+using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions.slash;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
+using EVESharp.EVE.Notifications.Skills;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Client.Notifications.Inventory;
-using EVESharp.Node.Client.Notifications.Skills;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using Categories = EVESharp.EVE.Data.Inventory.Categories;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Services.Network;
@@ -31,26 +32,26 @@ public class slash : Service
 {
     private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
         new Dictionary <string, Action <string [], CallInformation>> ();
-    public override AccessLevel        AccessLevel   => AccessLevel.None;
-    private         TypeManager        TypeManager   => ItemFactory.TypeManager;
-    private         ItemFactory        ItemFactory   { get; }
-    private         ILogger            Log           { get; }
-    private         CharacterDB        CharacterDB   { get; }
-    private         NotificationSender Notifications { get; }
-    private         IWalletManager     WalletManager { get; }
-    private         DogmaUtils         DogmaUtils    { get; }
+    public override AccessLevel        AccessLevel        => AccessLevel.None;
+    private         ITypes       Types        => this.Items.Types;
+    private         IItems              Items              { get; }
+    private         ILogger            Log                { get; }
+    private         CharacterDB        CharacterDB        { get; }
+    private         INotificationSender Notifications      { get; }
+    private         IWalletManager     WalletManager      { get; }
+    private         IDogmaNotifications DogmaNotifications { get; }
 
     public slash (
-        ILogger    logger, ItemFactory itemFactory, CharacterDB characterDB, NotificationSender notificationSender, IWalletManager walletManager,
-        DogmaUtils dogmaUtils
+        ILogger    logger, IItems items, CharacterDB characterDB, INotificationSender notificationSender, IWalletManager walletManager,
+        IDogmaNotifications dogmaNotifications
     )
     {
-        Log           = logger;
-        ItemFactory   = itemFactory;
-        CharacterDB   = characterDB;
-        Notifications = notificationSender;
-        WalletManager = walletManager;
-        DogmaUtils    = dogmaUtils;
+        Log                     = logger;
+        this.Items              = items;
+        CharacterDB             = characterDB;
+        Notifications           = notificationSender;
+        WalletManager           = walletManager;
+        this.DogmaNotifications = dogmaNotifications;
 
         // register commands
         this.mCommands ["create"]     = this.CreateCmd;
@@ -132,11 +133,11 @@ public class slash : Service
             if (iskQuantity < 0)
             {
                 wallet.EnsureEnoughBalance (iskQuantity);
-                wallet.CreateJournalRecord (MarketReference.GMCashTransfer, ItemFactory.OwnerSCC.ID, null, -iskQuantity);
+                wallet.CreateJournalRecord (MarketReference.GMCashTransfer, this.Items.OwnerSCC.ID, null, -iskQuantity);
             }
             else
             {
-                wallet.CreateJournalRecord (MarketReference.GMCashTransfer, ItemFactory.OwnerSCC.ID, targetCharacterID, null, iskQuantity);
+                wallet.CreateJournalRecord (MarketReference.GMCashTransfer, this.Items.OwnerSCC.ID, targetCharacterID, null, iskQuantity);
             }
         }
     }
@@ -155,20 +156,20 @@ public class slash : Service
         call.Session.EnsureCharacterIsInStation ();
 
         // ensure the typeID exists
-        if (TypeManager.ContainsKey (typeID) == false)
+        if (this.Types.ContainsKey (typeID) == false)
             throw new SlashError ("The specified typeID doesn't exist");
 
         // create a new item with the correct locationID
-        Station   location  = ItemFactory.GetStaticStation (call.Session.StationID);
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Station   location  = this.Items.GetStaticStation (call.Session.StationID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
-        Type       itemType = TypeManager [typeID];
-        ItemEntity item     = ItemFactory.CreateSimpleItem (itemType, character, location, Flags.Hangar, quantity);
+        Type       itemType = this.Types [typeID];
+        ItemEntity item     = this.Items.CreateSimpleItem (itemType, character, location, Flags.Hangar, quantity);
 
         item.Persist ();
 
         // send client a notification so they can display the item in the hangar
-        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (item));
+        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (item));
     }
 
     private static int ParseIntegerThatMightBeDecimal (string value)
@@ -196,13 +197,13 @@ public class slash : Service
         if (target != "me" && target != characterID.ToString ())
             throw new SlashError ("giveskill only supports me for now");
 
-        Character character = ItemFactory.GetItem <Character> (characterID);
+        Character character = this.Items.GetItem <Character> (characterID);
 
         if (skillType == "all")
         {
             // player wants all the skills!
             IEnumerable <KeyValuePair <int, Type>> skillTypes =
-                TypeManager.Where (x => x.Value.Group.Category.ID == (int) Categories.Skill && x.Value.Published);
+                this.Types.Where (x => x.Value.Group.Category.ID == (int) CategoryID.Skill && x.Value.Published);
 
             Dictionary <int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
 
@@ -214,18 +215,18 @@ public class slash : Service
 
                     skill.Level = level;
                     skill.Persist ();
-                    DogmaUtils.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
+                    this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
                 }
                 else
                 {
                     // skill not injected, create it, inject and done
-                    Skill skill = ItemFactory.CreateSkill (
+                    Skill skill = this.Items.CreateSkill (
                         pair.Value, character, level,
                         SkillHistoryReason.GMGiveSkill
                     );
 
-                    DogmaUtils.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
-                    DogmaUtils.QueueMultiEvent (character.ID, new OnSkillInjected ());
+                    this.DogmaNotifications.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                    this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
                 }
         }
         else
@@ -240,20 +241,20 @@ public class slash : Service
 
                 skill.Level = level;
                 skill.Persist ();
-                DogmaUtils.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
-                DogmaUtils.NotifyAttributeChange (character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
-                DogmaUtils.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
+                this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
+                this.DogmaNotifications.NotifyAttributeChange (character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
+                this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
             }
             else
             {
                 // skill not injected, create it, inject and done
-                Skill skill = ItemFactory.CreateSkill (
-                    TypeManager [skillTypeID], character, level,
+                Skill skill = this.Items.CreateSkill (
+                    this.Types [skillTypeID], character, level,
                     SkillHistoryReason.GMGiveSkill
                 );
 
-                DogmaUtils.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
-                DogmaUtils.QueueMultiEvent (character.ID, new OnSkillInjected ());
+                this.DogmaNotifications.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
             }
         }
     }

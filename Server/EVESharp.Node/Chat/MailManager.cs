@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.EVE.Notifications;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -9,9 +10,9 @@ namespace EVESharp.Node.Chat;
 public class MailManager
 {
     private MessagesDB         DB            { get; }
-    private NotificationSender Notifications { get; }
+    private INotificationSender Notifications { get; }
 
-    public MailManager (MessagesDB db, NotificationSender notificationSender)
+    public MailManager (MessagesDB db, INotificationSender notificationSender)
     {
         DB            = db;
         Notifications = notificationSender;

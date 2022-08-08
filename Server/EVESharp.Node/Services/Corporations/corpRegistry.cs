@@ -3,28 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Alliances;
+using EVESharp.EVE.Notifications.Corporations;
+using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Chat;
-using EVESharp.Node.Client.Notifications.Alliances;
-using EVESharp.Node.Client.Notifications.Corporations;
-using EVESharp.Node.Client.Notifications.Wallet;
 using EVESharp.Node.Configuration;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
@@ -32,9 +34,10 @@ using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Character = EVESharp.Node.Inventory.Items.Types.Character;
-using OnCorporationChanged = EVESharp.Node.Client.Notifications.Corporations.OnCorporationChanged;
-using OnCorporationMemberChanged = EVESharp.Node.Client.Notifications.Corporations.OnCorporationMemberChanged;
+using Character = EVESharp.EVE.Data.Inventory.Items.Types.Character;
+using ItemDB = EVESharp.Node.Database.ItemDB;
+using OnCorporationChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationChanged;
+using OnCorporationMemberChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationMemberChanged;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Corporations;
@@ -51,14 +54,15 @@ public class corpRegistry : MultiClientBoundService
     private CorporationDB              DB                  { get; }
     private ChatDB                     ChatDB              { get; }
     private CharacterDB                CharacterDB         { get; }
+    private ItemDB                     ItemDB              { get; }
     private IDatabaseConnection        Database            { get; }
-    private ItemFactory                ItemFactory         { get; }
+    private IItems                     Items               { get; }
     private IWalletManager             WalletManager       { get; }
-    private NotificationSender         Notifications       { get; }
+    private INotificationSender        Notifications       { get; }
     private MailManager                MailManager         { get; }
     public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
     public  OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
-    private Ancestries                 Ancestries          { get; }
+    private IAncestries                Ancestries          { get; }
     private Constants                  Constants           { get; }
     private SessionManager             SessionManager      { get; }
     private ClusterManager             ClusterManager      { get; }
@@ -68,9 +72,9 @@ public class corpRegistry : MultiClientBoundService
     private long CorporationAdvertisementDailyRate { get; }
 
     public corpRegistry (
-        CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, NotificationSender notificationSender,
-        MailManager   mailManager, IWalletManager      walletManager,      ItemFactory itemFactory, Constants constants, BoundServiceManager manager,
-        Ancestries    ancestries,  SessionManager      sessionManager,     ClusterManager clusterManager
+        CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, INotificationSender notificationSender,
+        MailManager   mailManager, IWalletManager      walletManager,      IItems items, Constants constants, BoundServiceManager manager,
+        IAncestries    ancestries,  SessionManager      sessionManager,     ClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
         DB             = db;
@@ -81,18 +85,19 @@ public class corpRegistry : MultiClientBoundService
         Constants      = constants;
         MailManager    = mailManager;
         WalletManager  = walletManager;
-        ItemFactory    = itemFactory;
+        Items          = items;
         Ancestries     = ancestries;
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
+        ItemDB         = itemDB;
 
         ClusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
 
     protected corpRegistry (
-        CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, NotificationSender notificationSender,
-        MailManager    mailManager,    IWalletManager     walletManager,       Constants constants, ItemFactory itemFactory, Ancestries ancestries,
-        SessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent
+        CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, INotificationSender notificationSender,
+        MailManager    mailManager,    IWalletManager     walletManager,       Constants constants, IItems items, IAncestries ancestries,
+        SessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent, ItemDB itemDB
     ) : base (parent, corp.ID)
     {
         DB                                = db;
@@ -103,13 +108,14 @@ public class corpRegistry : MultiClientBoundService
         Constants                         = constants;
         MailManager                       = mailManager;
         WalletManager                     = walletManager;
-        ItemFactory                       = itemFactory;
+        Items                             = items;
         SessionManager                    = sessionManager;
         Corporation                       = corp;
         IsMaster                          = isMaster;
         CorporationAdvertisementFlatFee   = Constants.CorporationAdvertisementFlatFee;
         CorporationAdvertisementDailyRate = Constants.CorporationAdvertisementDailyRate;
         Ancestries                        = ancestries;
+        ItemDB                            = itemDB;
     }
 
     /// <summary>
@@ -425,10 +431,10 @@ public class corpRegistry : MultiClientBoundService
         // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
         // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
         // TODO: DIRECTLY
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         // ensure empire control is trained and at least level 5
-        character.EnsureSkillLevel (Types.EmpireControl, 5);
+        character.EnsureSkillLevel (TypeID.EmpireControl, 5);
 
         // the alliance costs 1b ISK to establish, and that's taken from the corporation's wallet
         using (IWallet wallet = WalletManager.AcquireWallet (Corporation.ID, call.Session.CorpAccountKey, true))
@@ -440,16 +446,16 @@ public class corpRegistry : MultiClientBoundService
             wallet.CreateJournalRecord (MarketReference.AllianceRegistrationFee, null, null, -Constants.AllianceCreationCost);
 
             // now create the alliance
-            ItemEntity allianceItem = ItemFactory.CreateSimpleItem (
-                name, (int) Types.Alliance, call.Session.CorporationID,
-                ItemFactory.LocationSystem.ID, Flags.None, 1, false, true, 0, 0, 0,
+            ItemEntity allianceItem = this.Items.CreateSimpleItem (
+                name, (int) TypeID.Alliance, call.Session.CorporationID,
+                this.Items.LocationSystem.ID, Flags.None, 1, false, true, 0, 0, 0,
                 ""
             );
 
             int allianceID = allianceItem.ID;
 
             // unload the item as alliances shouldn't really be loaded anywhere
-            ItemFactory.UnloadItem (allianceItem);
+            this.Items.UnloadItem (allianceItem);
 
             // now record the alliance into the database
             Database.CrpAlliancesCreate (allianceID, shortName, description, url, call.Session.CorporationID, callerCharacterID);
@@ -524,12 +530,12 @@ public class corpRegistry : MultiClientBoundService
         // TODO: PROPERLY IMPLEMENT THIS CHECK, RIGHT NOW THE CHARACTER AND THE CORPREGISTRY INSTANCES DO NOT HAVE TO BE LOADED ON THE SAME NODE
         // TODO: SWITCH UP THE CORPORATION CHANGE MECHANISM TO NOT RELY ON THE CHARACTER OBJECT SO THIS CAN BE DONE THROUGH THE DATABASE
         // TODO: DIRECTLY
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         this.CalculateCorporationLimits (character, out int maximumMembers, out int allowedMemberRaceIDs);
 
         // ensure the character has the required skills
-        long corporationManagementLevel = character.GetSkillLevel (Types.CorporationManagement);
+        long corporationManagementLevel = character.GetSkillLevel (TypeID.CorporationManagement);
 
         if (corporationManagementLevel < 1)
             throw new PlayerCantCreateCorporation (-corporationStartupCost);
@@ -615,7 +621,7 @@ public class corpRegistry : MultiClientBoundService
                 character.Persist ();
 
                 // load the corporation item
-                ItemFactory.LoadItem <Corporation> (corporationID);
+                this.Items.LoadItem <Corporation> (corporationID);
             }
 
             return null;
@@ -814,7 +820,7 @@ public class corpRegistry : MultiClientBoundService
             // check if there's enough cash left
             wallet.EnsureEnoughBalance (amount);
             // make transaction
-            wallet.CreateJournalRecord (MarketReference.CorporationDividendPayment, ItemFactory.OwnerBank.ID, null, amount);
+            wallet.CreateJournalRecord (MarketReference.CorporationDividendPayment, this.Items.OwnerBank.ID, null, amount);
         }
 
         if (payShareholders == 1)
@@ -827,12 +833,12 @@ public class corpRegistry : MultiClientBoundService
 
     private void CalculateCorporationLimits (Character ceo, out int maximumMembers, out int allowedRaceIDs)
     {
-        int corporationManagementLevel = (int) ceo.GetSkillLevel (Types.CorporationManagement); // +10 members per level 
+        int corporationManagementLevel = (int) ceo.GetSkillLevel (TypeID.CorporationManagement); // +10 members per level 
         int ethnicRelationsLevel =
-            (int) ceo.GetSkillLevel (Types.EthnicRelations); // 20% more members of other races based off the character's corporation levels TODO: SUPPORT THIS!
-        int empireControlLevel      = (int) ceo.GetSkillLevel (Types.EmpireControl); // adds +200 members per level
-        int megacorpManagementLevel = (int) ceo.GetSkillLevel (Types.MegacorpManagement); // adds +50 members per level
-        int sovereigntyLevel        = (int) ceo.GetSkillLevel (Types.Sovereignty); // adds +1000 members per level
+            (int) ceo.GetSkillLevel (TypeID.EthnicRelations); // 20% more members of other races based off the character's corporation levels TODO: SUPPORT THIS!
+        int empireControlLevel      = (int) ceo.GetSkillLevel (TypeID.EmpireControl); // adds +200 members per level
+        int megacorpManagementLevel = (int) ceo.GetSkillLevel (TypeID.MegacorpManagement); // adds +50 members per level
+        int sovereigntyLevel        = (int) ceo.GetSkillLevel (TypeID.Sovereignty); // adds +1000 members per level
 
         maximumMembers = corporationManagementLevel * 10 + empireControlLevel * 200 +
                          megacorpManagementLevel * 50 + sovereigntyLevel * 1000;
@@ -846,7 +852,7 @@ public class corpRegistry : MultiClientBoundService
             throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED12);
 
         // TODO: CHANGE THIS UP SO IT DOESN'T REQUIRE THE OBJECT IN MEMORY AS CORPREGISTRY MIGHT NOT BE ON THE SAME NODE AS OUR CHARACTER
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         this.CalculateCorporationLimits (character, out int maximumMembers, out int allowedMemberRaceIDs);
 
@@ -934,7 +940,7 @@ public class corpRegistry : MultiClientBoundService
     {
         // TODO: HANDLE DIVISION AND SQUADRON CHANGES
         int       callerCharacterID = call.Session.CharacterID;
-        Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character         = this.Items.GetItem <Character> (callerCharacterID);
         Session   update            = new Session ();
 
         // get current roles for that character
@@ -1001,7 +1007,7 @@ public class corpRegistry : MultiClientBoundService
             }
 
             Notifications.NotifyNode (
-                ItemFactory.ItemDB.GetItemNode (characterID),
+                this.ItemDB.GetItemNode (characterID),
                 new OnCorporationMemberUpdated (
                     characterID, currentRoles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
                     rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, currentBaseID,
@@ -1191,7 +1197,7 @@ public class corpRegistry : MultiClientBoundService
 
         // notify the node about the changes
         Notifications.NotifyNode (
-            ItemFactory.ItemDB.GetItemNode (characterID),
+            this.ItemDB.GetItemNode (characterID),
             new OnCorporationMemberUpdated (
                 characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
                 rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, currentBlockRoles, titleMask ?? 0
@@ -1285,7 +1291,7 @@ public class corpRegistry : MultiClientBoundService
         CallInformation call, PyInteger       days, PyInteger stationID, PyInteger raceMask, PyInteger typeMask, PyInteger allianceID, PyInteger skillpoints, PyString description
     )
     {
-        Station station           = ItemFactory.GetStaticStation (stationID);
+        Station station           = this.Items.GetStaticStation (stationID);
         int     callerCharacterID = call.Session.CharacterID;
         long    price             = CorporationAdvertisementFlatFee + CorporationAdvertisementDailyRate * days;
 
@@ -1420,11 +1426,11 @@ public class corpRegistry : MultiClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
              throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        Corporation corp = ItemFactory.LoadItem <Corporation> (bindParams.ObjectID);
+        Corporation corp = this.Items.LoadItem <Corporation> (bindParams.ObjectID);
 
         return new corpRegistry (
             DB, Database, ChatDB, CharacterDB, Notifications, MailManager, WalletManager, Constants,
-            ItemFactory, Ancestries, SessionManager, corp, bindParams.ExtraValue, this
+            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this, this.ItemDB
         );
     }
 
@@ -1559,7 +1565,7 @@ public class corpRegistry : MultiClientBoundService
             CharacterDB.CreateEmploymentRecord (characterID, corporationID, DateTime.UtcNow.ToFileTimeUtc ());
 
             // check if the character is connected and update it's session
-            int characterNodeID = ItemFactory.ItemDB.GetItemNode (characterID);
+            int characterNodeID = this.ItemDB.GetItemNode (characterID);
 
             if (characterNodeID > 0)
             {
@@ -1580,8 +1586,8 @@ public class corpRegistry : MultiClientBoundService
                     new Notifications.Nodes.Corps.OnCorporationMemberChanged (characterID, oldCorporationID, corporationID);
 
                 // TODO: WORKOUT A BETTER WAY OF NOTIFYING THIS TO THE NODE, IT MIGHT BE BETTER TO INSPECT THE SESSION CHANGE INSTEAD OF DOING IT LIKE THIS
-                long newCorporationNodeID = ItemFactory.ItemDB.GetItemNode (corporationID);
-                long oldCorporationNodeID = ItemFactory.ItemDB.GetItemNode (oldCorporationID);
+                long newCorporationNodeID = this.ItemDB.GetItemNode (corporationID);
+                long oldCorporationNodeID = this.ItemDB.GetItemNode (oldCorporationID);
 
                 // get the node where the character is loaded
                 // the node where the corporation is loaded also needs to get notified so the members rowset can be updated

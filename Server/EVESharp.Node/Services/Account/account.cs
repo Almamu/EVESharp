@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Packets.Complex;

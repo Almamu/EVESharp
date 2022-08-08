@@ -2,27 +2,29 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.contractMgr;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Contracts;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Contracts;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Container = EVESharp.Node.Inventory.Items.Types.Container;
+using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Services.Contracts;
 
@@ -32,30 +34,31 @@ public class contractMgr : Service
     public override AccessLevel AccessLevel => AccessLevel.Station;
 
     // TODO: THE TYPEID FOR THE BOX IS 24445
-    private ContractDB         DB            { get; }
-    private ItemDB             ItemDB        { get; }
-    private MarketDB           MarketDB      { get; }
-    private CharacterDB        CharacterDB   { get; }
-    private ItemFactory        ItemFactory   { get; }
-    private TypeManager        TypeManager   => ItemFactory.TypeManager;
-    private SystemManager      SystemManager => ItemFactory.SystemManager;
-    private NotificationSender Notifications { get; }
-    private IWalletManager     WalletManager { get; }
-    private DogmaUtils         DogmaUtils    { get; }
+    private ContractDB          DB                 { get; }
+    private ItemDB              ItemDB             { get; }
+    private MarketDB            MarketDB           { get; }
+    private CharacterDB         CharacterDB        { get; }
+    private IItems              Items              { get; }
+    private ITypes              Types              => this.Items.Types;
+    private ISolarSystems       SolarSystems       { get; }
+    private INotificationSender Notifications      { get; }
+    private IWalletManager      WalletManager      { get; }
+    private IDogmaNotifications DogmaNotifications { get; }
 
     public contractMgr (
-        ContractDB    db,            ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, ItemFactory itemFactory, NotificationSender notificationSender,
-        IWalletManager walletManager, DogmaUtils dogmaUtils
+        ContractDB    db,            ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, IItems items, INotificationSender notificationSender,
+        IWalletManager walletManager, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
     )
     {
-        DB            = db;
-        ItemDB        = itemDB;
-        MarketDB      = marketDB;
-        CharacterDB   = characterDB;
-        ItemFactory   = itemFactory;
-        Notifications = notificationSender;
-        WalletManager = walletManager;
-        DogmaUtils    = dogmaUtils;
+        DB                 = db;
+        ItemDB             = itemDB;
+        MarketDB           = marketDB;
+        CharacterDB        = characterDB;
+        Items              = items;
+        Notifications      = notificationSender;
+        WalletManager      = walletManager;
+        DogmaNotifications = dogmaNotifications;
+        SolarSystems       = solarSystems;
     }
 
     public PyDataType NumRequiringAttention (CallInformation call)
@@ -68,9 +71,9 @@ public class contractMgr : Service
         List <int> assignedContracts = DB.FetchLoginCharacterContractAssigned (callerCharacterID);
 
         foreach (int contractID in outbidContracts)
-            DogmaUtils.QueueMultiEvent (callerCharacterID, new OnContractOutbid (contractID));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnContractOutbid (contractID));
         foreach (int contractID in assignedContracts)
-            DogmaUtils.QueueMultiEvent (callerCharacterID, new OnContractAssigned (contractID));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnContractAssigned (contractID));
 
         return DB.NumRequiringAttention (callerCharacterID, call.Session.CorporationID);
     }
@@ -133,9 +136,9 @@ public class contractMgr : Service
     )
     {
         // create the container in the system to ensure it's not visible to the player
-        Container container = ItemFactory.CreateSimpleItem (
-            TypeManager [Types.PlasticWrap],
-            ItemFactory.LocationSystem.ID, station.ID, Flags.None
+        Container container = this.Items.CreateSimpleItem (
+            this.Types [TypeID.PlasticWrap],
+            this.Items.LocationSystem.ID, station.ID, Flags.None
         ) as Container;
 
         Dictionary <int, ContractDB.ItemQuantityEntry> items =
@@ -145,21 +148,21 @@ public class contractMgr : Service
 
         // build notification for item changes
         OnItemChange changes            = new OnItemChange ();
-        long         stationNode        = SystemManager.GetNodeStationBelongsTo (station.ID);
-        bool         stationBelongsToUs = SystemManager.StationBelongsToUs (station.ID);
+        long         stationNode        = this.SolarSystems.GetNodeStationBelongsTo (station.ID);
+        bool         stationBelongsToUs = this.SolarSystems.StationBelongsToUs (station.ID);
 
         // notify the changes in the items to the nodes
         foreach ((int _, ContractDB.ItemQuantityEntry item) in items)
         {
             if (stationNode == 0 || stationBelongsToUs)
             {
-                ItemEntity entity = ItemFactory.LoadItem (item.ItemID);
+                ItemEntity entity = this.Items.LoadItem (item.ItemID);
 
                 entity.LocationID = container.ID;
                 entity.Persist ();
 
                 // notify the character
-                Notifications.NotifyCharacter (ownerID, Client.Notifications.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
+                Notifications.NotifyCharacter (ownerID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
             }
             else
             {
@@ -199,12 +202,12 @@ public class contractMgr : Service
         if (call.NamedPayload.TryGetValue ("forCorp", out PyBool forCorp) == false)
             forCorp = false;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         if (forCorp == false)
         {
             // check limits for the character
-            long maximumContracts = 1 + 4 * character.GetSkillLevel (Types.Contracting);
+            long maximumContracts = 1 + 4 * character.GetSkillLevel (TypeID.Contracting);
 
             if (maximumContracts <= DB.GetOutstandingContractsCountForPlayer (callerCharacterID))
                 throw new ConTooManyContractsMax (maximumContracts);
@@ -214,7 +217,7 @@ public class contractMgr : Service
             throw new CustomError ("Not supported yet!");
         }
 
-        Station station = ItemFactory.GetStaticStation (startStationID);
+        Station station = this.Items.GetStaticStation (startStationID);
 
         using IDbConnection connection = MarketDB.AcquireMarketLock ();
 
@@ -542,62 +545,62 @@ public class contractMgr : Service
         // extract the crate
         DB.ExtractCrate (connection, contract.CrateID, station.ID, ownerID);
 
-        long stationNode = SystemManager.GetNodeStationBelongsTo (station.ID);
+        long stationNode = this.SolarSystems.GetNodeStationBelongsTo (station.ID);
 
-        if (stationNode == 0 || SystemManager.StationBelongsToUs (station.ID))
+        if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (station.ID))
         {
             foreach (ContractDB.ItemQuantityEntry change in changedItems)
             {
-                ItemEntity item = ItemFactory.LoadItem (change.ItemID);
+                ItemEntity item = this.Items.LoadItem (change.ItemID);
 
                 if (change.Quantity == 0)
                 {
                     // remove item from the meta inventories
-                    ItemFactory.MetaInventoryManager.OnItemDestroyed (item);
+                    this.Items.MetaInventoryManager.OnItemDestroyed (item);
                     // temporarily move the item to the recycler, let the current owner know
-                    item.LocationID = ItemFactory.LocationRecycler.ID;
-                    DogmaUtils.QueueMultiEvent (
-                        session.CharacterID, Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
+                    item.LocationID = this.Items.LocationRecycler.ID;
+                    this.DogmaNotifications.QueueMultiEvent (
+                        session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
                     );
                     // now set the item to the correct owner and place and notify it's new owner
                     // TODO: TAKE forCorp INTO ACCOUNT
                     item.LocationID = station.ID;
                     item.OwnerID    = contract.IssuerID;
-                    Notifications.NotifyCharacter (contract.IssuerID, Client.Notifications.Inventory.OnItemChange.BuildNewItemChange (item));
+                    Notifications.NotifyCharacter (contract.IssuerID, EVE.Notifications.Inventory.OnItemChange.BuildNewItemChange (item));
                     // add the item back to meta inventories if required
-                    ItemFactory.MetaInventoryManager.OnItemLoaded (item);
+                    this.Items.MetaInventoryManager.OnItemLoaded (item);
                 }
                 else
                 {
                     int oldQuantity = item.Quantity;
                     item.Quantity = change.Quantity;
-                    DogmaUtils.QueueMultiEvent (
-                        session.CharacterID, Client.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
+                    this.DogmaNotifications.QueueMultiEvent (
+                        session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
                     );
 
                     item.Persist ();
 
                     // unload the item if required
-                    ItemFactory.UnloadItem (item);
+                    this.Items.UnloadItem (item);
                 }
             }
 
             // move the offered items
             foreach (ContractDB.ItemQuantityEntry entry in offeredItems)
             {
-                ItemEntity item = ItemFactory.LoadItem (entry.ItemID);
+                ItemEntity item = this.Items.LoadItem (entry.ItemID);
 
                 item.LocationID = station.ID;
                 item.OwnerID    = ownerID;
 
-                DogmaUtils.QueueMultiEvent (
-                    session.CharacterID, Client.Notifications.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
+                this.DogmaNotifications.QueueMultiEvent (
+                    session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
                 );
 
                 item.Persist ();
 
                 // unload the item if possible
-                ItemFactory.UnloadItem (item);
+                this.Items.UnloadItem (item);
             }
         }
         else
@@ -617,11 +620,11 @@ public class contractMgr : Service
                     changes.AddChange (change.ItemID, "quantity", change.OldQuantity, change.Quantity);
                     // create a new item and notify the new node about it
                     // TODO: HANDLE BLUEPRINTS TOO! RIGHT NOW NO DATA IS COPIED FOR THEM
-                    ItemEntity item = ItemFactory.CreateSimpleItem (
-                        TypeManager [change.TypeID], contract.IssuerID, station.ID, Flags.Hangar, change.OldQuantity - change.Quantity
+                    ItemEntity item = this.Items.CreateSimpleItem (
+                        this.Types [change.TypeID], contract.IssuerID, station.ID, Flags.Hangar, change.OldQuantity - change.Quantity
                     );
                     // unload the created item
-                    ItemFactory.UnloadItem (item);
+                    this.Items.UnloadItem (item);
                     changes.AddChange (item.ID, "location", 0, station.ID);
                 }
 
@@ -664,7 +667,7 @@ public class contractMgr : Service
             if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc ())
                 throw new ConContractExpired ();
 
-            Station station = ItemFactory.GetStaticStation (contract.StationID);
+            Station station = this.Items.GetStaticStation (contract.StationID);
 
             // TODO: CHECK REWARD/PRICE
             switch (contract.Type)

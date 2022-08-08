@@ -5,14 +5,15 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Network;
-using EVESharp.EVE.Account;
-using EVESharp.EVE.Client;
+using EVESharp.EVE.Data;
+using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Accounts;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
+using Version = EVESharp.EVE.Data.Version;
 
 namespace EVESharp.Node.Server.Shared.Transports;
 
@@ -186,13 +187,13 @@ public class MachoUnauthenticatedTransport : MachoTransport
 
         LowLevelVersionExchange data = new LowLevelVersionExchange
         {
-            Codename     = VersionInfo.CODENAME,
-            Birthday     = VersionInfo.BIRTHDAY,
-            Build        = VersionInfo.BUILD,
-            MachoVersion = VersionInfo.MACHO_VERSION,
-            Version      = VersionInfo.VERSION,
+            Codename     = Version.CODENAME,
+            Birthday     = Version.BIRTHDAY,
+            Build        = Version.BUILD,
+            MachoVersion = Version.MACHO_VERSION,
+            Version      = Version.VERSION,
             UserCount    = MachoNet.TransportManager.ClientTransports.Count,
-            Region       = VersionInfo.REGION
+            Region       = Version.REGION
         };
 
         Socket.Send (data);
@@ -321,11 +322,11 @@ public class MachoUnauthenticatedTransport : MachoTransport
                 rsp.user_logonqueueposition = 1;
                 rsp.challenge_responsehash  = "55087";
 
-                rsp.macho_version = VersionInfo.MACHO_VERSION;
-                rsp.boot_version  = VersionInfo.VERSION;
-                rsp.boot_build    = VersionInfo.BUILD;
-                rsp.boot_codename = VersionInfo.CODENAME;
-                rsp.boot_region   = VersionInfo.REGION;
+                rsp.macho_version = Version.MACHO_VERSION;
+                rsp.boot_version  = Version.VERSION;
+                rsp.boot_build    = Version.BUILD;
+                rsp.boot_codename = Version.CODENAME;
+                rsp.boot_region   = Version.REGION;
 
                 // setup session
                 Session.UserType = AccountType.USER;

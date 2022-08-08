@@ -25,7 +25,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE.Data.Dogma;
-using EVESharp.EVE.Inventory.Attributes;
+using EVESharp.EVE.Data.Inventory.Attributes;
 
 namespace EVESharp.EVE.Data.Inventory;
 

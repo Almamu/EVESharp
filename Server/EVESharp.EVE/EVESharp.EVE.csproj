@@ -9,8 +9,4 @@
         <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Inventory" />
-    </ItemGroup>
-
 </Project>

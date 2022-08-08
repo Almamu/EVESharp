@@ -1,24 +1,25 @@
 using System;
 using EVESharp.Database;
-using EVESharp.EVE.Account;
+using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.inventory;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Station;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Station;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.Data.Inventory.Groups;
 
 namespace EVESharp.Node.Services.Dogma;
 
@@ -27,29 +28,32 @@ public class dogmaIM : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory         ItemFactory      { get; }
-    private AttributeManager    AttributeManager => ItemFactory.AttributeManager;
-    private SystemManager       SystemManager    => ItemFactory.SystemManager;
-    private NotificationSender  Notifications    { get; }
+    private IItems               Items            { get; }
+    private IAttributes         AttributeManager => this.Items.AttributeManager;
+    private ISolarSystems       SolarSystems     { get; }
+    private INotificationSender  Notifications    { get; }
     private EffectsManager      EffectsManager   { get; }
     private IDatabaseConnection Database         { get; }
 
-    public dogmaIM (EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database) : base (manager)
+    public dogmaIM (EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database,
+                    ISolarSystems solarSystems) : base (manager)
     {
         EffectsManager = effectsManager;
-        ItemFactory    = itemFactory;
+        Items          = items;
         Notifications  = notificationSender;
         Database       = database;
+        SolarSystems   = solarSystems;
     }
 
     protected dogmaIM (
-        int     locationID, EffectsManager effectsManager, ItemFactory itemFactory, NotificationSender notificationSender, BoundServiceManager manager,
-        Session session
+        int     locationID, EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager,
+        Session session, ISolarSystems solarSystems
     ) : base (manager, session, locationID)
     {
         EffectsManager = effectsManager;
-        ItemFactory    = itemFactory;
+        Items          = items;
         Notifications  = notificationSender;
+        SolarSystems   = solarSystems;
     }
 
     public PyDataType ShipGetInfo (CallInformation call)
@@ -61,7 +65,7 @@ public class dogmaIM : ClientBoundService
             throw new CustomError ("The character is not aboard any ship");
 
         // TODO: RE-EVALUATE WHERE THE SHIP LOADING IS PERFORMED, SHIPGETINFO DOESN'T LOOK LIKE A GOOD PLACE TO DO IT
-        Ship ship = ItemFactory.LoadItem <Ship> ((int) shipID);
+        Ship ship = this.Items.LoadItem <Ship> ((int) shipID);
 
         if (ship is null)
             throw new CustomError ($"Cannot get information for ship {call.Session.ShipID}");
@@ -94,7 +98,7 @@ public class dogmaIM : ClientBoundService
         catch (Exception)
         {
             // there was an exception, the ship has to be unloaded as it's not going to be used anymore
-            ItemFactory.UnloadItem (ship);
+            this.Items.UnloadItem (ship);
 
             throw;
         }
@@ -104,7 +108,7 @@ public class dogmaIM : ClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         if (character is null)
             throw new CustomError ($"Cannot get information for character {callerCharacterID}");
@@ -138,7 +142,7 @@ public class dogmaIM : ClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        ItemEntity item = ItemFactory.LoadItem (itemID);
+        ItemEntity item = this.Items.LoadItem (itemID);
 
         if (item.ID != callerCharacterID && item.OwnerID != callerCharacterID && item.OwnerID != call.Session.CorporationID)
             throw new TheItemIsNotYoursToTake (itemID);
@@ -175,7 +179,7 @@ public class dogmaIM : ClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         if (character is null)
             throw new CustomError ($"Cannot get information for character {callerCharacterID}");
@@ -203,7 +207,7 @@ public class dogmaIM : ClientBoundService
         if ((role & roleMask) == 0)
             throw new CustomError ("Not allowed!");
 
-        ItemEntity item = ItemFactory.GetItem (itemID);
+        ItemEntity item = this.Items.GetItem (itemID);
 
         if (item.Attributes.AttributeExists (attributeID) == false)
             throw new CustomError ("The given attribute doesn't exists in the item");
@@ -222,7 +226,7 @@ public class dogmaIM : ClientBoundService
 
     public PyDataType Activate (CallInformation call, PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat)
     {
-        ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
+        ShipModule module = this.Items.GetItem <ShipModule> (itemID);
 
         EffectsManager.GetForItem (module, call.Session).ApplyEffect (effectName, call.Session);
 
@@ -231,7 +235,7 @@ public class dogmaIM : ClientBoundService
 
     public PyDataType Deactivate (CallInformation call, PyInteger itemID, PyString effectName)
     {
-        ShipModule module = ItemFactory.GetItem <ShipModule> (itemID);
+        ShipModule module = this.Items.GetItem <ShipModule> (itemID);
 
         EffectsManager.GetForItem (module, call.Session).StopApplyingEffect (effectName, call.Session);
 
@@ -242,8 +246,8 @@ public class dogmaIM : ClientBoundService
     {
         return parameters.ExtraValue switch
         {
-            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
-            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
             _                        => throw new CustomError ("Unknown item's groupID")
         };
     }
@@ -256,18 +260,18 @@ public class dogmaIM : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         // make sure the character is loaded
-        Character character = ItemFactory.LoadItem <Character> (characterID);
+        Character character = this.Items.LoadItem <Character> (characterID);
 
         // depending on the type of binding we're doing it means the player might be entering a station
-        if (bindParams.ExtraValue == (int) Groups.Station && call.Session.StationID == bindParams.ObjectID)
+        if (bindParams.ExtraValue == (int) GroupID.Station && call.Session.StationID == bindParams.ObjectID)
         {
-            ItemFactory.GetStaticStation (bindParams.ObjectID).Guests [characterID] = character;
+            this.Items.GetStaticStation (bindParams.ObjectID).Guests [characterID] = character;
 
             // notify all station guests
             Notifications.NotifyStation (bindParams.ObjectID, new OnCharNowInStation (call.Session));
         }
 
-        return new dogmaIM (bindParams.ObjectID, EffectsManager, ItemFactory, Notifications, BoundServiceManager, call.Session);
+        return new dogmaIM (bindParams.ObjectID, EffectsManager, Items, Notifications, BoundServiceManager, call.Session, SolarSystems);
     }
 
     protected override void OnClientDisconnected ()
@@ -278,17 +282,17 @@ public class dogmaIM : ClientBoundService
         if (Session.StationID == ObjectID)
         {
             // remove the character from the list
-            ItemFactory.GetStaticStation (ObjectID).Guests.Remove (characterID);
+            this.Items.GetStaticStation (ObjectID).Guests.Remove (characterID);
 
             // notify all station guests
             Notifications.NotifyStation (ObjectID, new OnCharNoLongerInStation (Session));
 
             // check if the character is loaded or their ship is loaded and unload it
             // TODO: THIS MIGHT REQUIRE CHANGES WHEN DESTINY WORK IS STARTED
-            ItemFactory.UnloadItem (characterID);
+            this.Items.UnloadItem (characterID);
 
             if (Session.ShipID is not null)
-                ItemFactory.UnloadItem ((int) Session.ShipID);
+                this.Items.UnloadItem ((int) Session.ShipID);
         }
     }
 }

@@ -1,10 +1,11 @@
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -15,14 +16,14 @@ public class charmgr : Service
     public override AccessLevel    AccessLevel   => AccessLevel.None;
     private         CharacterDB    DB            { get; }
     private         MarketDB       MarketDB      { get; }
-    private         ItemFactory    ItemFactory   { get; }
+    private         IItems    Items   { get; }
     private         IWalletManager WalletManager { get; }
 
-    public charmgr (CharacterDB db, MarketDB marketDB, ItemFactory itemFactory, IWalletManager WalletManager)
+    public charmgr (CharacterDB db, MarketDB marketDB, IItems items, IWalletManager WalletManager)
     {
         DB                 = db;
         MarketDB           = marketDB;
-        ItemFactory        = itemFactory;
+        this.Items         = items;
         this.WalletManager = WalletManager;
     }
 
@@ -47,7 +48,7 @@ public class charmgr : Service
     public PyDataType AddToBounty (CallInformation call, PyInteger characterID, PyInteger bounty)
     {
         // get character's object
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         // access the wallet and do the required changes
         using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);

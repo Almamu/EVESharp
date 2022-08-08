@@ -1,5 +1,5 @@
 ﻿using System;
-using EVESharp.EVE.Account;
+using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Sessions;
 
 namespace EVESharp.EVE.Services.Validators;

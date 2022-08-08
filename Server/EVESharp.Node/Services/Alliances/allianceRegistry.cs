@@ -4,25 +4,28 @@ using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.allianceRegistry;
 using EVESharp.EVE.Exceptions.corpRegistry;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Alliances;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Alliances;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
+using ItemDB = EVESharp.Node.Database.ItemDB;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Alliances;
@@ -34,37 +37,39 @@ public class allianceRegistry : MultiClientBoundService
     private IDatabaseConnection Database       { get; }
     private CorporationDB       CorporationDB  { get; }
     private ChatDB              ChatDB         { get; }
-    private NotificationSender  Notifications  { get; }
-    private ItemFactory         ItemFactory    { get; }
+    private ItemDB              ItemDB         { get; }
+    private INotificationSender Notifications  { get; }
+    private IItems              Items          { get; }
     private Alliance            Alliance       { get; }
     private SessionManager      SessionManager { get; }
     private ClusterManager      ClusterManager { get; }
 
     public allianceRegistry (
-        IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, ItemFactory itemFactory, NotificationSender notificationSender,
-        BoundServiceManager manager,            SessionManager sessionManager, ClusterManager clusterManager
+        IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, IItems items, INotificationSender notificationSender,
+        BoundServiceManager manager,            SessionManager sessionManager, ClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
         Database       = databaseConnection;
         CorporationDB  = corporationDB;
         ChatDB         = chatDB;
         Notifications  = notificationSender;
-        ItemFactory    = itemFactory;
+        this.Items     = items;
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
+        ItemDB         = itemDB;
 
         ClusterManager.OnClusterTimer += PerformTimedEvents;
     }
 
     private allianceRegistry (
-        Alliance alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, ItemFactory itemFactory, NotificationSender notificationSender,
+        Alliance alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, IItems items, INotificationSender notificationSender,
         SessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
         Database       = databaseConnection;
         CorporationDB  = corporationDB;
         Notifications  = notificationSender;
-        ItemFactory    = itemFactory;
+        this.Items     = items;
         Alliance       = alliance;
         SessionManager = sessionManager;
     }
@@ -102,7 +107,7 @@ public class allianceRegistry : MultiClientBoundService
             // first update the corporation to join it to the alliance in the database
             CorporationDB.UpdateCorporationInformation (entry.CorporationID, entry.AllianceID, DateTime.UtcNow.ToFileTimeUtc (), entry.ExecutorCorpID);
             // now check if any node has it loaded and notify it about the changes
-            long nodeID = ItemFactory.ItemDB.GetItemNode (entry.CorporationID);
+            long nodeID = this.ItemDB.GetItemNode (entry.CorporationID);
 
             if (nodeID > 0)
             {
@@ -144,9 +149,9 @@ public class allianceRegistry : MultiClientBoundService
          if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
              throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        Alliance alliance = ItemFactory.LoadItem <Alliance> (bindParams.ObjectID);
+        Alliance alliance = this.Items.LoadItem <Alliance> (bindParams.ObjectID);
 
-        return new allianceRegistry (alliance, Database, CorporationDB, ItemFactory, Notifications, SessionManager, this);
+        return new allianceRegistry (alliance, Database, CorporationDB, this.Items, Notifications, SessionManager, this);
     }
 
     public PyDataType GetAlliance (CallInformation call)

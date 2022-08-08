@@ -1,11 +1,10 @@
-using EVESharp.EVE.Account;
-using EVESharp.EVE.Client.Messages;
+using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Unit.ServiceManagerTests;

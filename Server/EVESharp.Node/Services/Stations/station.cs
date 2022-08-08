@@ -1,7 +1,8 @@
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 
 namespace EVESharp.Node.Services.Stations;
@@ -9,11 +10,11 @@ namespace EVESharp.Node.Services.Stations;
 public class station : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
-    private         ItemFactory ItemFactory { get; }
+    private         IItems Items { get; }
 
-    public station (ItemFactory itemFactory)
+    public station (IItems items)
     {
-        ItemFactory = itemFactory;
+        this.Items = items;
     }
 
     [MustBeInStation]
@@ -21,7 +22,7 @@ public class station : Service
     {
         int stationID = call.Session.StationID;
 
-        Station station = ItemFactory.GetStaticStation (stationID);
+        Station station = this.Items.GetStaticStation (stationID);
 
         return new PyTuple (5)
         {
@@ -38,7 +39,7 @@ public class station : Service
     {
         int stationID = call.Session.StationID;
 
-        Station          station = ItemFactory.GetStaticStation (stationID);
+        Station          station = this.Items.GetStaticStation (stationID);
         PyList <PyTuple> result  = new PyList <PyTuple> ();
 
         foreach ((int _, Character character) in station.Guests)

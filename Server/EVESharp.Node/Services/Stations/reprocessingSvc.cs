@@ -2,19 +2,21 @@
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Exceptions.reprocessingSvc;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -25,69 +27,72 @@ namespace EVESharp.Node.Services.Stations;
 [MustBeCharacter]
 public class reprocessingSvc : ClientBoundService
 {
-    private static readonly Dictionary <Types, Types> sOreTypeIDtoProcessingSkillTypeID = new Dictionary <Types, Types>
+    private static readonly Dictionary <TypeID, TypeID> sOreTypeIDtoProcessingSkillTypeID = new Dictionary <TypeID, TypeID>
     {
-        {Types.Arkonor, Types.ArkonorProcessing},
-        {Types.Bistot, Types.BistotProcessing},
-        {Types.Crokite, Types.CrokiteProcessing},
-        {Types.DarkOchre, Types.DarkOchreProcessing},
-        {Types.Gneiss, Types.GneissProcessing},
-        {Types.Hedbergite, Types.HedbergiteProcessing},
-        {Types.Hemorphite, Types.HemorphiteProcessing},
-        {Types.Jaspet, Types.JaspetProcessing},
-        {Types.Kernite, Types.KerniteProcessing},
-        {Types.Mercoxit, Types.MercoxitProcessing},
-        {Types.Omber, Types.OmberProcessing},
-        {Types.Plagioclase, Types.PlagioclaseProcessing},
-        {Types.Pyroxeres, Types.PyroxeresProcessing},
-        {Types.Scordite, Types.ScorditeProcessing},
-        {Types.Spodumain, Types.SpodumainProcessing},
-        {Types.Veldspar, Types.VeldsparProcessing}
+        {TypeID.Arkonor, TypeID.ArkonorProcessing},
+        {TypeID.Bistot, TypeID.BistotProcessing},
+        {TypeID.Crokite, TypeID.CrokiteProcessing},
+        {TypeID.DarkOchre, TypeID.DarkOchreProcessing},
+        {TypeID.Gneiss, TypeID.GneissProcessing},
+        {TypeID.Hedbergite, TypeID.HedbergiteProcessing},
+        {TypeID.Hemorphite, TypeID.HemorphiteProcessing},
+        {TypeID.Jaspet, TypeID.JaspetProcessing},
+        {TypeID.Kernite, TypeID.KerniteProcessing},
+        {TypeID.Mercoxit, TypeID.MercoxitProcessing},
+        {TypeID.Omber, TypeID.OmberProcessing},
+        {TypeID.Plagioclase, TypeID.PlagioclaseProcessing},
+        {TypeID.Pyroxeres, TypeID.PyroxeresProcessing},
+        {TypeID.Scordite, TypeID.ScorditeProcessing},
+        {TypeID.Spodumain, TypeID.SpodumainProcessing},
+        {TypeID.Veldspar, TypeID.VeldsparProcessing}
     };
     private readonly Corporation   mCorporation;
     private readonly ItemInventory mInventory;
     private readonly Station       mStation;
     public override  AccessLevel   AccessLevel => AccessLevel.None;
 
-    private ItemFactory         ItemFactory    { get; }
-    private SystemManager       SystemManager  => ItemFactory.SystemManager;
-    private TypeManager         TypeManager    => ItemFactory.TypeManager;
-    private StandingDB          StandingDB     { get; }
-    private ReprocessingDB      ReprocessingDB { get; }
-    private DogmaUtils          DogmaUtils     { get; }
-    private IDatabaseConnection Database       { get; }
+    private IItems               Items              { get; }
+    private ISolarSystems       SolarSystems       { get; }
+    private ITypes              Types              => this.Items.Types;
+    private StandingDB          StandingDB         { get; }
+    private ReprocessingDB      ReprocessingDB     { get; }
+    private IDogmaNotifications  DogmaNotifications { get; }
+    private IDatabaseConnection Database           { get; }
 
     public reprocessingSvc (
-        ReprocessingDB reprocessingDb, StandingDB standingDb, ItemFactory itemFactory, BoundServiceManager manager, DogmaUtils dogmaUtils, IDatabaseConnection database
+        ReprocessingDB reprocessingDb, StandingDB standingDb, IItems items, BoundServiceManager manager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
+        ISolarSystems solarSystems
     ) : base (manager)
     {
-        ReprocessingDB = reprocessingDb;
-        StandingDB     = standingDb;
-        ItemFactory    = itemFactory;
-        DogmaUtils     = dogmaUtils;
-        Database       = database;
+        ReprocessingDB     = reprocessingDb;
+        StandingDB         = standingDb;
+        Items              = items;
+        DogmaNotifications = dogmaNotifications;
+        Database           = database;
+        SolarSystems       = solarSystems;
     }
 
     protected reprocessingSvc (
-        ReprocessingDB      reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, ItemFactory itemFactory,
-        BoundServiceManager manager,        DogmaUtils dogmaUtils, Session     session
+        ReprocessingDB      reprocessingDb, StandingDB standingDb, Corporation corporation, Station station, ItemInventory inventory, IItems items,
+        BoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session     session, ISolarSystems solarSystems
     ) : base (manager, session, inventory.ID)
     {
-        ReprocessingDB    = reprocessingDb;
-        StandingDB        = standingDb;
-        this.mCorporation = corporation;
-        this.mStation     = station;
-        this.mInventory   = inventory;
-        ItemFactory       = itemFactory;
-        DogmaUtils        = dogmaUtils;
+        ReprocessingDB     = reprocessingDb;
+        StandingDB         = standingDb;
+        this.mCorporation  = corporation;
+        this.mStation      = station;
+        this.mInventory    = inventory;
+        Items              = items;
+        DogmaNotifications = dogmaNotifications;
+        SolarSystems       = solarSystems;
     }
 
     private double CalculateCombinedYield (Character character)
     {
         // there's no implants that affect the reprocessing of anything
         double efficiency = 0.375
-                            * (1 + 0.02 * character.GetSkillLevel (Types.Refining))
-                            * (1 + 0.04 * character.GetSkillLevel (Types.RefineryEfficiency));
+                            * (1 + 0.02 * character.GetSkillLevel (TypeID.Refining))
+                            * (1 + 0.04 * character.GetSkillLevel (TypeID.RefineryEfficiency));
 
         efficiency += this.mStation.ReprocessingEfficiency;
 
@@ -99,12 +104,12 @@ public class reprocessingSvc : ClientBoundService
     {
         // there's no implants that affect the reprocessing of anything
         double efficiency = 0.375
-                            * (1 + 0.02 * character.GetSkillLevel (Types.Refining))
-                            * (1 + 0.04 * character.GetSkillLevel (Types.RefineryEfficiency));
+                            * (1 + 0.02 * character.GetSkillLevel (TypeID.Refining))
+                            * (1 + 0.04 * character.GetSkillLevel (TypeID.RefineryEfficiency));
 
         // check what mineral it is and calculate it's efficiency (there's skills that modify the outcome) 
-        if (sOreTypeIDtoProcessingSkillTypeID.TryGetValue ((Types) typeID, out Types skillType) == false)
-            skillType = Types.ScrapmetalProcessing;
+        if (sOreTypeIDtoProcessingSkillTypeID.TryGetValue ((TypeID) typeID, out TypeID skillType) == false)
+            skillType = TypeID.ScrapmetalProcessing;
 
         // 5% increase by the specific metal skill
         efficiency *= 1 + 0.05 * character.GetSkillLevel (skillType);
@@ -126,9 +131,9 @@ public class reprocessingSvc : ClientBoundService
         double standing = StandingDB.GetStanding (this.mStation.OwnerID, character.ID);
 
         if (standing < 0.0f)
-            standing += (10.0 + standing) * 0.04 * character.GetSkillLevel (Types.Diplomacy);
+            standing += (10.0 + standing) * 0.04 * character.GetSkillLevel (TypeID.Diplomacy);
         else
-            standing += (10.0 - standing) * 0.04 * character.GetSkillLevel (Types.Connections);
+            standing += (10.0 - standing) * 0.04 * character.GetSkillLevel (TypeID.Connections);
 
         return standing;
     }
@@ -137,7 +142,7 @@ public class reprocessingSvc : ClientBoundService
     public PyDataType GetReprocessingInfo (CallInformation call)
     {
         int       stationID = call.Session.StationID;
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         double standing = this.GetStanding (character);
 
@@ -209,7 +214,7 @@ public class reprocessingSvc : ClientBoundService
 
     public PyDataType GetQuotes (CallInformation call, PyList itemIDs)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         PyDictionary <PyInteger, PyDataType> result = new PyDictionary <PyInteger, PyDataType> ();
 
@@ -243,18 +248,18 @@ public class reprocessingSvc : ClientBoundService
             int quantityForClient = (int) (efficiency * (1.0 - this.mCorporation.TaxRate) * ratio);
 
             // create the new item
-            ItemEntity newItem = ItemFactory.CreateSimpleItem (
-                TypeManager [recoverable.TypeID], character, this.mStation,
+            ItemEntity newItem = this.Items.CreateSimpleItem (
+                this.Types [recoverable.TypeID], character, this.mStation,
                 Flags.Hangar, quantityForClient
             );
             // notify the client about the new item
-            DogmaUtils.QueueMultiEvent (session.CharacterID, OnItemChange.BuildNewItemChange (newItem));
+            this.DogmaNotifications.QueueMultiEvent (session.CharacterID, OnItemChange.BuildNewItemChange (newItem));
         }
     }
 
     public PyDataType Reprocess (CallInformation call, PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         // TODO: TAKE INTO ACCOUNT OWNERID AND FLAG, THESE MOST LIKELY WILL BE USED BY CORP STUFF
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
@@ -266,9 +271,9 @@ public class reprocessingSvc : ClientBoundService
             this.Reprocess (character, item, call.Session);
             int oldLocationID = item.LocationID;
             // finally remove the item from the inventories
-            ItemFactory.DestroyItem (item);
+            this.Items.DestroyItem (item);
             // notify the client about the item being destroyed
-            DogmaUtils.QueueMultiEvent (character.ID, OnItemChange.BuildLocationChange (item, oldLocationID));
+            this.DogmaNotifications.QueueMultiEvent (character.ID, OnItemChange.BuildLocationChange (item, oldLocationID));
         }
 
         return null;
@@ -284,20 +289,20 @@ public class reprocessingSvc : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        Station station = ItemFactory.GetStaticStation (bindParams.ObjectID);
+        Station station = this.Items.GetStaticStation (bindParams.ObjectID);
 
         if (station.HasService (Service.ReprocessingPlant) == false)
             throw new CustomError ("This station does not allow for reprocessing plant services");
         if (station.ID != call.Session.StationID)
             throw new CanOnlyDoInStations ();
 
-        Corporation corporation = ItemFactory.GetItem <Corporation> (station.OwnerID);
+        Corporation corporation = this.Items.GetItem <Corporation> (station.OwnerID);
         ItemInventory inventory =
-            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
+            this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 
         return new reprocessingSvc (
-            ReprocessingDB, StandingDB, corporation, station, inventory, ItemFactory, BoundServiceManager, DogmaUtils,
-            call.Session
+            ReprocessingDB, StandingDB, corporation, station, inventory, this.Items, BoundServiceManager, this.DogmaNotifications,
+            call.Session, this.SolarSystems
         );
     }
 }

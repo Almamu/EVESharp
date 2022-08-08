@@ -1,20 +1,21 @@
 ﻿using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.ship;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Inventory;
@@ -22,49 +23,53 @@ namespace EVESharp.Node.Services.Inventory;
 [MustBeCharacter]
 public class ship : ClientBoundService
 {
-    public override AccessLevel         AccessLevel    => AccessLevel.None;
-    private         ItemEntity          Location       { get; }
-    private         ItemFactory         ItemFactory    { get; }
-    private         TypeManager         TypeManager    => ItemFactory.TypeManager;
-    private         SystemManager       SystemManager  => ItemFactory.SystemManager;
-    private         SessionManager      SessionManager { get; }
-    private         DogmaUtils          DogmaUtils     { get; }
-    private         IDatabaseConnection Database       { get; }
+    public override AccessLevel         AccessLevel        => AccessLevel.None;
+    private         ItemEntity          Location           { get; }
+    private         IItems               Items              { get; }
+    private         ITypes              Types              => this.Items.Types;
+    private         ISolarSystems       SolarSystems       { get; }
+    private         SessionManager      SessionManager     { get; }
+    private         IDogmaNotifications  DogmaNotifications { get; }
+    private         IDatabaseConnection Database           { get; }
 
-    public ship (ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils, IDatabaseConnection database) : base (manager)
+    public ship (IItems items, BoundServiceManager manager, SessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
+                 ISolarSystems solarSystems) : base (manager)
     {
-        ItemFactory    = itemFactory;
-        SessionManager = sessionManager;
-        DogmaUtils     = dogmaUtils;
-        Database       = database;
+        Items              = items;
+        SessionManager     = sessionManager;
+        DogmaNotifications = dogmaNotifications;
+        Database           = database;
+        SolarSystems       = solarSystems;
     }
 
     protected ship (
-        ItemEntity location, ItemFactory itemFactory, BoundServiceManager manager, SessionManager sessionManager, DogmaUtils dogmaUtils, Session session
+        ItemEntity location, IItems items, BoundServiceManager manager, SessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
+        ISolarSystems solarSystems
     ) : base (manager, session, location.ID)
     {
-        Location       = location;
-        ItemFactory    = itemFactory;
-        SessionManager = sessionManager;
-        DogmaUtils     = dogmaUtils;
+        Location           = location;
+        Items              = items;
+        SessionManager     = sessionManager;
+        DogmaNotifications = dogmaNotifications;
+        SolarSystems       = solarSystems;
     }
 
     public PyInteger LeaveShip (CallInformation call)
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
         // get the item type
-        Type capsuleType = TypeManager [Types.Capsule];
+        Type capsuleType = this.Types [TypeID.Capsule];
         // create a pod for this character
-        ItemInventory capsule = ItemFactory.CreateShip (capsuleType, Location, character);
+        ItemInventory capsule = this.Items.CreateShip (capsuleType, Location, character);
         // update capsule's name
         capsule.Name = character.Name + "'s Capsule";
         // change character's location to the pod
         character.LocationID = capsule.ID;
         // notify the client about the item changes
-        DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule,   Flags.Capsule, ItemFactory.LocationRecycler.ID));
-        DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot,   call.Session.ShipID));
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule,   Flags.Capsule, this.Items.LocationRecycler.ID));
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot,   call.Session.ShipID));
         // notify the client
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = capsule.ID});
 
@@ -83,11 +88,11 @@ public class ship : ClientBoundService
 
         // ensure the item is loaded somewhere in this node
         // this will usually be taken care by the EVE Client
-        if (ItemFactory.TryGetItem (itemID, out Ship newShip) == false)
+        if (this.Items.TryGetItem (itemID, out Ship newShip) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
 
-        Character character   = ItemFactory.GetItem <Character> (callerCharacterID);
-        Ship      currentShip = ItemFactory.GetItem <Ship> ((int) call.Session.ShipID);
+        Character character   = this.Items.GetItem <Character> (callerCharacterID);
+        Ship      currentShip = this.Items.GetItem <Ship> ((int) call.Session.ShipID);
 
         if (newShip.Singleton == false)
             throw new CustomError ("TooFewSubSystemsToUndock");
@@ -104,19 +109,19 @@ public class ship : ClientBoundService
         // finally update the session
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = newShip.ID});
         // notify the client about the change in location
-        DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, currentShip.ID));
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, currentShip.ID));
 
         character.Persist ();
 
         // ensure the character is not removed when the capsule is removed
         currentShip.RemoveItem (character);
 
-        if (currentShip.Type.ID == (int) Types.Capsule)
+        if (currentShip.Type.ID == (int) TypeID.Capsule)
         {
             // destroy the pod from the database
-            ItemFactory.DestroyItem (currentShip);
+            this.Items.DestroyItem (currentShip);
             // notify the player of the item change
-            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (currentShip, Location.ID));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (currentShip, Location.ID));
         }
 
         return null;
@@ -130,10 +135,10 @@ public class ship : ClientBoundService
 
         // ensure the item is loaded somewhere in this node
         // this will usually be taken care by the EVE Client
-        if (ItemFactory.TryGetItem (itemID, out Ship ship) == false)
+        if (this.Items.TryGetItem (itemID, out Ship ship) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         if (ship.OwnerID != callerCharacterID)
             throw new AssembleOwnShipsOnly (ship.OwnerID);
@@ -149,19 +154,19 @@ public class ship : ClientBoundService
             ship.Quantity -= 1;
             ship.Persist ();
             // notify the quantity change
-            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (ship, ship.Quantity + 1));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (ship, ship.Quantity + 1));
 
             // create the new item in the database
-            Station station = ItemFactory.GetStaticStation (stationID);
-            ship = ItemFactory.CreateShip (ship.Type, station, character);
+            Station station = this.Items.GetStaticStation (stationID);
+            ship = this.Items.CreateShip (ship.Type, station, character);
             // notify the new item
-            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildNewItemChange (ship));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildNewItemChange (ship));
         }
         else
         {
             // stack of one, simple as changing the singleton flag
             ship.Singleton = true;
-            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildSingletonChange (ship, false));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildSingletonChange (ship, false));
         }
 
         // save the ship
@@ -182,8 +187,8 @@ public class ship : ClientBoundService
     {
         return parameters.ExtraValue switch
         {
-            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
-            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
             _                        => throw new CustomError ("Unknown item's groupID")
         };
     }
@@ -193,14 +198,14 @@ public class ship : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        if (bindParams.ExtraValue != (int) Groups.Station && bindParams.ExtraValue != (int) Groups.SolarSystem)
+        if (bindParams.ExtraValue != (int) GroupID.Station && bindParams.ExtraValue != (int) GroupID.SolarSystem)
             throw new CustomError ("Cannot bind ship service to non-solarsystem and non-station locations");
-        if (ItemFactory.TryGetItem (bindParams.ObjectID, out ItemEntity location) == false)
+        if (this.Items.TryGetItem (bindParams.ObjectID, out ItemEntity location) == false)
             throw new CustomError ("This bind request does not belong here");
 
         if (location.Type.Group.ID != bindParams.ExtraValue)
             throw new CustomError ("Location and group do not match");
 
-        return new ship (location, ItemFactory, BoundServiceManager, SessionManager, DogmaUtils, call.Session);
+        return new ship (location, this.Items, BoundServiceManager, SessionManager, this.DogmaNotifications, call.Session, this.SolarSystems);
     }
 }

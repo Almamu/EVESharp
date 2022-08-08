@@ -5,9 +5,10 @@ using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Data;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -18,12 +19,12 @@ namespace EVESharp.Node.Database;
 
 public class CharacterDB : DatabaseAccessor
 {
-    private ItemDB      ItemDB      { get; }
-    private TypeManager TypeManager { get; }
+    private ItemDB       ItemDB      { get; }
+    private ITypes Types { get; }
 
-    public CharacterDB (IDatabaseConnection db, ItemDB itemDB, TypeManager typeManager) : base (db)
+    public CharacterDB (IDatabaseConnection db, ItemDB itemDB, ITypes types) : base (db)
     {
-        TypeManager = typeManager;
+        this.Types = types;
         ItemDB      = itemDB;
     }
 
@@ -146,100 +147,6 @@ public class CharacterDB : DatabaseAccessor
 
             return reader.GetInt32 (0) > 0;
         }
-    }
-
-    /// <summary>
-    /// Obtains the information of all the bloodlines
-    /// </summary>
-    /// <returns></returns>
-    public Dictionary <int, Bloodline> GetBloodlineInformation ()
-    {
-        Dictionary <int, Bloodline> result     = new Dictionary <int, Bloodline> ();
-        IDbConnection               connection = null;
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT " +
-            " bloodlineTypes.bloodlineID, typeID, bloodlineName, raceID, description, maleDescription, " +
-            " femaleDescription, shipTypeID, corporationID, perception, willpower, charisma, memory, " +
-            " intelligence, graphicID, shortDescription, shortMaleDescription, shortFemaleDescription " +
-            " FROM bloodlineTypes, chrBloodlines " +
-            " WHERE chrBloodlines.bloodlineID = bloodlineTypes.bloodlineID"
-        );
-
-        using (connection)
-        using (reader)
-        {
-            while (reader.Read ())
-            {
-                Bloodline bloodline = new Bloodline (
-                    reader.GetInt32 (0),
-                    TypeManager [reader.GetInt32 (1)],
-                    reader.GetString (2),
-                    reader.GetInt32 (3),
-                    reader.GetString (4),
-                    reader.GetString (5),
-                    reader.GetString (6),
-                    TypeManager [reader.GetInt32 (7)],
-                    reader.GetInt32 (8),
-                    reader.GetInt32 (9),
-                    reader.GetInt32 (10),
-                    reader.GetInt32 (11),
-                    reader.GetInt32 (12),
-                    reader.GetInt32 (13),
-                    reader.GetInt32OrDefault (14),
-                    reader.GetString (15),
-                    reader.GetString (16),
-                    reader.GetString (17)
-                );
-
-                result [bloodline.ID] = bloodline;
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Obtains the information of all the ancestries
-    /// </summary>
-    /// <param name="bloodlines">Loaded bloodlines used to store the ancestry information into</param>
-    /// <returns></returns>
-    public Dictionary <int, Ancestry> GetAncestryInformation (Bloodlines bloodlines)
-    {
-        Dictionary <int, Ancestry> result     = new Dictionary <int, Ancestry> ();
-        IDbConnection              connection = null;
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT " +
-            " ancestryID, ancestryName, bloodlineID, description, perception, willpower, charisma," +
-            " memory, intelligence, graphicID, shortDescription " +
-            " FROM chrAncestries "
-        );
-
-        using (connection)
-        using (reader)
-        {
-            while (reader.Read ())
-            {
-                Ancestry ancestry = new Ancestry (
-                    reader.GetInt32 (0),
-                    reader.GetString (1),
-                    bloodlines [reader.GetInt32 (2)],
-                    reader.GetString (3),
-                    reader.GetInt32 (4),
-                    reader.GetInt32 (5),
-                    reader.GetInt32 (6),
-                    reader.GetInt32 (7),
-                    reader.GetInt32 (8),
-                    reader.GetInt32OrDefault (9),
-                    reader.GetString (10)
-                );
-
-                result [ancestry.ID] = ancestry;
-            }
-        }
-
-        return result;
     }
 
     /// <summary>
@@ -980,7 +887,7 @@ public class CharacterDB : DatabaseAccessor
     /// <param name="skill">The skill type</param>
     /// <param name="characterID">The character to get skill level from</param>
     /// <returns></returns>
-    public int GetSkillLevelForCharacter (Types skill, int characterID)
+    public int GetSkillLevelForCharacter (TypeID skill, int characterID)
     {
         IDbConnection connection = null;
         DbDataReader reader = Database.Select (

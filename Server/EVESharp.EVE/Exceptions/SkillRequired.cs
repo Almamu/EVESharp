@@ -6,7 +6,7 @@ namespace EVESharp.EVE.Exceptions;
 
 public class SkillRequired : UserError
 {
-    public SkillRequired (Types skill) : this ((int) skill) { }
+    public SkillRequired (TypeID skill) : this ((int) skill) { }
 
     public SkillRequired (int skill) : base (
         "SkillRequired",

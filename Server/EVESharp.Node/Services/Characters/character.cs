@@ -27,20 +27,22 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Data;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Chat;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Client.Notifications.Chat;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -61,20 +63,20 @@ public class character : Service
     private CharacterDB        DB             { get; }
     private CorporationDB      CorporationDB  { get; }
     private ChatDB             ChatDB         { get; }
-    private ItemFactory        ItemFactory    { get; }
-    private TypeManager        TypeManager    => ItemFactory.TypeManager;
+    private IItems              Items          { get; }
+    private ITypes       Types    => this.Items.Types;
     private CacheStorage       CacheStorage   { get; }
-    private NotificationSender Notifications  { get; }
+    private INotificationSender Notifications  { get; }
     private IWalletManager     WalletManager  { get; }
-    private Ancestries         Ancestries     { get; }
-    private Bloodlines         Bloodlines     { get; }
+    private IAncestries         Ancestries     { get; }
+    private IBloodlines         Bloodlines     { get; }
     private SessionManager     SessionManager { get; }
     private ILogger            Log            { get; }
 
     public character (
         CacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
-        ItemFactory        itemFactory,        ILogger       logger,        Character  configuration,
-        NotificationSender notificationSender, IWalletManager walletManager, Ancestries ancestries, Bloodlines bloodlines,
+        IItems        items,        ILogger       logger,        Character  configuration,
+        INotificationSender notificationSender, IWalletManager walletManager, IAncestries ancestries, IBloodlines bloodlines,
         SessionManager     sessionManager
     )
     {
@@ -83,7 +85,7 @@ public class character : Service
         DB                  = db;
         ChatDB              = chatDB;
         CorporationDB       = corporationDB;
-        ItemFactory         = itemFactory;
+        this.Items          = items;
         CacheStorage        = cacheStorage;
         Notifications       = notificationSender;
         WalletManager       = walletManager;
@@ -244,12 +246,12 @@ public class character : Service
         data.SafeGetValue ("camPos3",       out camPos3);
     }
 
-    private Node.Inventory.Items.Types.Character CreateCharacter (
+    private EVE.Data.Inventory.Items.Types.Character CreateCharacter (
         CallInformation call, string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime
     )
     {
         // load the item into memory
-        ItemEntity owner = ItemFactory.LocationSystem;
+        ItemEntity owner = this.Items.LocationSystem;
 
         this.GetRandomCareerForRace (ancestry.Bloodline.RaceID, out int careerID, out int schoolID, out int careerSpecialityID, out int corporationID);
         this.GetLocationForCorporation (corporationID, out int stationID, out int solarSystemID, out int constellationID, out int regionID);
@@ -285,7 +287,7 @@ public class character : Service
         // create the wallet for the player
         WalletManager.CreateWallet (itemID, WalletKeys.MAIN, this.mConfiguration.Balance);
 
-        return ItemFactory.LoadItem (itemID) as Node.Inventory.Items.Types.Character;
+        return this.Items.LoadItem (itemID) as EVE.Data.Inventory.Items.Types.Character;
     }
 
     [MustNotBeCharacter]
@@ -323,9 +325,9 @@ public class character : Service
             throw new BannedBloodline (ancestry, bloodline);
         }
 
-        Node.Inventory.Items.Types.Character character =
+        EVE.Data.Inventory.Items.Types.Character character =
             this.CreateCharacter (call, characterName, ancestry, genderID, appearance, currentTime);
-        Station station = ItemFactory.GetStaticStation (character.StationID);
+        Station station = this.Items.GetStaticStation (character.StationID);
 
         // TODO: CREATE DEFAULT STANDINGS FOR THE CHARACTER
         // change character attributes based on the picked ancestry
@@ -340,40 +342,40 @@ public class character : Service
 
         foreach ((int skillTypeID, int level) in skills)
         {
-            Type skillType = TypeManager [skillTypeID];
+            Type skillType = this.Types [skillTypeID];
 
             // create the skill at the required level
-            ItemFactory.CreateSkill (skillType, character, level);
+            this.Items.CreateSkill (skillType, character, level);
         }
 
         // create the ship for the character
-        Ship ship = ItemFactory.CreateShip (
+        Ship ship = this.Items.CreateShip (
             bloodline.ShipType, station,
             character
         );
 
         // add one unit of Tritanium to the station's hangar for the player
-        Type tritaniumType = TypeManager [Types.Tritanium];
+        Type tritaniumType = this.Types [TypeID.Tritanium];
 
         ItemEntity tritanium =
-            ItemFactory.CreateSimpleItem (
+            this.Items.CreateSimpleItem (
                 tritaniumType, character,
                 station, Flags.Hangar
             );
 
         // add one unit of Damage Control I to the station's hangar for the player
-        Type damageControlType = TypeManager [Types.DamageControlI];
+        Type damageControlType = this.Types [TypeID.DamageControlI];
 
         ItemEntity damageControl =
-            ItemFactory.CreateSimpleItem (
+            this.Items.CreateSimpleItem (
                 damageControlType, character,
                 station, Flags.Hangar
             );
 
         // create an alpha clone
-        Type cloneType = TypeManager [Types.CloneGradeAlpha];
+        Type cloneType = this.Types [TypeID.CloneGradeAlpha];
 
-        Clone clone = ItemFactory.CreateClone (cloneType, station, character);
+        Clone clone = this.Items.CreateClone (cloneType, station, character);
 
         character.LocationID    = ship.ID;
         character.ActiveCloneID = clone.ID;
@@ -405,11 +407,11 @@ public class character : Service
         ChatDB.JoinEntityMailingList (character.CorporationID, character.ID);
 
         // unload items from list
-        ItemFactory.UnloadItem (clone);
-        ItemFactory.UnloadItem (damageControl);
-        ItemFactory.UnloadItem (tritanium);
-        ItemFactory.UnloadItem (ship);
-        ItemFactory.UnloadItem (character);
+        this.Items.UnloadItem (clone);
+        this.Items.UnloadItem (damageControl);
+        this.Items.UnloadItem (tritanium);
+        this.Items.UnloadItem (ship);
+        this.Items.UnloadItem (character);
 
         // finally return the new character's ID and wait for the subsequent calls from the EVE client :)
         return character.ID;
@@ -443,12 +445,12 @@ public class character : Service
     )
     {
         // ensure the character belongs to the current account
-        Node.Inventory.Items.Types.Character character = ItemFactory.LoadItem <Node.Inventory.Items.Types.Character> (characterID);
+        EVE.Data.Inventory.Items.Types.Character character = this.Items.LoadItem <EVE.Data.Inventory.Items.Types.Character> (characterID);
 
         if (character.AccountID != call.Session.UserID)
         {
             // unload character
-            ItemFactory.UnloadItem (character);
+            this.Items.UnloadItem (character);
 
             // throw proper error
             throw new CustomError ("The selected character does not belong to this account, aborting...");
@@ -506,7 +508,7 @@ public class character : Service
         Notifications.NotifyCharacters (onlineFriends, new OnContactLoggedOn (character.ID));
 
         // unload the character
-        ItemFactory.UnloadItem (characterID);
+        this.Items.UnloadItem (characterID);
 
         // send the session change
         SessionManager.PerformSessionUpdate (Session.USERID, call.Session.UserID, updates);
@@ -530,13 +532,13 @@ public class character : Service
     {
         // TODO: FETCH THIS FROM THE DATABASE INSTEAD
         // return character.ActiveClone.Type.ID;
-        return (int) Types.CloneGradeAlpha;
+        return (int) TypeID.CloneGradeAlpha;
     }
 
     [MustBeCharacter]
     public PyDataType GetHomeStation (CallInformation call)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
+        EVE.Data.Inventory.Items.Types.Character character = this.Items.GetItem <EVE.Data.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         if (character.ActiveCloneID is null)
             throw new CustomError ("You do not have any medical clone...");
@@ -549,7 +551,7 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType GetCharacterDescription (CallInformation call, PyInteger characterID)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
+        EVE.Data.Inventory.Items.Types.Character character = this.Items.GetItem <EVE.Data.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         return character.Description;
     }
@@ -557,7 +559,7 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType SetCharacterDescription (CallInformation call, PyString newBio)
     {
-        Node.Inventory.Items.Types.Character character = ItemFactory.GetItem <Node.Inventory.Items.Types.Character> (call.Session.CharacterID);
+        EVE.Data.Inventory.Items.Types.Character character = this.Items.GetItem <EVE.Data.Inventory.Items.Types.Character> (call.Session.CharacterID);
 
         character.Description = newBio;
         character.Persist ();
@@ -612,7 +614,7 @@ public class character : Service
     {
         PyList result = new PyList ();
 
-        foreach ((int factionID, Faction faction) in ItemFactory.Factions)
+        foreach ((int factionID, Faction faction) in this.Items.Factions)
             result.Add (faction.GetKeyVal ());
 
         return result;

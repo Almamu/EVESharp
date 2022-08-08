@@ -1,4 +1,4 @@
-using EVESharp.EVE.Account;
+using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;

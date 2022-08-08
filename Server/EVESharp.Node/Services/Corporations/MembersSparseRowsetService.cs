@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Client.Notifications.Database;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Services.Database;
 using EVESharp.PythonTypes.Types.Collections;
@@ -20,10 +21,10 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
     public override AccessLevel                  AccessLevel   => AccessLevel.None;
     private         Corporation                  Corporation   { get; }
     private         CorporationDB                DB            { get; }
-    private         NotificationSender           Notifications { get; }
+    private         INotificationSender           Notifications { get; }
 
     public MembersSparseRowsetService (
-        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, NotificationSender notificationSender, BoundServiceManager manager,
+        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, INotificationSender notificationSender, BoundServiceManager manager,
         Session     session
     ) : base (rowsetHeader, manager, session, true)
     {

@@ -28,25 +28,25 @@ using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.contractMgr;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Services.Contracts;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Categories = EVESharp.EVE.Data.Inventory.Categories;
 using Type = System.Type;
 
 namespace EVESharp.Node.Database;
 
 public class ContractDB : DatabaseAccessor
 {
-    private TypeManager TypeManager { get; }
+    private ITypes Types { get; }
 
-    public ContractDB (TypeManager typeManager, IDatabaseConnection db) : base (db)
+    public ContractDB (ITypes types, IDatabaseConnection db) : base (db)
     {
-        TypeManager = typeManager;
+        Types = types;
     }
 
     public int GetOutstandingContractsCountForPlayer (int characterID)
@@ -296,17 +296,17 @@ public class ContractDB : DatabaseAccessor
                 Type damageValue = reader.GetFieldType (2);
 
                 if (damageValue == typeof (long) && reader.IsDBNull (2) == false && reader.GetInt64 (2) > 0)
-                    throw new ConCannotTradeDamagedItem (TypeManager [typeID]);
+                    throw new ConCannotTradeDamagedItem (this.Types [typeID]);
                 if (damageValue == typeof (double) && reader.IsDBNull (2) == false && reader.GetDouble (2) > 0)
-                    throw new ConCannotTradeDamagedItem (TypeManager [typeID]);
+                    throw new ConCannotTradeDamagedItem (this.Types [typeID]);
 
                 int itemQuantity = reader.GetInt32 (0);
 
-                if (reader.GetInt32 (4) == (int) Categories.Ship && itemQuantity == 1 && reader.GetBoolean (5) == false)
-                    throw new ConCannotTradeNonSingletonShip (TypeManager [typeID], station.ID);
+                if (reader.GetInt32 (4) == (int) CategoryID.Ship && itemQuantity == 1 && reader.GetBoolean (5) == false)
+                    throw new ConCannotTradeNonSingletonShip (this.Types [typeID], station.ID);
 
                 if (reader.GetBoolean (6))
-                    throw new ConCannotTradeContraband (TypeManager [typeID]);
+                    throw new ConCannotTradeContraband (this.Types [typeID]);
 
                 // quantity MUST match for this operation to succeed
                 if (itemQuantity != quantity)
@@ -924,13 +924,13 @@ public class ContractDB : DatabaseAccessor
                 Type damageValue = reader.GetFieldType (4);
 
                 if (damageValue == typeof (long) && reader.IsDBNull (4) == false && reader.GetInt64 (4) > 0)
-                    throw new ConCannotTradeDamagedItem (TypeManager [typeID]);
+                    throw new ConCannotTradeDamagedItem (this.Types [typeID]);
                 if (damageValue == typeof (double) && reader.IsDBNull (4) == false && reader.GetDouble (4) > 0)
-                    throw new ConCannotTradeDamagedItem (TypeManager [typeID]);
-                if (reader.GetBoolean (6) == false && reader.GetInt32 (6) == (int) Categories.Ship)
-                    throw new ConCannotTradeNonSingletonShip (TypeManager [typeID], station.ID);
+                    throw new ConCannotTradeDamagedItem (this.Types [typeID]);
+                if (reader.GetBoolean (6) == false && reader.GetInt32 (6) == (int) CategoryID.Ship)
+                    throw new ConCannotTradeNonSingletonShip (this.Types [typeID], station.ID);
                 if (reader.GetBoolean (7))
-                    throw new ConCannotTradeContraband (TypeManager [typeID]);
+                    throw new ConCannotTradeContraband (this.Types [typeID]);
 
                 itemsAtStation.Add (
                     new ItemQuantityEntry
@@ -979,7 +979,7 @@ public class ContractDB : DatabaseAccessor
 
             // if the quantity required is not exhausted there was an error
             if (quantity > 0)
-                throw new ConReturnItemsMissingNonSingleton (TypeManager [itemTypeID], station.ID);
+                throw new ConReturnItemsMissingNonSingleton (this.Types [itemTypeID], station.ID);
         }
 
         // iterate the modified items and update database if required

@@ -2,6 +2,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
@@ -15,13 +16,13 @@ public class config : Service
     public override AccessLevel AccessLevel => AccessLevel.LocationPreferred;
     private         ConfigDB    DB          { get; }
     private         ILogger     Log         { get; }
-    private         ItemFactory ItemFactory { get; }
+    private         IItems Items { get; }
 
-    public config (ConfigDB db, ItemFactory itemFactory, ILogger log)
+    public config (ConfigDB db, IItems items, ILogger log)
     {
-        DB          = db;
-        ItemFactory = itemFactory;
-        Log         = log;
+        DB         = db;
+        this.Items = items;
+        Log        = log;
     }
 
     public PyDataType GetMultiOwnersEx (CallInformation call, PyList ids)

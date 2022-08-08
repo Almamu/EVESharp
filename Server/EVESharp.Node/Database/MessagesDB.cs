@@ -135,12 +135,12 @@ public class MessagesDB : DatabaseAccessor
             if (reader.Read ())
                 switch (reader.GetInt32 (0))
                 {
-                    case (int) Groups.Character:
+                    case (int) GroupID.Character:
                         mailboxType = "charid";
                         break;
 
 
-                    case (int) Groups.Corporation:
+                    case (int) GroupID.Corporation:
                         mailboxType = "corpid";
                         break;
 

@@ -1,11 +1,12 @@
 ﻿using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -15,18 +16,18 @@ namespace EVESharp.Node.Services.Stations;
 public class ramProxy : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
-    private         ItemFactory ItemFactory { get; }
+    private         IItems Items { get; }
     private         RAMDB       DB          { get; }
 
-    public ramProxy (RAMDB ramDb, ItemFactory itemFactory)
+    public ramProxy (RAMDB ramDb, IItems items)
     {
-        DB          = ramDb;
-        ItemFactory = itemFactory;
+        DB         = ramDb;
+        this.Items = items;
     }
 
     public PyDataType GetRelevantCharSkills (CallInformation call)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         // i guess this call fetches skills that affect maximumManufacturingJobCount and maximumResearchJobCount
         return new PyTuple (2)
@@ -34,17 +35,17 @@ public class ramProxy : Service
             // the first part of the dict is not really used by the client, seems to be old code
             [0] = new PyDictionary <PyInteger, PyInteger>
             {
-                [(int) Types.ScientificNetworking]  = character.GetSkillLevel (Types.ScientificNetworking),
-                [(int) Types.SupplyChainManagement] = character.GetSkillLevel (Types.SupplyChainManagement)
+                [(int) TypeID.ScientificNetworking]  = character.GetSkillLevel (TypeID.ScientificNetworking),
+                [(int) TypeID.SupplyChainManagement] = character.GetSkillLevel (TypeID.SupplyChainManagement)
             },
             // this part contains the actually useful information
             // used to calculate the maximum manufacturing job count and the maximum research job count the character can have
             [1] = new PyDictionary <PyInteger, PyInteger>
             {
                 [(int) AttributeTypes.manufactureSlotLimit] =
-                    1 + character.GetSkillLevel (Types.MassProduction) + character.GetSkillLevel (Types.AdvancedMassProduction),
-                [(int) AttributeTypes.maxLaborotorySlots] = 1 + character.GetSkillLevel (Types.LaboratoryOperation) +
-                                                            character.GetSkillLevel (Types.AdvancedLaboratoryOperation)
+                    1 + character.GetSkillLevel (TypeID.MassProduction) + character.GetSkillLevel (TypeID.AdvancedMassProduction),
+                [(int) AttributeTypes.maxLaborotorySlots] = 1 + character.GetSkillLevel (TypeID.LaboratoryOperation) +
+                                                            character.GetSkillLevel (TypeID.AdvancedLaboratoryOperation)
             }
         };
     }

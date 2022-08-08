@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
@@ -9,30 +10,8 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Notifications;
 
-public class NotificationSender
+public class NotificationSender : INotificationSender
 {
-    /// <summary>
-    /// Translates the NotificationIdType enumeration to their string values
-    /// </summary>
-    public static readonly Dictionary <NotificationIdType, string> NotificationTypeTranslation = new Dictionary <NotificationIdType, string>
-    {
-        [NotificationIdType.Character]          = Session.CHAR_ID,
-        [NotificationIdType.Corporation]        = Session.CORP_ID,
-        [NotificationIdType.Station]            = Session.STATION_ID,
-        [NotificationIdType.Owner]              = "ownerid",
-        [NotificationIdType.OwnerAndLocation]   = "ownerid&" + Session.LOCATION_ID,
-        [NotificationIdType.CorporationAndRole] = Session.CORP_ID + "&" + Session.CORP_ROLE,
-        [NotificationIdType.Alliance]           = Session.ALLIANCE_ID
-    };
-
-    /// <summary>
-    /// Translates the session key name into how it has to be compared for notifications
-    /// </summary>
-    public static readonly Dictionary <string, ComparisonType> NotificationComparison = new Dictionary <string, ComparisonType>
-    {
-        [Session.CORP_ROLE] = ComparisonType.Bitmask,
-    };
-
     /// <summary>
     /// The node this notification manager belongs to
     /// </summary>
@@ -153,12 +132,12 @@ public class NotificationSender
 
     public void SendNotification (NotificationIdType idType, int id, ClientNotification data)
     {
-        this.SendNotification (NotificationTypeTranslation [idType], id, data);
+        this.SendNotification (INotificationSender.NotificationTypeTranslation [idType], id, data);
     }
 
     public void SendNotification (NotificationIdType idType, PyTuple ids, ClientNotification data)
     {
-        this.SendNotification (NotificationTypeTranslation [idType], ids, data);
+        this.SendNotification (INotificationSender.NotificationTypeTranslation [idType], ids, data);
     }
 
     public void SendNotification (string idType, int id, ClientNotification data)
@@ -178,12 +157,12 @@ public class NotificationSender
 
     public void SendNotification (string notificationType, NotificationIdType idType, int id, PyTuple data)
     {
-        this.SendNotification (notificationType, NotificationTypeTranslation [idType], new PyList (1) {[0] = id}, data);
+        this.SendNotification (notificationType, INotificationSender.NotificationTypeTranslation [idType], new PyList (1) {[0] = id}, data);
     }
 
     public void SendNotification (string notificationType, NotificationIdType idType, int id, ClientNotification data)
     {
-        this.SendNotification (notificationType, NotificationTypeTranslation [idType], id, data.GetElements ());
+        this.SendNotification (notificationType, INotificationSender.NotificationTypeTranslation [idType], id, data.GetElements ());
     }
 
     public void SendNotification (string idType, PyList idsOfInterest, ClientNotification data)
@@ -193,17 +172,17 @@ public class NotificationSender
 
     public void SendNotification (NotificationIdType idType, PyList idsOfInterest, ClientNotification data)
     {
-        this.SendNotification (data.NotificationName, NotificationTypeTranslation [idType], idsOfInterest, data.GetElements ());
+        this.SendNotification (data.NotificationName, INotificationSender.NotificationTypeTranslation [idType], idsOfInterest, data.GetElements ());
     }
 
     public void SendNotification (string notificationType, NotificationIdType idType, PyList idsOfInterest, ClientNotification data)
     {
-        this.SendNotification (notificationType, NotificationTypeTranslation [idType], idsOfInterest, data.GetElements ());
+        this.SendNotification (notificationType, INotificationSender.NotificationTypeTranslation [idType], idsOfInterest, data.GetElements ());
     }
 
     public void SendNotification (string notificationType, NotificationIdType idType, PyList idsOfInterest, PyTuple data)
     {
-        this.SendNotification (notificationType, NotificationTypeTranslation [idType], idsOfInterest, data);
+        this.SendNotification (notificationType, INotificationSender.NotificationTypeTranslation [idType], idsOfInterest, data);
     }
 
     public void SendNotification (string notificationType, string idType, PyList idsOfInterest, PyTuple data)

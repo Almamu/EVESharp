@@ -1,13 +1,15 @@
 using System.Collections.Generic;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corporationSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Client.Notifications.Corporations;
 using EVESharp.Node.Configuration;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
@@ -26,19 +28,19 @@ public class corporationSvc : Service
     private         CorporationDB      DB            { get; }
     private         IWalletManager     WalletManager { get; }
     private         Constants          Constants     { get; }
-    private         ItemFactory        ItemFactory   { get; }
-    private         NotificationSender Notifications { get; }
+    private         IItems        Items   { get; }
+    private         INotificationSender Notifications { get; }
 
     public corporationSvc (
-        IDatabaseConnection databaseConnection, CorporationDB db, Constants constants, IWalletManager walletManager, ItemFactory itemFactory,
-        NotificationSender  notificationSender
+        IDatabaseConnection databaseConnection, CorporationDB db, Constants constants, IWalletManager walletManager, IItems items,
+        INotificationSender  notificationSender
     )
     {
         Database      = databaseConnection;
         DB            = db;
         Constants     = constants;
         WalletManager = walletManager;
-        ItemFactory   = itemFactory;
+        this.Items    = items;
         Notifications = notificationSender;
     }
 

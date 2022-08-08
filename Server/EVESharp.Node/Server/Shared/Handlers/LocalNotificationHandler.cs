@@ -1,10 +1,12 @@
 using System;
 using System.Text.RegularExpressions;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared.Messages;
@@ -26,21 +28,21 @@ public class LocalNotificationHandler
     public ILogger             Log                 { get; }
     public BoundServiceManager BoundServiceManager { get; }
     public ServiceManager      ServiceManager      { get; }
-    public ItemFactory         ItemFactory         { get; }
-    public SystemManager       SystemManager       { get; }
-    public NotificationSender  Notifications       { get; }
+    public IItems         Items         { get; }
+    public ISolarSystems       SolarSystems       { get; }
+    public INotificationSender  Notifications       { get; }
     public SessionManager      SessionManager      { get; }
 
     public LocalNotificationHandler (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, ItemFactory itemFactory, SystemManager systemManager,
-        NotificationSender notificationSender, SessionManager sessionManager
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IItems items, ISolarSystems solarSystems,
+        INotificationSender notificationSender, SessionManager sessionManager
     )
     {
         MachoNet            = machoNet;
         ServiceManager      = serviceManager;
         BoundServiceManager = boundServiceManager;
-        ItemFactory         = itemFactory;
-        SystemManager       = systemManager;
+        this.Items          = items;
+        this.SolarSystems        = solarSystems;
         Notifications       = notificationSender;
         SessionManager      = sessionManager;
         Log                 = logger;
@@ -201,7 +203,7 @@ public class LocalNotificationHandler
         PyInteger solarSystemID = first as PyInteger;
 
         // mark as loaded
-        SystemManager.LoadSolarSystemOnCluster (solarSystemID);
+        this.SolarSystems.LoadSolarSystemOnCluster (solarSystemID);
     }
 
     private void HandleOnItemUpdate (OnItemChange change)
@@ -210,7 +212,7 @@ public class LocalNotificationHandler
         {
             PyDictionary <PyString, PyTuple> changes = _changes.GetEnumerable <PyString, PyTuple> ();
 
-            ItemEntity item = ItemFactory.LoadItem (itemID, out bool loadRequired);
+            ItemEntity item = this.Items.LoadItem (itemID, out bool loadRequired);
 
             // if the item was just loaded there's extra things to take into account
             // as the item might not even need a notification to the character it belongs to
@@ -219,7 +221,7 @@ public class LocalNotificationHandler
                 // trust that the notification got to the correct node
                 // load the item and check the owner, if it's logged in and the locationID is loaded by us
                 // that means the item should be kept here
-                if (ItemFactory.TryGetItem (item.LocationID, out ItemEntity location) == false)
+                if (this.Items.TryGetItem (item.LocationID, out ItemEntity location) == false)
                     return;
 
                 bool locationBelongsToUs = true;
@@ -227,24 +229,24 @@ public class LocalNotificationHandler
                 switch (location)
                 {
                     case Station _:
-                        locationBelongsToUs = SystemManager.StationBelongsToUs (location.ID);
+                        locationBelongsToUs = this.SolarSystems.StationBelongsToUs (location.ID);
                         break;
 
                     case SolarSystem _:
-                        locationBelongsToUs = SystemManager.SolarSystemBelongsToUs (location.ID);
+                        locationBelongsToUs = this.SolarSystems.SolarSystemBelongsToUs (location.ID);
                         break;
 
                 }
 
                 if (locationBelongsToUs == false)
                 {
-                    ItemFactory.UnloadItem (item);
+                    this.Items.UnloadItem (item);
 
                     return;
                 }
             }
 
-            Client.Notifications.Inventory.OnItemChange itemChange = new Client.Notifications.Inventory.OnItemChange (item);
+            EVE.Notifications.Inventory.OnItemChange itemChange = new EVE.Notifications.Inventory.OnItemChange (item);
 
             // update item and build change notification
             if (changes.TryGetValue ("locationID", out PyTuple locationChange))
@@ -291,12 +293,12 @@ public class LocalNotificationHandler
                 new PyTuple (1) {[0] = new PyList (1) {[0] = itemChange}}
             );
 
-            if (item.LocationID == ItemFactory.LocationRecycler.ID)
+            if (item.LocationID == this.Items.LocationRecycler.ID)
                 // the item is removed off the database if the new location is the recycler
                 item.Destroy ();
-            else if (item.LocationID == ItemFactory.LocationMarket.ID)
+            else if (item.LocationID == this.Items.LocationMarket.ID)
                 // items that are moved to the market can be unloaded
-                ItemFactory.UnloadItem (item);
+                this.Items.UnloadItem (item);
             else
                 // save the item if the new location is not removal
                 item.Persist ();
@@ -407,7 +409,7 @@ public class LocalNotificationHandler
         }
 
         // the only thing needed is to check for a Character reference and update it's corporationID to the correct one
-        if (ItemFactory.TryGetItem (change.MemberID, out Character character) == false)
+        if (this.Items.TryGetItem (change.MemberID, out Character character) == false)
             // if the character is not loaded it could mean that the package arrived on to the node while the player was logging out
             // so this is safe to ignore 
             return;
@@ -436,7 +438,7 @@ public class LocalNotificationHandler
         // by the session change
 
         // the only thing needed is to check for a Character reference and update it's roles to the correct onews
-        if (ItemFactory.TryGetItem (change.CharacterID, out Character character) == false)
+        if (this.Items.TryGetItem (change.CharacterID, out Character character) == false)
             // if the character is not loaded it could mean that the package arrived on the node wile the player was logging out
             // so this is safe to ignore
             return;
@@ -460,7 +462,7 @@ public class LocalNotificationHandler
         // by the session change
 
         // the only thing needed is to check for a Corporation reference and update it's alliance information to the new values
-        if (ItemFactory.TryGetItem (change.CorporationID, out Corporation corporation) == false)
+        if (this.Items.TryGetItem (change.CorporationID, out Corporation corporation) == false)
             // if the corporation is not loaded it could mean that the package arrived on the node wile the last player was logging out
             // so this is safe to ignore
             return;

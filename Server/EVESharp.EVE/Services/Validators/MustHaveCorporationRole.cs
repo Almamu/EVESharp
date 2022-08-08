@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Sessions;
 

@@ -1,25 +1,26 @@
 using EVESharp.Database;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Container = EVESharp.EVE.Data.Inventory.Container;
-using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Inventory;
@@ -30,38 +31,40 @@ public class invbroker : ClientBoundService
     private readonly int         mObjectID;
     public override  AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory         ItemFactory    { get; }
-    private ItemDB              ItemDB         { get; }
-    private SystemManager       SystemManager  => ItemFactory.SystemManager;
-    private NotificationSender  Notifications  { get; }
-    private DogmaUtils          DogmaUtils     { get; }
-    private EffectsManager      EffectsManager { get; }
-    private IDatabaseConnection Database       { get; }
+    private IItems              Items              { get; }
+    private ItemDB              ItemDB             { get; }
+    private ISolarSystems       SolarSystems       { get; }
+    private INotificationSender Notifications      { get; }
+    private IDogmaNotifications  DogmaNotifications { get; }
+    private EffectsManager      EffectsManager     { get; }
+    private IDatabaseConnection Database           { get; }
 
     public invbroker (
-        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory         itemFactory, NotificationSender notificationSender,
-        DogmaUtils dogmaUtils, BoundServiceManager manager,        IDatabaseConnection database
+        ItemDB     itemDB,     EffectsManager      effectsManager, IItems         items, INotificationSender notificationSender,
+        IDogmaNotifications dogmaNotifications, BoundServiceManager manager,        IDatabaseConnection database, ISolarSystems solarSystems
     ) : base (manager)
     {
-        EffectsManager = effectsManager;
-        ItemFactory    = itemFactory;
-        ItemDB         = itemDB;
-        Notifications  = notificationSender;
-        DogmaUtils     = dogmaUtils;
-        Database       = database;
+        EffectsManager     = effectsManager;
+        Items              = items;
+        ItemDB             = itemDB;
+        Notifications      = notificationSender;
+        DogmaNotifications = dogmaNotifications;
+        Database           = database;
+        SolarSystems       = solarSystems;
     }
 
     private invbroker (
-        ItemDB     itemDB,     EffectsManager      effectsManager, ItemFactory itemFactory, NotificationSender notificationSender,
-        DogmaUtils dogmaUtils, BoundServiceManager manager,        int         objectID,    Session            session
+        ItemDB     itemDB,     EffectsManager      effectsManager, IItems items, INotificationSender notificationSender,
+        IDogmaNotifications dogmaNotifications, BoundServiceManager manager,        int         objectID,    Session            session, ISolarSystems solarSystems
     ) : base (manager, session, objectID)
     {
-        EffectsManager = effectsManager;
-        ItemFactory    = itemFactory;
-        ItemDB         = itemDB;
-        this.mObjectID = objectID;
-        Notifications  = notificationSender;
-        DogmaUtils     = dogmaUtils;
+        EffectsManager     = effectsManager;
+        Items              = items;
+        ItemDB             = itemDB;
+        this.mObjectID     = objectID;
+        Notifications      = notificationSender;
+        DogmaNotifications = dogmaNotifications;
+        SolarSystems       = solarSystems;
     }
 
     private ItemInventory CheckInventoryBeforeLoading (ItemEntity inventoryItem)
@@ -71,7 +74,7 @@ public class invbroker : ClientBoundService
             throw new ItemNotContainer (inventoryItem.ID);
 
         // extra check, ensure it's a singleton if not a station
-        if (inventoryItem.Type.Group.ID != (int) Groups.Station && inventoryItem.Singleton == false)
+        if (inventoryItem.Type.Group.ID != (int) GroupID.Station && inventoryItem.Singleton == false)
             throw new AssembleCCFirst ();
 
         return (ItemInventory) inventoryItem;
@@ -83,11 +86,11 @@ public class invbroker : ClientBoundService
 
         // create a meta inventory only if required
         if (inventoryItem is not Ship && inventoryItem is not Character)
-            inventory = ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
+            inventory = this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
 
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
-            ItemDB, EffectsManager, inventory, flag, ItemFactory, Notifications, DogmaUtils,
+            ItemDB, EffectsManager, inventory, flag, this.Items, Notifications, this.DogmaNotifications,
             BoundServiceManager, session
         );
     }
@@ -95,7 +98,7 @@ public class invbroker : ClientBoundService
     public PySubStruct GetInventoryFromId (CallInformation call, PyInteger itemID, PyInteger one)
     {
         int        ownerID       = call.Session.CharacterID;
-        ItemEntity inventoryItem = ItemFactory.LoadItem (itemID);
+        ItemEntity inventoryItem = this.Items.LoadItem (itemID);
 
         if (inventoryItem is not Station)
             ownerID = inventoryItem.OwnerID;
@@ -158,10 +161,10 @@ public class invbroker : ClientBoundService
         // these inventories are usually meta
 
         // get the inventory item first
-        ItemInventory inventoryItem = ItemFactory.LoadItem <ItemInventory> (this.mObjectID);
+        ItemInventory inventoryItem = this.Items.LoadItem <ItemInventory> (this.mObjectID);
 
         // create a metainventory for it
-        ItemInventory metaInventory = ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
+        ItemInventory metaInventory = this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
 
         return this.BindInventory (
             this.CheckInventoryBeforeLoading (metaInventory),
@@ -180,14 +183,14 @@ public class invbroker : ClientBoundService
             if (itemID == call.Session.ShipID)
                 throw new CantMoveActiveShip ();
 
-            ItemEntity item = ItemFactory.GetItem (itemID);
+            ItemEntity item = this.Items.GetItem (itemID);
             // store it's location id
             int   oldLocation = item.LocationID;
             Flags oldFlag     = item.Flag;
             // remove the item off the ItemManager
-            ItemFactory.DestroyItem (item);
+            this.Items.DestroyItem (item);
             // notify the client of the change
-            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocation));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocation));
             // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
             // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
         }
@@ -197,7 +200,7 @@ public class invbroker : ClientBoundService
 
     public PyDataType SetLabel (CallInformation call, PyInteger itemID, PyString newLabel)
     {
-        ItemEntity item = ItemFactory.GetItem (itemID);
+        ItemEntity item = this.Items.GetItem (itemID);
 
         // ensure the itemID is owned by the client's character
         if (item.OwnerID != call.Session.CharacterID)
@@ -219,7 +222,7 @@ public class invbroker : ClientBoundService
         CallInformation call, PyInteger       containerID, PyDataType ignored, PyDecimal ignored2
     )
     {
-        ItemEntity item = ItemFactory.GetItem (containerID);
+        ItemEntity item = this.Items.GetItem (containerID);
 
         if (item.OwnerID != call.Session.CharacterID)
             throw new TheItemIsNotYoursToTake (containerID);
@@ -227,12 +230,12 @@ public class invbroker : ClientBoundService
         // ensure the item is a cargo container
         switch (item.Type.Group.ID)
         {
-            case (int) Groups.CargoContainer:
-            case (int) Groups.SecureCargoContainer:
-            case (int) Groups.AuditLogSecureContainer:
-            case (int) Groups.FreightContainer:
-            case (int) Groups.Tool:
-            case (int) Groups.MobileWarpDisruptor:
+            case (int) GroupID.CargoContainer:
+            case (int) GroupID.SecureCargoContainer:
+            case (int) GroupID.AuditLogSecureContainer:
+            case (int) GroupID.FreightContainer:
+            case (int) GroupID.Tool:
+            case (int) GroupID.MobileWarpDisruptor:
                 break;
             default:
                 throw new ItemNotContainer (containerID);
@@ -245,7 +248,7 @@ public class invbroker : ClientBoundService
         item.Persist ();
 
         // notify the client
-        DogmaUtils.QueueMultiEvent (item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton));
+        this.DogmaNotifications.QueueMultiEvent (item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton));
 
         return null;
     }
@@ -270,8 +273,8 @@ public class invbroker : ClientBoundService
     {
         return parameters.ExtraValue switch
         {
-            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
-            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
             _                        => throw new CustomError ("Unknown item's groupID")
         };
     }
@@ -282,8 +285,8 @@ public class invbroker : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new invbroker (
-            ItemDB, EffectsManager, ItemFactory, Notifications, DogmaUtils, BoundServiceManager, bindParams.ObjectID,
-            call.Session
+            ItemDB, EffectsManager, this.Items, Notifications, this.DogmaNotifications, BoundServiceManager, bindParams.ObjectID,
+            call.Session, this.SolarSystems
         );
     }
 }

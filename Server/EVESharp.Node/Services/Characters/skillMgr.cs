@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Exceptions.skillMgr;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
+using EVESharp.EVE.Notifications.Skills;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
-using EVESharp.Node.Client.Notifications.Skills;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -30,42 +32,44 @@ public class skillMgr : ClientBoundService
     private const   int                 MAXIMUM_ATTRIBUTE_POINTS       = 15;
     private const   int                 MINIMUM_ATTRIBUTE_POINTS       = 5;
     private const   int                 MAXIMUM_TOTAL_ATTRIBUTE_POINTS = 39;
-    public override AccessLevel         AccessLevel    => AccessLevel.None;
-    private         SkillDB             DB             { get; }
-    private         ItemFactory         ItemFactory    { get; }
-    private         Timers              Timers         { get; }
-    private         SystemManager       SystemManager  => ItemFactory.SystemManager;
-    private         ILogger             Log            { get; }
-    private         Character           Character      { get; }
-    private         DogmaUtils          DogmaUtils     { get; }
-    private         Timer <int>         NextSkillTimer { get; set; }
-    private         Timer <int>         ReSpecTimer    { get; set; }
-    private         IDatabaseConnection Database       { get; }
+    public override AccessLevel         AccessLevel        => AccessLevel.None;
+    private         SkillDB             DB                 { get; }
+    private         IItems               Items              { get; }
+    private         Timers              Timers             { get; }
+    private         ISolarSystems       SolarSystems       { get; }
+    private         ILogger             Log                { get; }
+    private         Character           Character          { get; }
+    private         IDogmaNotifications  DogmaNotifications { get; }
+    private         Timer <int>         NextSkillTimer     { get; set; }
+    private         Timer <int>         ReSpecTimer        { get; set; }
+    private         IDatabaseConnection Database           { get; }
 
     public skillMgr (
-        SkillDB             db,      ItemFactory itemFactory, Timers              timers, DogmaUtils dogmaUtils,
-        BoundServiceManager manager, ILogger     logger,      IDatabaseConnection database
+        SkillDB             db,      IItems items, Timers              timers, IDogmaNotifications dogmaNotifications,
+        BoundServiceManager manager, ILogger     logger,      IDatabaseConnection database, ISolarSystems solarSystems
     ) : base (manager)
     {
-        DB          = db;
-        ItemFactory = itemFactory;
-        Timers      = timers;
-        DogmaUtils  = dogmaUtils;
-        Log         = logger;
-        Database    = database;
+        DB                 = db;
+        Items              = items;
+        Timers             = timers;
+        DogmaNotifications = dogmaNotifications;
+        Log                = logger;
+        Database           = database;
+        SolarSystems       = solarSystems;
     }
 
     protected skillMgr (
-        SkillDB             db,      ItemFactory itemFactory, Timers timers, DogmaUtils dogmaUtils,
-        BoundServiceManager manager, ILogger     logger,      Session      session
+        SkillDB             db,      IItems items, Timers timers, IDogmaNotifications dogmaNotifications,
+        BoundServiceManager manager, ILogger     logger,      Session      session, ISolarSystems solarSystems
     ) : base (manager, session, session.CharacterID)
     {
-        DB           = db;
-        ItemFactory  = itemFactory;
-        Timers = timers;
-        DogmaUtils   = dogmaUtils;
-        Character    = ItemFactory.GetItem <Character> (ObjectID);
-        Log          = logger;
+        DB                 = db;
+        Items              = items;
+        Timers             = timers;
+        DogmaNotifications = dogmaNotifications;
+        Character          = this.Items.GetItem <Character> (ObjectID);
+        Log                = logger;
+        SolarSystems       = solarSystems;
 
         this.InitializeCharacter ();
     }
@@ -81,7 +85,7 @@ public class skillMgr : ClientBoundService
             return;
 
         // send notification of skill training started
-        DogmaUtils.QueueMultiEvent (Session.CharacterID, new OnSkillStartTraining (entry.Skill));
+        this.DogmaNotifications.QueueMultiEvent (Session.CharacterID, new OnSkillStartTraining (entry.Skill));
 
         NextSkillTimer = Timers.EnqueueTimer (DateTime.FromFileTimeUtc (entry.Skill.ExpiryTime), this.OnSkillTrainingCompleted, entry.Skill.ID);
     }
@@ -114,9 +118,9 @@ public class skillMgr : ClientBoundService
                 toRemove.Add (entry);
 
                 // update it's location in the client if needed
-                DogmaUtils.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
+                this.DogmaNotifications.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
                 // also notify attribute changes
-                DogmaUtils.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, entry.Skill);
+                this.DogmaNotifications.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, entry.Skill);
             }
 
         // remove skills that already expired
@@ -124,7 +128,7 @@ public class skillMgr : ClientBoundService
 
         // send notification of multiple skills being finished training (if any)
         if (skillTypeIDs.Count > 0)
-            DogmaUtils.QueueMultiEvent (Session.CharacterID, new OnGodmaMultipleSkillsTrained (skillTypeIDs));
+            this.DogmaNotifications.QueueMultiEvent (Session.CharacterID, new OnGodmaMultipleSkillsTrained (skillTypeIDs));
 
         // persists the skill queue
         Character.Persist ();
@@ -180,10 +184,10 @@ public class skillMgr : ClientBoundService
         skill.ExpiryTime = 0;
 
         // make sure the client is aware of the new item's status
-        DogmaUtils.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (skill, Flags.SkillInTraining));
+        this.DogmaNotifications.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (skill, Flags.SkillInTraining));
         // also notify attribute changes
-        DogmaUtils.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
-        DogmaUtils.QueueMultiEvent (Character.ID, new OnSkillTrained (skill));
+        this.DogmaNotifications.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
+        this.DogmaNotifications.QueueMultiEvent (Character.ID, new OnSkillTrained (skill));
 
         skill.Persist ();
 
@@ -217,7 +221,7 @@ public class skillMgr : ClientBoundService
 
     public PyDataType GetSkillQueue (CallInformation call)
     {
-        Character character = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         PyList skillQueueList = new PyList (character.SkillQueue.Count);
 
@@ -240,7 +244,7 @@ public class skillMgr : ClientBoundService
             try
             {
                 // get the item by it's ID and change the location of it
-                Skill skill = ItemFactory.GetItem <Skill> (item);
+                Skill skill = this.Items.GetItem <Skill> (item);
 
                 // check if the character already has this skill injected
                 if (Character.InjectedSkillsByTypeID.ContainsKey (skill.Type.ID))
@@ -250,7 +254,7 @@ public class skillMgr : ClientBoundService
                 if (skill.Quantity > 1)
                 {
                     // add one of the skill into the character's brain
-                    Skill newStack = ItemFactory.CreateSkill (skill.Type, Character, 0, SkillHistoryReason.None);
+                    Skill newStack = this.Items.CreateSkill (skill.Type, Character, 0, SkillHistoryReason.None);
 
                     // subtract one from the quantity
                     skill.Quantity -= 1;
@@ -259,8 +263,8 @@ public class skillMgr : ClientBoundService
                     skill.Persist ();
 
                     // finally notify the client
-                    DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildQuantityChange (skill, skill.Quantity + 1));
-                    DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (newStack));
+                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildQuantityChange (skill, skill.Quantity + 1));
+                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (newStack));
                 }
                 else
                 {
@@ -281,8 +285,8 @@ public class skillMgr : ClientBoundService
                     skill.Persist ();
 
                     // notify the character of the change in the item
-                    DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (skill, oldFlag, oldLocationID));
-                    DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildSingletonChange (skill, false));
+                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (skill, oldFlag, oldLocationID));
+                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildSingletonChange (skill, false));
                 }
             }
             catch (CharacterAlreadyKnowsSkill)
@@ -297,7 +301,7 @@ public class skillMgr : ClientBoundService
             }
 
         // send the skill injected notification to refresh windows if needed
-        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, new OnSkillInjected ());
+        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, new OnSkillInjected ());
 
         return null;
     }
@@ -332,10 +336,10 @@ public class skillMgr : ClientBoundService
             {
                 entry.Skill.Flag = Flags.Skill;
 
-                DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
+                this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
 
                 // send notification of skill training stopped
-                DogmaUtils.QueueMultiEvent (call.Session.CharacterID, new OnSkillTrainingStopped (entry.Skill));
+                this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, new OnSkillTrainingStopped (entry.Skill));
 
                 // create history entry
                 DB.CreateSkillHistoryRecord (
@@ -381,7 +385,7 @@ public class skillMgr : ClientBoundService
             skill.ExpiryTime = expiryTime.ToFileTimeUtc ();
             skill.Flag       = Flags.SkillInTraining;
 
-            DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (skill, Flags.Skill));
+            this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (skill, Flags.Skill));
 
             startDateTime = expiryTime;
 
@@ -397,7 +401,7 @@ public class skillMgr : ClientBoundService
             if (first)
             {
                 // skill was trained, send the success message
-                DogmaUtils.QueueMultiEvent (call.Session.CharacterID, new OnSkillStartTraining (skill));
+                this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, new OnSkillStartTraining (skill));
 
                 // create history entry
                 DB.CreateSkillHistoryRecord (skill.Type, Character, SkillHistoryReason.SkillTrainingStarted, skill.Points);
@@ -500,7 +504,7 @@ public class skillMgr : ClientBoundService
             entry.Skill.Persist ();
 
             // notify the skill is not in training anymore
-            DogmaUtils.QueueMultiEvent (call.Session.CharacterID, new OnSkillTrainingStopped (entry.Skill));
+            this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, new OnSkillTrainingStopped (entry.Skill));
 
             // create history entry
             DB.CreateSkillHistoryRecord (entry.Skill.Type, Character, SkillHistoryReason.SkillTrainingCancelled, entry.Skill.Points);
@@ -671,7 +675,7 @@ public class skillMgr : ClientBoundService
         Character.Persist ();
 
         // notify the game of the change on the character
-        DogmaUtils.NotifyAttributeChange (
+        this.DogmaNotifications.NotifyAttributeChange (
             Character.ID,
             new []
             {
@@ -695,7 +699,7 @@ public class skillMgr : ClientBoundService
         int characterID = call.Session.CharacterID;
 
         // get the item and plug it into our brain now!
-        ItemEntity item = ItemFactory.LoadItem (itemID);
+        ItemEntity item = this.Items.LoadItem (itemID);
 
         // ensure the item is somewhere we can interact with it
         item.EnsureOwnership (characterID, call.Session.CorporationID, call.Session.CorporationRole, true);
@@ -712,14 +716,14 @@ public class skillMgr : ClientBoundService
             item.Quantity--;
 
             // notify the client of the stack change
-            DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildQuantityChange (item, item.Quantity + 1));
+            this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildQuantityChange (item, item.Quantity + 1));
 
             // save the item to the database
             item.Persist ();
 
             // create the new item with a default location and flag
             // this way the item location change notification is only needed once
-            item = ItemFactory.CreateSimpleItem (
+            item = this.Items.CreateSimpleItem (
                 item.Type, item.OwnerID, 0,
                 Flags.None, 1, item.Contraband, item.Singleton
             );
@@ -731,7 +735,7 @@ public class skillMgr : ClientBoundService
         item.LocationID = Character.ID;
         item.Flag       = Flags.Implant;
 
-        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
+        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
 
         // add the item to the inventory it belongs
         Character.AddItem (item);
@@ -748,10 +752,10 @@ public class skillMgr : ClientBoundService
             throw new CustomError ("This implant is not in your brain!");
 
         // now destroy the item
-        ItemFactory.DestroyItem (item);
+        this.Items.DestroyItem (item);
 
         // notify the change
-        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, Character.ID));
+        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, Character.ID));
 
         return null;
     }
@@ -766,6 +770,6 @@ public class skillMgr : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        return new skillMgr (DB, ItemFactory, Timers, DogmaUtils, BoundServiceManager, Log, call.Session);
+        return new skillMgr (DB, this.Items, Timers, this.DogmaNotifications, BoundServiceManager, Log, call.Session, this.SolarSystems);
     }
 }

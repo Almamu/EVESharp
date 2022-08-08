@@ -29,11 +29,14 @@ using System.Threading.Tasks;
 using EVESharp.Common.Database;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
+using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Notifications;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Configuration;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
@@ -71,6 +74,7 @@ using Serilog.Events;
 using Serilog.Templates;
 using SimpleInjector;
 using Constants = EVESharp.Node.Configuration.Constants;
+using Container = SimpleInjector.Container;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;
 using MessageProcessor = EVESharp.Node.Server.Single.Messages.MessageProcessor;
 
@@ -84,7 +88,7 @@ internal class Program
             () =>
             {
                 logChannel.Information ("Initializing item factory");
-                dependencies.GetInstance <ItemFactory> ().Init ();
+                dependencies.GetInstance <IItems> ().Init ();
                 logChannel.Debug ("Item Factory Initialized");
             }
         );
@@ -168,37 +172,35 @@ internal class Program
         // change how dependencies are resolved to ensure serilog instances are properly provided
         container.Options.DependencyInjectionBehavior =
             new SerilogContextualLoggerInjectionBehavior (container.Options, baseLogger);
-        
-        // disable auto-verification on the container as it triggers creation of instances before they're needed
-        container.Options.EnableAutoVerification = false;
-        
+
         // register all the dependencies we have available
         container.RegisterInstance (new HttpClient ());
         container.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
         container.Register <SessionManager> (Lifestyle.Singleton);
         container.Register <CacheStorage> (Lifestyle.Singleton);
         container.Register <MetaInventoryManager> (Lifestyle.Singleton);
-        container.Register <AttributeManager> (Lifestyle.Singleton);
-        container.Register <TypeManager> (Lifestyle.Singleton);
-        container.Register <Categories> (Lifestyle.Singleton);
-        container.Register <Groups> (Lifestyle.Singleton);
-        container.Register <StationManager> (Lifestyle.Singleton);
-        container.Register <ItemFactory> (Lifestyle.Singleton);
+        container.Register <IAttributes, AttributeManager> (Lifestyle.Singleton);
+        container.Register <IFactions, Factions> (Lifestyle.Singleton);
+        container.Register <ITypes, Types> (Lifestyle.Singleton);
+        container.Register <ICategories, Categories> (Lifestyle.Singleton);
+        container.Register <IGroups, Groups> (Lifestyle.Singleton);
+        container.Register <IStations, Stations> (Lifestyle.Singleton);
+        container.Register <IItems, Items> (Lifestyle.Singleton);
         container.Register <Timers> (Lifestyle.Singleton);
-        container.Register <SystemManager> (Lifestyle.Singleton);
+        container.Register <ISolarSystems, SolarSystems> (Lifestyle.Singleton);
         container.Register <ServiceManager> (Lifestyle.Singleton);
         container.Register <BoundServiceManager> (Lifestyle.Singleton);
         container.Register <RemoteServiceManager>(Lifestyle.Singleton);
         container.Register <PacketCallHelper>(Lifestyle.Singleton);
-        container.Register <NotificationSender> (Lifestyle.Singleton);
-        container.Register <ExpressionManager> (Lifestyle.Singleton);
+        container.Register <INotificationSender, NotificationSender> (Lifestyle.Singleton);
+        container.Register <IExpressions, ExpressionManager> (Lifestyle.Singleton);
         container.Register <IWalletManager, WalletManager> (Lifestyle.Singleton);
         container.Register <MailManager> (Lifestyle.Singleton);
         container.Register <AgentManager> (Lifestyle.Singleton);
-        container.Register <Ancestries> (Lifestyle.Singleton);
-        container.Register <Bloodlines> (Lifestyle.Singleton);
+        container.Register <IAncestries, Ancestries> (Lifestyle.Singleton);
+        container.Register <IBloodlines, Bloodlines> (Lifestyle.Singleton);
         container.Register <Constants> (Lifestyle.Singleton);
-        container.Register <DogmaUtils> (Lifestyle.Singleton);
+        container.Register <IDogmaNotifications, DogmaNotifications> (Lifestyle.Singleton);
 
         // register the database accessors dependencies
         container.Register <CharacterDB> (Lifestyle.Singleton);

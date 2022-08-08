@@ -1,12 +1,13 @@
 using System;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -18,13 +19,13 @@ public class bookmark : Service
 {
     public override AccessLevel          AccessLevel          => AccessLevel.None;
     private         IDatabaseConnection  Database             { get; }
-    private         ItemFactory          ItemFactory          { get; }
+    private         IItems          Items          { get; }
     private         RemoteServiceManager RemoteServiceManager { get; }
 
-    public bookmark (IDatabaseConnection connection, ItemFactory itemFactory, RemoteServiceManager remoteServiceManager)
+    public bookmark (IDatabaseConnection connection, IItems items, RemoteServiceManager remoteServiceManager)
     {
         Database             = connection;
-        ItemFactory          = itemFactory;
+        this.Items           = items;
         RemoteServiceManager = remoteServiceManager;
     }
 
@@ -38,7 +39,7 @@ public class bookmark : Service
         if (ItemRanges.IsStaticData (itemID) == false)
             throw new CustomError ("Bookmarks for non-static locations are not supported yet!");
 
-        ItemEntity item = ItemFactory.GetItem (itemID);
+        ItemEntity item = this.Items.GetItem (itemID);
 
         if (item.HasPosition == false)
             throw new CustomError ("Cannot bookmark a non-location item");

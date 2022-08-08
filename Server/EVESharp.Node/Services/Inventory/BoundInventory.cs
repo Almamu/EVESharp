@@ -3,18 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -26,40 +28,40 @@ public class BoundInventory : ClientBoundService
 {
     private readonly Flags mFlag;
 
-    private readonly ItemInventory      mInventory;
-    public override  AccessLevel        AccessLevel    => AccessLevel.None;
-    private          ItemDB             ItemDB         { get; }
-    private          ItemFactory        ItemFactory    { get; }
-    private          NotificationSender Notifications  { get; }
-    private          DogmaUtils         DogmaUtils     { get; }
-    private          EffectsManager     EffectsManager { get; }
+    private readonly ItemInventory       mInventory;
+    public override  AccessLevel         AccessLevel        => AccessLevel.None;
+    private          ItemDB              ItemDB             { get; }
+    private          IItems              Items              { get; }
+    private          INotificationSender Notifications      { get; }
+    private          IDogmaNotifications DogmaNotifications { get; }
+    private          EffectsManager      EffectsManager     { get; }
 
     public BoundInventory (
-        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,    ItemFactory itemFactory,
-        NotificationSender notificationSender, DogmaUtils     dogmaUtils,     BoundServiceManager manager, Session     session
+        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,    IItems items,
+        INotificationSender notificationSender, IDogmaNotifications     dogmaNotifications,     BoundServiceManager manager, Session     session
     ) : base (manager, session, item.ID)
     {
-        EffectsManager  = effectsManager;
-        this.mInventory = item;
-        this.mFlag      = Flags.None;
-        ItemDB          = itemDB;
-        ItemFactory     = itemFactory;
-        Notifications   = notificationSender;
-        DogmaUtils      = dogmaUtils;
+        EffectsManager     = effectsManager;
+        this.mInventory    = item;
+        this.mFlag         = Flags.None;
+        ItemDB             = itemDB;
+        Items              = items;
+        Notifications      = notificationSender;
+        DogmaNotifications = dogmaNotifications;
     }
 
     public BoundInventory (
-        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,    Flags   flag, ItemFactory itemFactory,
-        NotificationSender notificationSender, DogmaUtils     dogmaUtils,     BoundServiceManager manager, Session session
+        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,    Flags   flag, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications     dogmaNotifications,     BoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
-        EffectsManager  = effectsManager;
-        this.mInventory = item;
-        this.mFlag      = flag;
-        ItemDB          = itemDB;
-        ItemFactory     = itemFactory;
-        Notifications   = notificationSender;
-        DogmaUtils      = dogmaUtils;
+        EffectsManager          = effectsManager;
+        this.mInventory         = item;
+        this.mFlag              = flag;
+        ItemDB                  = itemDB;
+        Items              = items;
+        Notifications           = notificationSender;
+        DogmaNotifications = dogmaNotifications;
     }
 
     public PyDataType List (CallInformation call)
@@ -103,7 +105,7 @@ public class BoundInventory : ClientBoundService
         // check that where the item comes from we have permissions
         item.EnsureOwnership (session.CharacterID, session.CorporationID, session.CorporationRole, true);
 
-        if (this.mInventory.Type.ID == (int) Types.Capsule)
+        if (this.mInventory.Type.ID == (int) TypeID.Capsule)
             throw new CantTakeInSpaceCapsule ();
 
         // if this inventory is a delivery section, items cannot be moved to it
@@ -265,7 +267,7 @@ public class BoundInventory : ClientBoundService
         if (newFlag == Flags.AutoFit)
         {
             // capsules cannot fit anything
-            if (this.mInventory.Type.ID == (int) Types.Capsule)
+            if (this.mInventory.Type.ID == (int) TypeID.Capsule)
                 throw new CantFitToCapsule ();
 
             if (this.mInventory is Ship ship)
@@ -327,7 +329,7 @@ public class BoundInventory : ClientBoundService
             if (item.Quantity == 1)
             {
                 // remove item off the old inventory if required
-                if (ItemFactory.TryGetItem (item.LocationID, out ItemInventory inventory))
+                if (this.Items.TryGetItem (item.LocationID, out ItemInventory inventory))
                     inventory.RemoveItem (item);
 
                 OnItemChange changes = new OnItemChange (item);
@@ -353,7 +355,7 @@ public class BoundInventory : ClientBoundService
                 if (item.OwnerID != oldOwnerID)
                     Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
                 // update meta inventories too
-                ItemFactory.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
+                this.Items.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
                 // finally persist the item changes
                 item.Persist ();
@@ -361,7 +363,7 @@ public class BoundInventory : ClientBoundService
             else
             {
                 // item is not a singleton, create a new item, decrease quantity and send notifications
-                ItemEntity newItem = ItemFactory.CreateSimpleItem (
+                ItemEntity newItem = this.Items.CreateSimpleItem (
                     item.Type, this.mInventory.OwnerID, this.mInventory.ID, newFlag, 1, false,
                     true
                 );
@@ -435,7 +437,7 @@ public class BoundInventory : ClientBoundService
             if (quantity == 0 || item.Quantity == quantity)
             {
                 // remove item off the old inventory if required
-                if (ItemFactory.TryGetItem (item.LocationID, out ItemInventory inventory))
+                if (this.Items.TryGetItem (item.LocationID, out ItemInventory inventory))
                     inventory.RemoveItem (item);
 
                 OnItemChange changes = new OnItemChange (item);
@@ -459,7 +461,7 @@ public class BoundInventory : ClientBoundService
                 // notify the new owner
                 Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
                 // update meta inventories too
-                ItemFactory.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
+                this.Items.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
                 // ensure the new inventory knows
                 this.mInventory.AddItem (item);
@@ -469,7 +471,7 @@ public class BoundInventory : ClientBoundService
                 // a specified quantity means move only that quantity, so the easiest way is to decrement the stack
                 // and create a new item in the correct place
                 // item is not a singleton, create a new item, decrease quantity and send notifications
-                ItemEntity newItem = ItemFactory.CreateSimpleItem (
+                ItemEntity newItem = this.Items.CreateSimpleItem (
                     item.Type, this.mInventory.OwnerID, this.mInventory.ID, newFlag, quantity, item.Contraband, item.Singleton
                 );
 
@@ -501,7 +503,7 @@ public class BoundInventory : ClientBoundService
         if (itemID == call.Session.ShipID)
             throw new CantMoveActiveShip ();
 
-        ItemEntity item = ItemFactory.GetItem (itemID);
+        ItemEntity item = this.Items.GetItem (itemID);
 
         this.PreMoveItemCheck (item, this.mFlag, item.Quantity, call.Session);
         this.MoveItemHere (item, this.mFlag, call.Session);
@@ -514,7 +516,7 @@ public class BoundInventory : ClientBoundService
         if (itemID == call.Session.ShipID)
             throw new CantMoveActiveShip ();
 
-        ItemEntity item = ItemFactory.GetItem (itemID);
+        ItemEntity item = this.Items.GetItem (itemID);
 
         this.PreMoveItemCheck (item, this.mFlag, item.Quantity, call.Session);
         this.MoveItemHere (item, this.mFlag, call.Session, quantity);
@@ -528,7 +530,7 @@ public class BoundInventory : ClientBoundService
             throw new CantMoveActiveShip ();
 
         // TODO: ADD CONSTRAINTS CHECKS FOR THE FLAG
-        ItemEntity item = ItemFactory.GetItem (itemID);
+        ItemEntity item = this.Items.GetItem (itemID);
 
         // ensure there's enough quantity in the stack to split it
         if (quantity > item.Quantity)
@@ -547,7 +549,7 @@ public class BoundInventory : ClientBoundService
             // null quantity means all the items in the list
             foreach (PyInteger itemID in adds.GetEnumerable <PyInteger> ())
             {
-                ItemEntity item = ItemFactory.GetItem (itemID);
+                ItemEntity item = this.Items.GetItem (itemID);
 
                 // check and then move the item
                 this.PreMoveItemCheck (item, (Flags) (int) flag, item.Quantity, call.Session);
@@ -582,7 +584,7 @@ public class BoundInventory : ClientBoundService
             if (this.mInventory.Items.TryGetValue (toItemID, out ItemEntity toItem) == false)
                 continue;
 
-            ItemEntity fromItem = ItemFactory.GetItem (fromItemID);
+            ItemEntity fromItem = this.Items.GetItem (fromItemID);
 
             // ignore singleton items
             if (fromItem.Singleton || toItem.Singleton)
@@ -597,21 +599,21 @@ public class BoundInventory : ClientBoundService
             {
                 int oldLocationID = fromItem.LocationID;
                 // remove the item
-                ItemFactory.DestroyItem (fromItem);
+                this.Items.DestroyItem (fromItem);
                 // notify the client about the item too
-                DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (fromItem, oldLocationID));
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (fromItem, oldLocationID));
             }
             else
             {
                 // change the item's quantity
                 fromItem.Quantity -= quantity;
                 // notify the client about the change
-                DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (fromItem, fromItem.Quantity + quantity));
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (fromItem, fromItem.Quantity + quantity));
                 fromItem.Persist ();
             }
 
             toItem.Quantity += quantity;
-            DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (toItem, toItem.Quantity - quantity));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (toItem, toItem.Quantity - quantity));
             toItem.Persist ();
         }
 
@@ -652,10 +654,10 @@ public class BoundInventory : ClientBoundService
                 // add the quantity of the first item to the second
                 secondItem.Quantity += firstItem.Quantity;
                 // also create the notification for the user
-                DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (secondItem, oldQuantity));
-                ItemFactory.DestroyItem (firstItem);
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (secondItem, oldQuantity));
+                this.Items.DestroyItem (firstItem);
                 // notify the client about the item too
-                DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (firstItem, firstItem.Flag, secondItem.LocationID));
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (firstItem, firstItem.Flag, secondItem.LocationID));
                 // ensure the second item is saved to database too
                 secondItem.Persist ();
 
@@ -686,12 +688,12 @@ public class BoundInventory : ClientBoundService
     }
 
     public static PySubStruct BindInventory (
-        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,                Flags   flag, ItemFactory itemFactory,
-        NotificationSender notificationSender, DogmaUtils     dogmaUtils,     BoundServiceManager boundServiceManager, Session session
+        ItemDB             itemDB,             EffectsManager effectsManager, ItemInventory       item,                Flags   flag, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications     dogmaNotifications,     BoundServiceManager boundServiceManager, Session session
     )
     {
         BoundService instance = new BoundInventory (
-            itemDB, effectsManager, item, flag, itemFactory, notificationSender, dogmaUtils,
+            itemDB, effectsManager, item, flag, items, notificationSender, dogmaNotifications,
             boundServiceManager, session
         );
         // bind the service
@@ -733,10 +735,10 @@ public class BoundInventory : ClientBoundService
         Flags oldFlag       = item.Flag;
 
         // destroy the rig
-        ItemFactory.DestroyItem (item);
+        this.Items.DestroyItem (item);
 
         // notify the client about the change
-        DogmaUtils.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
+        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
 
         return null;
     }

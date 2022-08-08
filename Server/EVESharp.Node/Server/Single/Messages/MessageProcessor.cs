@@ -1,4 +1,6 @@
 ﻿using System;
+using EVESharp.EVE.Notifications;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
@@ -13,8 +15,8 @@ namespace EVESharp.Node.Server.Single.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, NotificationSender notificationSender, ItemFactory itemFactory, SystemManager systemManager, SessionManager sessionManager) :
-        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, itemFactory, systemManager, notificationSender, sessionManager, 100) { }
+    public MessageProcessor (IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems, SessionManager sessionManager) :
+        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems, notificationSender, sessionManager, 100) { }
 
     protected override void HandleMessage (MachoMessage machoMessage)
     {

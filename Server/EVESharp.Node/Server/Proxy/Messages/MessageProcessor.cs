@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.EVE.Notifications;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
@@ -18,14 +20,12 @@ namespace EVESharp.Node.Server.Proxy.Messages;
 
 public class MessageProcessor : Shared.Messages.MessageProcessor
 {
-    public SessionManager SessionManager { get; }
 
     public MessageProcessor (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, SessionManager sessionManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, NotificationSender notificationSender, ItemFactory itemFactory, SystemManager systemManager
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, SessionManager sessionManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems
     ) :
-        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, itemFactory, systemManager, notificationSender, sessionManager, 100)
+        base (machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems, notificationSender, sessionManager, 100)
     {
-        SessionManager = sessionManager;
     }
 
     protected override void HandleMessage (MachoMessage machoMessage)

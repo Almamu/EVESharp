@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.Http;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network.Messages;
+using EVESharp.EVE.Notifications;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Database;
@@ -190,7 +191,7 @@ public class MachoNet : IMachoNet
         bool               isOwnerID = dest.IDType == "ownerid";
 
         // determine how the values have to be checked
-        if (NotificationSender.NotificationComparison.TryGetValue (dest.IDType, out ComparisonType comparison) == false)
+        if (INotificationSender.NotificationComparison.TryGetValue (dest.IDType, out ComparisonType comparison) == false)
             comparison = ComparisonType.Equality;
 
         foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable <PyInteger> ())
@@ -232,7 +233,7 @@ public class MachoNet : IMachoNet
         ComparisonType [] comparison = criteria.Select (
             x =>
             {
-                if (NotificationSender.NotificationComparison.TryGetValue (x, out ComparisonType result) == false)
+                if (INotificationSender.NotificationComparison.TryGetValue (x, out ComparisonType result) == false)
                     result = ComparisonType.Equality;
 
                 return result;

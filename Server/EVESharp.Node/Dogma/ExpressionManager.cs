@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Data.Dogma;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.Node.Database;
 using Serilog;
 
 namespace EVESharp.Node.Dogma;
 
-public class ExpressionManager
+public class ExpressionManager : IExpressions
 {
     private ILogger                      Log         { get; }
     private DogmaDB                      DB          { get; }

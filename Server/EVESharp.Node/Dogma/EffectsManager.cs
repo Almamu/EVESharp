@@ -1,18 +1,20 @@
-﻿using EVESharp.EVE.Sessions;
+﻿using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Sessions;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 
 namespace EVESharp.Node.Dogma;
 
 public class EffectsManager
 {
-    private DogmaUtils  DogmaUtils  { get; }
-    private ItemFactory ItemFactory { get; }
+    private IDogmaNotifications  DogmaNotifications  { get; }
+    private IItems Items { get; }
 
-    public EffectsManager (ItemFactory itemFactory, DogmaUtils dogmaUtils)
+    public EffectsManager (IItems items, IDogmaNotifications dogmaNotifications)
     {
-        ItemFactory = itemFactory;
-        DogmaUtils  = dogmaUtils;
+        this.Items             = items;
+        this.DogmaNotifications = dogmaNotifications;
     }
 
     /// <summary>
@@ -26,6 +28,6 @@ public class EffectsManager
         if (module is null)
             return null;
 
-        return module.ItemEffects ??= new ItemEffects (module, ItemFactory, session);
+        return module.ItemEffects ??= new ItemEffects (module, this.Items, this.DogmaNotifications, session);
     }
 }

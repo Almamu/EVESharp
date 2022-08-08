@@ -1,15 +1,17 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Certificates;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.certificateMgr;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Certificates;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Client.Notifications.Certificates;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -20,18 +22,18 @@ namespace EVESharp.Node.Services.Characters;
 public class certificateMgr : Service
 {
     public override AccessLevel                           AccessLevel              => AccessLevel.None;
-    private         ItemFactory                           ItemFactory              { get; }
+    private         IItems                                Items                    { get; }
     private         CacheStorage                          CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
-    private         DogmaUtils                            DogmaUtils               { get; }
+    private         IDogmaNotifications                   DogmaNotifications       { get; }
     private         IDatabaseConnection                   Database                 { get; }
 
-    public certificateMgr (ItemFactory itemFactory, CacheStorage cacheStorage, DogmaUtils dogmaUtils, IDatabaseConnection database)
+    public certificateMgr (IItems items, CacheStorage cacheStorage, IDogmaNotifications dogmaNotifications, IDatabaseConnection database)
     {
-        Database     = database;
-        ItemFactory  = itemFactory;
-        CacheStorage = cacheStorage;
-        DogmaUtils   = dogmaUtils;
+        Database                = database;
+        this.Items              = items;
+        CacheStorage            = cacheStorage;
+        this.DogmaNotifications = dogmaNotifications;
 
         // get the full list of requirements
         CertificateRelationships = Database.GetCertificateRelationships ();
@@ -81,7 +83,7 @@ public class certificateMgr : Service
     public PyBool GrantCertificate (CallInformation call, PyInteger certificateID)
     {
         int       callerCharacterID = call.Session.CharacterID;
-        Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character         = this.Items.GetItem <Character> (callerCharacterID);
 
         Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
         List <int>              grantedCertificates = Database.GetCertificateListForCharacter (callerCharacterID);
@@ -103,7 +105,7 @@ public class certificateMgr : Service
         Database.CrtGrantCertificate (callerCharacterID, certificateID);
 
         // notify the character about the granting of the certificate
-        DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued (certificateID));
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnCertificateIssued (certificateID));
 
         return null;
     }
@@ -111,7 +113,7 @@ public class certificateMgr : Service
     public PyDataType BatchCertificateGrant (CallInformation call, PyList certificateList)
     {
         int       callerCharacterID = call.Session.CharacterID;
-        Character character         = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character         = this.Items.GetItem <Character> (callerCharacterID);
 
         PyList <PyInteger>      result              = new PyList <PyInteger> ();
         Dictionary <int, Skill> skills              = character.InjectedSkillsByTypeID;
@@ -145,7 +147,7 @@ public class certificateMgr : Service
         }
 
         // notify the client about the granting of certificates
-        DogmaUtils.QueueMultiEvent (callerCharacterID, new OnCertificateIssued ());
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnCertificateIssued ());
 
         return result;
     }

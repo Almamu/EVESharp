@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Sessions;
 

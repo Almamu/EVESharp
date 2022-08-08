@@ -2,6 +2,7 @@
 using EVESharp.Database;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
@@ -10,10 +11,10 @@ namespace EVESharp.Node.Market;
 
 public class WalletManager : IWalletManager
 {
-    private NotificationSender  Notifications { get; }
+    private INotificationSender  Notifications { get; }
     private IDatabaseConnection Database      { get; }
 
-    public WalletManager (IDatabaseConnection database, NotificationSender notificationSender)
+    public WalletManager (IDatabaseConnection database, INotificationSender notificationSender)
     {
         Database      = database;
         Notifications = notificationSender;

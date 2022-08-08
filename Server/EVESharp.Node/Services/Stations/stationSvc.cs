@@ -2,6 +2,7 @@
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -10,12 +11,12 @@ namespace EVESharp.Node.Services.Stations;
 public class stationSvc : Service
 {
     public override AccessLevel  AccessLevel  => AccessLevel.None;
-    private         ItemFactory  ItemFactory  { get; }
+    private         IItems  Items  { get; }
     private         CacheStorage CacheStorage { get; }
 
-    public stationSvc (ItemFactory itemFactory, CacheStorage cacheStorage)
+    public stationSvc (IItems items, CacheStorage cacheStorage)
     {
-        ItemFactory  = itemFactory;
+        this.Items  = items;
         CacheStorage = cacheStorage;
     }
 
@@ -27,7 +28,7 @@ public class stationSvc : Service
         if (CacheStorage.Exists ("stationSvc", $"GetStation_{stationID}") == false)
             CacheStorage.StoreCall (
                 "stationSvc", $"GetStation_{stationID}",
-                ItemFactory.Stations [stationID].GetStationInfo (),
+                this.Items.Stations [stationID].GetStationInfo (),
                 DateTime.UtcNow.ToFileTimeUtc ()
             );
 
@@ -36,6 +37,6 @@ public class stationSvc : Service
 
     public PyDataType GetSolarSystem (CallInformation call, PyInteger solarSystemID)
     {
-        return ItemFactory.SolarSystems [solarSystemID].GetSolarSystemInfo ();
+        return this.Items.SolarSystems [solarSystemID].GetSolarSystemInfo ();
     }
 }

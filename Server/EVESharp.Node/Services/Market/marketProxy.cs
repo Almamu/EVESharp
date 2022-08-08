@@ -1,34 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
 using EVESharp.EVE.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
+using EVESharp.EVE.Notifications.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Client.Notifications.Inventory;
-using EVESharp.Node.Client.Notifications.Market;
 using EVESharp.Node.Configuration;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Primitives;
-using Character = EVESharp.Node.Inventory.Items.Types.Character;
+using Character = EVESharp.EVE.Data.Inventory.Items.Types.Character;
 
 namespace EVESharp.Node.Services.Market;
 
@@ -38,34 +40,36 @@ public class marketProxy : Service
     private static readonly int []      JumpsPerSkillLevel = {-1, 0, 5, 10, 20, 50};
     public override         AccessLevel AccessLevel => AccessLevel.None;
 
-    private MarketDB           DB            { get; }
-    private CharacterDB        CharacterDB   { get; }
-    private ItemDB             ItemDB        { get; }
-    private CacheStorage       CacheStorage  { get; }
-    private ItemFactory        ItemFactory   { get; }
-    private TypeManager        TypeManager   => ItemFactory.TypeManager;
-    private SolarSystemDB      SolarSystemDB { get; }
-    private Constants          Constants     { get; }
-    private SystemManager      SystemManager => ItemFactory.SystemManager;
-    private NotificationSender Notifications { get; }
-    private IWalletManager      WalletManager { get; }
-    private DogmaUtils         DogmaUtils    { get; }
+    private MarketDB           DB                 { get; }
+    private CharacterDB        CharacterDB        { get; }
+    private ItemDB             ItemDB             { get; }
+    private CacheStorage       CacheStorage       { get; }
+    private IItems              Items              { get; }
+    private ITypes             Types              => this.Items.Types;
+    private SolarSystemDB      SolarSystemDB      { get; }
+    private Constants          Constants          { get; }
+    private ISolarSystems      SolarSystems       { get; }
+    private INotificationSender Notifications      { get; }
+    private IWalletManager     WalletManager      { get; }
+    private IDogmaNotifications DogmaNotifications { get; }
 
     public marketProxy (
-        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, ItemFactory itemFactory, CacheStorage cacheStorage,
-        Constants constants, NotificationSender notificationSender, IWalletManager walletManager, DogmaUtils dogmaUtils, ClusterManager clusterManager
+        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, IItems items, CacheStorage cacheStorage,
+        Constants constants, INotificationSender notificationSender, IWalletManager walletManager, IDogmaNotifications dogmaNotifications, ClusterManager clusterManager,
+        ISolarSystems solarSystems
     )
     {
-        DB            = db;
-        CharacterDB   = characterDB;
-        ItemDB        = itemDB;
-        SolarSystemDB = solarSystemDB;
-        CacheStorage  = cacheStorage;
-        ItemFactory   = itemFactory;
-        Constants     = constants;
-        Notifications = notificationSender;
-        WalletManager = walletManager;
-        DogmaUtils    = dogmaUtils;
+        DB                 = db;
+        CharacterDB        = characterDB;
+        ItemDB             = itemDB;
+        SolarSystemDB      = solarSystemDB;
+        CacheStorage       = cacheStorage;
+        Items              = items;
+        Constants          = constants;
+        Notifications      = notificationSender;
+        WalletManager      = walletManager;
+        DogmaNotifications = dogmaNotifications;
+        SolarSystems       = solarSystems;
 
         clusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
@@ -215,13 +219,13 @@ public class marketProxy : Service
 
     private void CheckSellOrderDistancePermissions (Character character, int stationID)
     {
-        Station station = ItemFactory.GetStaticStation (stationID);
+        Station station = this.Items.GetStaticStation (stationID);
 
         if (character.RegionID != station.RegionID)
             throw new MktInvalidRegion ();
 
         int  jumps               = SolarSystemDB.GetJumpsBetweenSolarSystems (character.SolarSystemID, station.SolarSystemID);
-        long marketingSkillLevel = character.GetSkillLevel (Types.Marketing);
+        long marketingSkillLevel = character.GetSkillLevel (TypeID.Marketing);
         long maximumDistance     = JumpsPerSkillLevel [marketingSkillLevel];
 
         if (maximumDistance == -1 && character.StationID != stationID)
@@ -236,13 +240,13 @@ public class marketProxy : Service
         if (duration == 0)
             return;
 
-        Station station = ItemFactory.GetStaticStation (stationID);
+        Station station = this.Items.GetStaticStation (stationID);
 
         if (character.RegionID != station.RegionID)
             throw new MktInvalidRegion ();
 
         int  jumps                 = SolarSystemDB.GetJumpsBetweenSolarSystems (character.SolarSystemID, station.SolarSystemID);
-        long procurementSkillLevel = character.GetSkillLevel (Types.Procurement);
+        long procurementSkillLevel = character.GetSkillLevel (TypeID.Procurement);
         long maximumDistance       = JumpsPerSkillLevel [procurementSkillLevel];
 
         if (maximumDistance == -1 && character.StationID != stationID)
@@ -282,7 +286,7 @@ public class marketProxy : Service
         double        price,      Session session
     )
     {
-        int solarSystemID = ItemFactory.GetStaticStation (stationID).SolarSystemID;
+        int solarSystemID = this.Items.GetStaticStation (stationID).SolarSystemID;
 
         // look for matching buy orders
         MarketOrder [] orders = DB.FindMatchingOrders (connection, price, typeID, character.ID, solarSystemID, TransactionType.Buy);
@@ -339,7 +343,7 @@ public class marketProxy : Service
                 // calculate sales tax
                 double profit, tax;
 
-                this.CalculateSalesTax (character.GetSkillLevel (Types.Accounting), quantity, price, out tax, out profit);
+                this.CalculateSalesTax (character.GetSkillLevel (TypeID.Accounting), quantity, price, out tax, out profit);
 
                 // create the required records for the wallet
                 wallet.CreateJournalRecord (MarketReference.MarketTransaction, orderOwnerID, character.ID, null, profit);
@@ -354,22 +358,22 @@ public class marketProxy : Service
                 );
 
                 // create the new item that will be used by the player
-                ItemEntity item = ItemFactory.CreateSimpleItem (
-                    TypeManager [typeID], orderOwnerID, stationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, quantityToSell
+                ItemEntity item = this.Items.CreateSimpleItem (
+                    this.Types [typeID], orderOwnerID, stationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, quantityToSell
                 );
 
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                ItemFactory.UnloadItem (item);
+                this.Items.UnloadItem (item);
 
                 // check if the station it's at is loaded and notify the node in question
                 // if not take care of the item notification ourselves
-                long stationNode = SystemManager.GetNodeStationBelongsTo (stationID);
+                long stationNode = this.SolarSystems.GetNodeStationBelongsTo (stationID);
 
-                if (stationNode == 0 || SystemManager.StationBelongsToUs (stationID))
-                    Notifications.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+                if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (stationID))
+                    Notifications.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
                 else
                     Notifications.NotifyNode (
-                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (itemID, ItemFactory.LocationMarket.ID, stationID)
+                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (itemID, this.Items.LocationMarket.ID, stationID)
                     );
             }
 
@@ -395,32 +399,32 @@ public class marketProxy : Service
             );
 
         if (items is null)
-            throw new NotEnoughQuantity (TypeManager [typeID]);
+            throw new NotEnoughQuantity (this.Types [typeID]);
 
-        long stationNode = SystemManager.GetNodeStationBelongsTo (stationID);
+        long stationNode = this.SolarSystems.GetNodeStationBelongsTo (stationID);
 
-        if (SystemManager.StationBelongsToUs (stationID) || stationNode == 0)
+        if (this.SolarSystems.StationBelongsToUs (stationID) || stationNode == 0)
         {
             // load the items here and send proper notifications
             foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
             {
-                ItemEntity item = ItemFactory.LoadItem (entry.ItemID);
+                ItemEntity item = this.Items.LoadItem (entry.ItemID);
 
                 if (entry.Quantity == 0)
                 {
                     // item has to be destroyed
-                    ItemFactory.DestroyItem (item);
+                    this.Items.DestroyItem (item);
                     // notify item destroyal
-                    DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
+                    this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
                 }
                 else
                 {
                     // just a quantity change
                     item.Quantity = entry.Quantity;
                     // notify the client
-                    DogmaUtils.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
+                    this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
                     // unload the item if it's not needed
-                    ItemFactory.UnloadItem (item);
+                    this.Items.UnloadItem (item);
                 }
             }
         }
@@ -431,7 +435,7 @@ public class marketProxy : Service
 
             foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
                 if (entry.Quantity == 0)
-                    changes.AddChange (entry.ItemID, "locationID", entry.LocationID, ItemFactory.LocationMarket.ID);
+                    changes.AddChange (entry.ItemID, "locationID", entry.LocationID, this.Items.LocationMarket.ID);
                 else
                     changes.AddChange (entry.ItemID, "quantity", entry.OriginalQuantity, entry.Quantity);
         }
@@ -460,7 +464,7 @@ public class marketProxy : Service
                 DB.CheckRepackagedItem (connection, itemID, out singleton);
 
                 if (singleton)
-                    throw new RepackageBeforeSelling (TypeManager [typeID]);
+                    throw new RepackageBeforeSelling (this.Types [typeID]);
             }
 
             if (duration == 0)
@@ -489,7 +493,7 @@ public class marketProxy : Service
             }
 
             // send a OnOwnOrderChange notification
-            DogmaUtils.QueueMultiEvent (callerCharacterID, new OnOwnOrderChanged (typeID, "Add"));
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnOwnOrderChanged (typeID, "Add"));
         }
         finally
         {
@@ -521,7 +525,7 @@ public class marketProxy : Service
         int           range
     )
     {
-        int solarSystemID = ItemFactory.GetStaticStation (stationID).SolarSystemID;
+        int solarSystemID = this.Items.GetStaticStation (stationID).SolarSystemID;
 
         // look for matching sell orders
         MarketOrder [] orders = DB.FindMatchingOrders (connection, price, typeID, character.ID, solarSystemID, TransactionType.Sell);
@@ -563,7 +567,7 @@ public class marketProxy : Service
                 // calculate sales tax
                 double tax;
 
-                this.CalculateSalesTax (CharacterDB.GetSkillLevelForCharacter (Types.Accounting, order.CharacterID), quantity, price, out tax, out _);
+                this.CalculateSalesTax (CharacterDB.GetSkillLevelForCharacter (TypeID.Accounting, order.CharacterID), quantity, price, out tax, out _);
 
                 // acquire wallet journal for seller so we can update their balance to add the funds that he got
                 using IWallet sellerWallet = WalletManager.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
@@ -571,7 +575,7 @@ public class marketProxy : Service
                     sellerWallet.CreateJournalRecord (MarketReference.MarketTransaction, orderOwnerID, null, price * quantityToBuy);
                     // calculate sales tax for the seller
                     if (tax > 0)
-                        sellerWallet.CreateJournalRecord (MarketReference.TransactionTax, ItemFactory.OwnerSCC.ID, null, -tax);
+                        sellerWallet.CreateJournalRecord (MarketReference.TransactionTax, this.Items.OwnerSCC.ID, null, -tax);
 
                     sellerWallet.CreateTransactionRecord (TransactionType.Sell, order.CharacterID, wallet.OwnerID, typeID, quantityToBuy, price, stationID);
                 }
@@ -579,20 +583,20 @@ public class marketProxy : Service
                 // create the transaction records for both characters
                 wallet.CreateTransactionRecord (TransactionType.Buy, character.ID, orderOwnerID, typeID, quantityToBuy, price, stationID);
 
-                long stationNode = SystemManager.GetNodeStationBelongsTo (stationID);
+                long stationNode = this.SolarSystems.GetNodeStationBelongsTo (stationID);
 
                 // create the new item that will be used by the player
-                ItemEntity item = ItemFactory.CreateSimpleItem (
-                    TypeManager [typeID], wallet.OwnerID, stationID, wallet.OwnerID == character.CorporationID ? Flags.CorpMarket : Flags.Hangar, quantityToBuy
+                ItemEntity item = this.Items.CreateSimpleItem (
+                    this.Types [typeID], wallet.OwnerID, stationID, wallet.OwnerID == character.CorporationID ? Flags.CorpMarket : Flags.Hangar, quantityToBuy
                 );
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                ItemFactory.UnloadItem (item);
+                this.Items.UnloadItem (item);
 
-                if (stationNode == 0 || SystemManager.StationBelongsToUs (stationID))
-                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+                if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (stationID))
+                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
                 else
                     Notifications.NotifyNode (
-                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, stationID)
+                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, stationID)
                     );
             }
 
@@ -638,7 +642,7 @@ public class marketProxy : Service
             }
 
             // send a OnOwnOrderChange notification
-            DogmaUtils.QueueMultiEvent (character.ID, new OnOwnOrderChanged (typeID, "Add"));
+            this.DogmaNotifications.QueueMultiEvent (character.ID, new OnOwnOrderChanged (typeID, "Add"));
         }
         finally
         {
@@ -665,7 +669,7 @@ public class marketProxy : Service
     )
     {
         // get solarSystem for the station
-        Character character  = ItemFactory.GetItem <Character> (call.Session.CharacterID);
+        Character character  = this.Items.GetItem <Character> (call.Session.CharacterID);
         double    brokerCost = 0.0;
 
         // if the order is not immediate check the amount of orders the character has
@@ -678,7 +682,7 @@ public class marketProxy : Service
                 throw new MarketExceededOrderCount (currentOrders, maximumOrders);
 
             // calculate broker costs for the order
-            this.CalculateBrokerCost (character.GetSkillLevel (Types.BrokerRelations), quantity, price, out brokerCost);
+            this.CalculateBrokerCost (character.GetSkillLevel (TypeID.BrokerRelations), quantity, price, out brokerCost);
         }
 
         int ownerID    = character.ID;
@@ -723,7 +727,7 @@ public class marketProxy : Service
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         using IDbConnection connection = DB.AcquireMarketLock ();
 
@@ -754,21 +758,21 @@ public class marketProxy : Service
             if (order.Bid == TransactionType.Sell)
             {
                 // create the new item that will be used by the player
-                ItemEntity item = ItemFactory.CreateSimpleItem (
-                    TypeManager [order.TypeID], orderOwnerID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
+                ItemEntity item = this.Items.CreateSimpleItem (
+                    this.Types [order.TypeID], orderOwnerID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
                 );
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                ItemFactory.UnloadItem (item);
+                this.Items.UnloadItem (item);
 
                 // check what node this item should be loaded at
-                long stationNode = SystemManager.GetNodeStationBelongsTo (order.LocationID);
+                long stationNode = this.SolarSystems.GetNodeStationBelongsTo (order.LocationID);
 
-                if (stationNode == 0 || SystemManager.StationBelongsToUs (order.LocationID))
-                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+                if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (order.LocationID))
+                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
                 else
                     Notifications.NotifyNode (
                         stationNode,
-                        Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
+                        Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, order.LocationID)
                     );
             }
 
@@ -782,7 +786,7 @@ public class marketProxy : Service
                 Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
             else
                 // send a OnOwnOrderChange notification
-                DogmaUtils.QueueMultiEvent (callerCharacterID, notification);
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, notification);
         }
         finally
         {
@@ -799,7 +803,7 @@ public class marketProxy : Service
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         using IDbConnection connection = DB.AcquireMarketLock ();
 
@@ -825,7 +829,7 @@ public class marketProxy : Service
             double brokerCost = 0.0;
             double newEscrow  = 0.0;
 
-            this.CalculateBrokerCost (character.GetSkillLevel (Types.BrokerRelations), volRemaining, newPrice - price, out brokerCost);
+            this.CalculateBrokerCost (character.GetSkillLevel (TypeID.BrokerRelations), volRemaining, newPrice - price, out brokerCost);
 
             int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
 
@@ -861,7 +865,7 @@ public class marketProxy : Service
                 Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
             else
                 // send a OnOwnOrderChange notification
-                DogmaUtils.QueueMultiEvent (callerCharacterID, notification);
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, notification);
         }
         finally
         {
@@ -878,14 +882,14 @@ public class marketProxy : Service
 
         int retailLevel = 0, tradeLevel = 0, wholeSaleLevel = 0, tycoonLevel = 0;
 
-        if (injectedSkills.ContainsKey ((int) Types.Retail))
-            retailLevel = (int) injectedSkills [(int) Types.Retail].Level;
-        if (injectedSkills.ContainsKey ((int) Types.Trade))
-            tradeLevel = (int) injectedSkills [(int) Types.Trade].Level;
-        if (injectedSkills.ContainsKey ((int) Types.Wholesale))
-            wholeSaleLevel = (int) injectedSkills [(int) Types.Wholesale].Level;
-        if (injectedSkills.ContainsKey ((int) Types.Tycoon))
-            tycoonLevel = (int) injectedSkills [(int) Types.Tycoon].Level;
+        if (injectedSkills.ContainsKey ((int) TypeID.Retail))
+            retailLevel = (int) injectedSkills [(int) TypeID.Retail].Level;
+        if (injectedSkills.ContainsKey ((int) TypeID.Trade))
+            tradeLevel = (int) injectedSkills [(int) TypeID.Trade].Level;
+        if (injectedSkills.ContainsKey ((int) TypeID.Wholesale))
+            wholeSaleLevel = (int) injectedSkills [(int) TypeID.Wholesale].Level;
+        if (injectedSkills.ContainsKey ((int) TypeID.Tycoon))
+            tycoonLevel = (int) injectedSkills [(int) TypeID.Tycoon].Level;
 
         return 5 + tradeLevel * 4 + retailLevel * 8 + wholeSaleLevel * 16 + tycoonLevel * 32;
     }
@@ -922,19 +926,19 @@ public class marketProxy : Service
         // create the item back into the player's hanger
 
         // create the new item that will be used by the player
-        ItemEntity item = ItemFactory.CreateSimpleItem (
-            TypeManager [order.TypeID], order.CharacterID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
+        ItemEntity item = this.Items.CreateSimpleItem (
+            this.Types [order.TypeID], order.CharacterID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
         );
         // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-        ItemFactory.UnloadItem (item);
+        this.Items.UnloadItem (item);
 
-        long stationNode = SystemManager.GetNodeStationBelongsTo (order.LocationID);
+        long stationNode = this.SolarSystems.GetNodeStationBelongsTo (order.LocationID);
 
-        if (stationNode == 0 || SystemManager.StationBelongsToUs (order.LocationID))
-            Notifications.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, ItemFactory.LocationMarket.ID));
+        if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (order.LocationID))
+            Notifications.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
         else
             Notifications.NotifyNode (
-                stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, ItemFactory.LocationMarket.ID, order.LocationID)
+                stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, order.LocationID)
             );
 
         // finally notify the character about the order change

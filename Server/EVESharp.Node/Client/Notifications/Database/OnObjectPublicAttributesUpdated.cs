@@ -6,6 +6,9 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Client.Notifications.Database;
 
+/// <summary>
+/// TODO: MOVE THIS TO THE EVE NAMESPACE
+/// </summary>
 public class OnObjectPublicAttributesUpdated : ClientNotification
 {
     public const string                           NOTIFICATION_NAME = "OnObjectPublicAttributesUpdated";
@@ -18,25 +21,25 @@ public class OnObjectPublicAttributesUpdated : ClientNotification
         PyDataType primaryKey, SparseRowsetDatabaseService rowset, PyDictionary <PyString, PyTuple> changes, PyDictionary notificationParams = null
     ) : base (NOTIFICATION_NAME)
     {
-        PrimaryKey         = primaryKey;
-        SparseRowset       = rowset;
-        Changes            = changes;
-        NotificationParams = notificationParams;
+        this.PrimaryKey         = primaryKey;
+        this.SparseRowset       = rowset;
+        this.Changes            = changes;
+        this.NotificationParams = notificationParams;
     }
 
     public override List <PyDataType> GetElements ()
     {
         return new List <PyDataType>
         {
-            SparseRowset.BoundString,
-            new PyDictionary {["realRowCount"] = SparseRowset.RowsetHeader.Count},
+            this.SparseRowset.BoundString,
+            new PyDictionary {["realRowCount"] = this.SparseRowset.RowsetHeader.Count},
             new PyTuple (0),
             new PyDictionary
             {
-                ["change"]             = Changes,
-                ["changePKIndexValue"] = PrimaryKey,
+                ["change"]             = this.Changes,
+                ["changePKIndexValue"] = this.PrimaryKey,
                 ["partials"]           = new PyList {"realRowCount"},
-                ["notificationParams"] = NotificationParams ?? new PyDictionary ()
+                ["notificationParams"] = this.NotificationParams ?? new PyDictionary ()
             }
         };
     }

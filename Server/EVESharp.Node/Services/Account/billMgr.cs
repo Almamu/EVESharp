@@ -1,16 +1,18 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.EVE.Client.Messages;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Market;
+using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Client.Notifications.Wallet;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
@@ -25,19 +27,19 @@ public class billMgr : Service
     public override AccessLevel         AccessLevel   => AccessLevel.None;
     private         CacheStorage        CacheStorage  { get; }
     private         CorporationDB       CorporationDB { get; }
-    private         ItemFactory         ItemFactory   { get; }
-    private         NotificationSender  Notifications { get; }
+    private         IItems              Items         { get; }
+    private         INotificationSender Notifications { get; }
     private         IDatabaseConnection Database      { get; }
 
     public billMgr (
-        CacheStorage       cacheStorage,       IDatabaseConnection databaseConnection, CorporationDB corporationDb, ItemFactory itemFactory,
-        NotificationSender notificationSender, ClusterManager      clusterManager
+        CacheStorage       cacheStorage,       IDatabaseConnection databaseConnection, CorporationDB corporationDb, IItems items,
+        INotificationSender notificationSender, ClusterManager      clusterManager
     )
     {
         CacheStorage  = cacheStorage;
         Database      = databaseConnection;
         CorporationDB = corporationDb;
-        ItemFactory   = itemFactory;
+        this.Items    = items;
         Notifications = notificationSender;
 
         clusterManager.OnClusterTimer += this.PerformTimedEvents;
@@ -81,10 +83,10 @@ public class billMgr : Service
         foreach (CorporationOffice office in offices)
         {
             long dueDate = office.DueDate;
-            int  ownerID = ItemFactory.Stations [office.StationID].OwnerID;
+            int  ownerID = this.Items.Stations [office.StationID].OwnerID;
             int billID = (int) Database.MktBillsCreate (
                 BillTypes.RentalBill, office.CorporationID, ownerID,
-                office.PeriodCost, dueDate, 0, (int) Types.OfficeFolder, office.StationID
+                office.PeriodCost, dueDate, 0, (int) TypeID.OfficeFolder, office.StationID
             );
             CorporationDB.SetNextBillID (office.CorporationID, office.OfficeID, billID);
 

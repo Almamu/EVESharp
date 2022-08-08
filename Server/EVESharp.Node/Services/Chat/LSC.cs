@@ -1,16 +1,18 @@
 using System;
 using System.IO;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.LSC;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Chat;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Chat;
-using EVESharp.Node.Client.Notifications.Chat;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.PythonTypes;
@@ -35,21 +37,21 @@ public class LSC : Service
     private MessagesDB           MessagesDB           { get; }
     private ChatDB               DB                   { get; }
     private CharacterDB          CharacterDB          { get; }
-    private ItemFactory          ItemFactory          { get; }
-    private NotificationSender   Notifications        { get; }
+    private IItems          Items          { get; }
+    private INotificationSender   Notifications        { get; }
     private MailManager          MailManager          { get; }
     private RemoteServiceManager RemoteServiceManager { get; }
     private PacketCallHelper     PacketCallHelper     { get; }
 
     public LSC (
-        ChatDB             db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          ItemFactory itemFactory, ILogger logger,
-        NotificationSender notificationSender, MailManager mailManager, RemoteServiceManager remoteServiceManager,  PacketCallHelper packetCallHelper
+        ChatDB             db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          IItems items, ILogger logger,
+        INotificationSender notificationSender, MailManager mailManager, RemoteServiceManager remoteServiceManager,  PacketCallHelper packetCallHelper
     )
     {
         DB                   = db;
         MessagesDB           = messagesDB;
         CharacterDB          = characterDB;
-        ItemFactory          = itemFactory;
+        this.Items           = items;
         Notifications        = notificationSender;
         MailManager          = mailManager;
         Log                  = logger;
@@ -618,7 +620,7 @@ public class LSC : Service
                 throw new ChtAlreadyInChannel (characterID);
 
             // TODO: THIS WONT WORK ON MULTIPLE-NODES ENVIRONMENTS, NEEDS FIXING
-            Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+            Character character = this.Items.GetItem <Character> (callerCharacterID);
 
             PyTuple args = new PyTuple (4)
             {

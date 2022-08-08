@@ -1,24 +1,25 @@
 ﻿using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Clones;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Clones;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Groups = EVESharp.EVE.Data.Inventory.Groups;
 using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Characters;
@@ -30,36 +31,36 @@ public class jumpCloneSvc : ClientBoundService
 
     private ItemDB              ItemDB        { get; }
     private MarketDB            MarketDB      { get; }
-    private ItemFactory         ItemFactory   { get; }
-    private TypeManager         TypeManager   => ItemFactory.TypeManager;
-    private SystemManager       SystemManager { get; }
-    private NotificationSender  Notifications { get; }
+    private IItems              Items         { get; }
+    private ITypes              Types         => this.Items.Types;
+    private ISolarSystems       SolarSystems  { get; }
+    private INotificationSender Notifications { get; }
     private IWalletManager      WalletManager { get; }
     private IDatabaseConnection Database      { get; }
 
     public jumpCloneSvc (
-        ItemDB        itemDB,        MarketDB      marketDB,      ItemFactory        itemFactory,
-        SystemManager systemManager, IWalletManager walletManager, NotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
+        ItemDB        itemDB,        MarketDB      marketDB,      IItems        items,
+        ISolarSystems solarSystems, IWalletManager walletManager, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         ItemDB        = itemDB;
         MarketDB      = marketDB;
-        ItemFactory   = itemFactory;
-        SystemManager = systemManager;
+        this.Items    = items;
+        this.SolarSystems  = solarSystems;
         WalletManager = walletManager;
         Notifications = notificationSender;
         Database      = database;
     }
 
     protected jumpCloneSvc (
-        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      ItemFactory        itemFactory,
-        SystemManager systemManager, BoundServiceManager manager, IWalletManager walletManager, NotificationSender notificationSender, Session session
+        int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      IItems        items,
+        ISolarSystems solarSystems, BoundServiceManager manager, IWalletManager walletManager, INotificationSender notificationSender, Session session
     ) : base (manager, session, locationID)
     {
         ItemDB        = itemDB;
         MarketDB      = marketDB;
-        ItemFactory   = itemFactory;
-        SystemManager = systemManager;
+        this.Items    = items;
+        this.SolarSystems  = solarSystems;
         WalletManager = walletManager;
         Notifications = notificationSender;
     }
@@ -78,7 +79,7 @@ public class jumpCloneSvc : ClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         return KeyVal.FromDictionary (
             new PyDictionary
@@ -95,7 +96,7 @@ public class jumpCloneSvc : ClientBoundService
         // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
         int callerCharacterID = call.Session.CharacterID;
 
-        if (ItemFactory.TryGetItem (jumpCloneID, out ItemEntity clone) == false)
+        if (this.Items.TryGetItem (jumpCloneID, out ItemEntity clone) == false)
             throw new JumpCantDestroyNonLocalClone ();
         if (clone.LocationID != call.Session.LocationID)
             throw new JumpCantDestroyNonLocalClone ();
@@ -103,7 +104,7 @@ public class jumpCloneSvc : ClientBoundService
             throw new MktNotOwner ();
 
         // finally destroy the clone, this also destroys all the implants in it
-        ItemFactory.DestroyItem (clone);
+        this.Items.DestroyItem (clone);
 
         // let the client know that the clones were updated
         this.OnCloneUpdate (callerCharacterID);
@@ -137,10 +138,10 @@ public class jumpCloneSvc : ClientBoundService
         int callerCharacterID = call.Session.CharacterID;
         int stationID         = call.Session.StationID;
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         // check the maximum number of clones the character has assigned
-        long maximumClonesAvailable = character.GetSkillLevel (Types.InfomorphPsychology);
+        long maximumClonesAvailable = character.GetSkillLevel (TypeID.InfomorphPsychology);
 
         // the skill is not trained
         if (maximumClonesAvailable == 0)
@@ -157,7 +158,7 @@ public class jumpCloneSvc : ClientBoundService
         int cost = this.GetPriceForClone (call);
 
         // get character's station
-        Station station = ItemFactory.GetStaticStation (stationID);
+        Station station = this.Items.GetStaticStation (stationID);
 
         using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
@@ -166,10 +167,10 @@ public class jumpCloneSvc : ClientBoundService
         }
 
         // create an alpha clone
-        Type cloneType = TypeManager [Types.CloneGradeAlpha];
+        Type cloneType = this.Types [TypeID.CloneGradeAlpha];
 
         // create a new clone on the itemDB
-        Clone clone = ItemFactory.CreateClone (cloneType, station, character);
+        Clone clone = this.Items.CreateClone (cloneType, station, character);
 
         // finally create the jump clone and invalidate caches
         this.OnCloneUpdate (callerCharacterID);
@@ -184,8 +185,8 @@ public class jumpCloneSvc : ClientBoundService
     {
         return parameters.ExtraValue switch
         {
-            (int) Groups.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
-            (int) Groups.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
+            (int) GroupID.SolarSystem => Database.CluResolveAddress ("solarsystem", parameters.ObjectID),
+            (int) GroupID.Station     => Database.CluResolveAddress ("station",     parameters.ObjectID),
             _                        => throw new CustomError ("Unknown item's groupID")
         };
     }
@@ -196,7 +197,7 @@ public class jumpCloneSvc : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new jumpCloneSvc (
-            bindParams.ObjectID, ItemDB, MarketDB, ItemFactory, SystemManager, BoundServiceManager, WalletManager, Notifications,
+            bindParams.ObjectID, ItemDB, MarketDB, this.Items, this.SolarSystems, BoundServiceManager, WalletManager, Notifications,
             call.Session
         );
     }

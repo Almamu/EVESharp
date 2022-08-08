@@ -142,7 +142,7 @@ public class CacheStorage : DatabaseAccessor
 #endif
         "SELECT celestialID, description FROM mapCelestialDescriptions",
         "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates",
-        $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) Groups.Station} OR groupID = {(int) Groups.Constellation} OR groupID = {(int) Groups.SolarSystem} OR groupID = {(int) Groups.Region}) AND itemID < {ItemRanges.USERGENERATED_ID_MIN}",
+        $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Constellation} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Region}) AND itemID < {ItemRanges.USERGENERATED_ID_MIN}",
         "SELECT factionID, typeID, standingLoss, confiscateMinSec, fineByValue, attackMinSec FROM invContrabandTypes",
         "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships",
         "SELECT unitID,unitName,displayName FROM eveUnits",

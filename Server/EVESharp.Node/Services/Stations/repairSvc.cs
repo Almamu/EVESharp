@@ -2,20 +2,22 @@
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Client.Notifications.Inventory;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -31,47 +33,48 @@ public class repairSvc : ClientBoundService
     private const    double              BASEPRICE_MULTIPLIER_MODULE = 0.0125;
     private const    double              BASEPRICE_MULTIPLIER_SHIP   = 0.000088;
     private readonly ItemInventory       mInventory;
-    public override  AccessLevel         AccessLevel   => AccessLevel.None;
-    private          ItemFactory         ItemFactory   { get; }
-    private          SystemManager       SystemManager => ItemFactory.SystemManager;
-    private          TypeManager         TypeManager   => ItemFactory.TypeManager;
-    private          MarketDB            MarketDB      { get; }
-    private          RepairDB            RepairDB      { get; }
-    private          InsuranceDB         InsuranceDB   { get; }
-    private          NotificationSender  Notifications { get; }
-    private          IWalletManager      WalletManager { get; }
-    private          DogmaUtils          DogmaUtils    { get; }
-    private          IDatabaseConnection Database      { get; }
+    public override  AccessLevel         AccessLevel        => AccessLevel.None;
+    private          IItems              Items              { get; }
+    private          ISolarSystems       SolarSystems       { get; }
+    private          ITypes              Types              => this.Items.Types;
+    private          MarketDB            MarketDB           { get; }
+    private          RepairDB            RepairDB           { get; }
+    private          InsuranceDB         InsuranceDB        { get; }
+    private          INotificationSender Notifications      { get; }
+    private          IWalletManager      WalletManager      { get; }
+    private          IDogmaNotifications DogmaNotifications { get; }
+    private          IDatabaseConnection Database           { get; }
 
     public repairSvc (
-        RepairDB            repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   NotificationSender notificationSender,
-        ItemFactory         itemFactory, BoundServiceManager manager,  IWalletManager walletManager, DogmaUtils         dogmaUtils,
-        IDatabaseConnection database
+        RepairDB            repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   INotificationSender notificationSender,
+        IItems         items, BoundServiceManager manager,  IWalletManager walletManager, IDogmaNotifications         dogmaNotifications,
+        ISolarSystems solarSystems, IDatabaseConnection database
     ) : base (manager)
     {
-        ItemFactory   = itemFactory;
-        MarketDB      = marketDb;
-        RepairDB      = repairDb;
-        InsuranceDB   = insuranceDb;
-        Notifications = notificationSender;
-        WalletManager = walletManager;
-        DogmaUtils    = dogmaUtils;
-        Database      = database;
+        Items              = items;
+        MarketDB           = marketDb;
+        RepairDB           = repairDb;
+        InsuranceDB        = insuranceDb;
+        Notifications      = notificationSender;
+        WalletManager      = walletManager;
+        DogmaNotifications = dogmaNotifications;
+        Database           = database;
+        SolarSystems       = solarSystems;
     }
 
     protected repairSvc (
-        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, NotificationSender notificationSender,
-        ItemInventory inventory, ItemFactory itemFactory, BoundServiceManager manager,     IWalletManager walletManager, DogmaUtils dogmaUtils, Session session
+        RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, INotificationSender notificationSender,
+        ItemInventory inventory, IItems items, BoundServiceManager manager,     IWalletManager walletManager, IDogmaNotifications dogmaNotifications, Session session
     ) : base (manager, session, inventory.ID)
     {
-        this.mInventory = inventory;
-        ItemFactory     = itemFactory;
-        MarketDB        = marketDb;
-        RepairDB        = repairDb;
-        InsuranceDB     = insuranceDb;
-        Notifications   = notificationSender;
-        WalletManager   = walletManager;
-        DogmaUtils      = dogmaUtils;
+        this.mInventory         = inventory;
+        this.Items              = items;
+        MarketDB                = marketDb;
+        RepairDB                = repairDb;
+        InsuranceDB             = insuranceDb;
+        Notifications           = notificationSender;
+        WalletManager           = walletManager;
+        this.DogmaNotifications = dogmaNotifications;
     }
 
     public PyDataType GetDamageReports (CallInformation call, PyList itemIDs)
@@ -161,7 +164,7 @@ public class repairSvc : ClientBoundService
     public PyDataType RepairItems (CallInformation call, PyList itemIDs, PyDecimal iskRepairValue)
     {
         // ensure the player has enough balance to do the fixing
-        Station station = ItemFactory.GetStaticStation (call.Session.StationID);
+        Station station = this.Items.GetStaticStation (call.Session.StationID);
 
         // take the wallet lock and ensure the character has enough balance
         using IWallet wallet = WalletManager.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
@@ -280,9 +283,9 @@ public class repairSvc : ClientBoundService
                 continue;
 
             // extra situation, the repair is happening on a item in our node, the client must know immediately
-            if (entry.NodeID == call.MachoNet.NodeID || SystemManager.StationBelongsToUs (entry.LocationID))
+            if (entry.NodeID == call.MachoNet.NodeID || this.SolarSystems.StationBelongsToUs (entry.LocationID))
             {
-                ItemEntity item = ItemFactory.LoadItem (entry.ItemID, out bool loadRequired);
+                ItemEntity item = this.Items.LoadItem (entry.ItemID, out bool loadRequired);
 
                 // the item is an inventory, take everything out!
                 if (item is ItemInventory inventory)
@@ -291,9 +294,9 @@ public class repairSvc : ClientBoundService
                         if (itemInInventory.IsInRigSlot ())
                         {
                             Flags oldFlag = itemInInventory.Flag;
-                            ItemFactory.DestroyItem (itemInInventory);
+                            this.Items.DestroyItem (itemInInventory);
                             // notify the client about the change
-                            DogmaUtils.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                            this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
                         }
                         else
                         {
@@ -303,22 +306,22 @@ public class repairSvc : ClientBoundService
                             itemInInventory.Flag       = Flags.Hangar;
 
                             // notify the client about the change
-                            DogmaUtils.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                            this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
                             // save the item
                             itemInInventory.Persist ();
                         }
 
                 // update the singleton flag too
                 item.Singleton = false;
-                DogmaUtils.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
+                this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
 
                 // load was required, the item is not needed anymore
                 if (loadRequired)
-                    ItemFactory.UnloadItem (item);
+                    this.Items.UnloadItem (item);
             }
             else
             {
-                long nodeID = SystemManager.GetNodeStationBelongsTo (entry.LocationID);
+                long nodeID = this.SolarSystems.GetNodeStationBelongsTo (entry.LocationID);
 
                 if (nodeID > 0)
                 {
@@ -349,7 +352,7 @@ public class repairSvc : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        Station station = ItemFactory.GetStaticStation (bindParams.ObjectID);
+        Station station = this.Items.GetStaticStation (bindParams.ObjectID);
 
         if (station.HasService (Service.RepairFacilities) == false)
             throw new CustomError ("This station does not allow for repair facilities services");
@@ -359,11 +362,11 @@ public class repairSvc : ClientBoundService
             throw new CanOnlyDoInStations ();
 
         ItemInventory inventory =
-            ItemFactory.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
+            this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 
         return new repairSvc (
-            RepairDB, MarketDB, InsuranceDB, Notifications, inventory, ItemFactory, BoundServiceManager,
-            WalletManager, DogmaUtils, call.Session
+            RepairDB, MarketDB, InsuranceDB, Notifications, inventory, this.Items, BoundServiceManager,
+            WalletManager, this.DogmaNotifications, call.Session
         );
     }
 }

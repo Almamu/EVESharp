@@ -5,7 +5,8 @@ using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Market;
-using EVESharp.Node.Client.Notifications.Wallet;
+using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
 
@@ -19,11 +20,11 @@ public class Wallet : IWallet
     public  double              Balance         { get; set; }
     public  double              OriginalBalance { get; }
     public  IDatabaseConnection Database        { get; }
-    public  NotificationSender  Notifications   { get; }
+    public  INotificationSender  Notifications   { get; }
     public  bool                ForCorporation  { get; }
     public  IWalletManager      WalletManager   { get; }
 
-    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, NotificationSender notificationSender, IWalletManager walletManager)
+    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, INotificationSender notificationSender, IWalletManager walletManager)
     {
         // set some data first
         this.OwnerID        = ownerID;

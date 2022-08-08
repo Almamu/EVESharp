@@ -1,5 +1,6 @@
 ﻿using System;
 using EVESharp.Database;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.insuranceSvc;
@@ -10,9 +11,9 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Chat;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.Node.Market;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
@@ -27,38 +28,41 @@ public class insuranceSvc : ClientBoundService
     private readonly int                 mStationID;
     public override  AccessLevel         AccessLevel   => AccessLevel.None;
     private          InsuranceDB         DB            { get; }
-    private          ItemFactory         ItemFactory   { get; }
+    private          IItems               Items         { get; }
     private          MarketDB            MarketDB      { get; }
-    private          SystemManager       SystemManager => ItemFactory.SystemManager;
+    private          ISolarSystems       SolarSystems  { get; }
     private          IWalletManager      WalletManager { get; }
     private          MailManager         MailManager   { get; }
     private          IDatabaseConnection Database      { get; }
 
     public insuranceSvc (
-        ClusterManager clusterManager, ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, IWalletManager walletManager, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database
+        ClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWalletManager walletManager, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database,
+        ISolarSystems solarSystems
     ) : base (manager)
     {
         DB            = db;
-        ItemFactory   = itemFactory;
+        Items         = items;
         MarketDB      = marketDB;
         WalletManager = walletManager;
         MailManager   = mailManager;
         Database      = database;
+        SolarSystems  = solarSystems;
         
         clusterManager.OnClusterTimer += PerformTimedEvents;
     }
 
     protected insuranceSvc (
-        ItemFactory itemFactory, InsuranceDB db, MarketDB marketDB, IWalletManager walletManager, MailManager mailManager, BoundServiceManager manager,
-        int         stationID,   Session     session
+        IItems items, InsuranceDB db, MarketDB marketDB, IWalletManager walletManager, MailManager mailManager, BoundServiceManager manager,
+        int         stationID,   Session     session, ISolarSystems solarSystems
     ) : base (manager, session, stationID)
     {
         this.mStationID = stationID;
         DB              = db;
-        ItemFactory     = itemFactory;
+        Items           = items;
         MarketDB        = marketDB;
         WalletManager   = walletManager;
         MailManager     = mailManager;
+        SolarSystems    = solarSystems;
     }
 
     public PyList <PyPackedRow> GetContracts (CallInformation call)
@@ -93,10 +97,10 @@ public class insuranceSvc : ClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        if (ItemFactory.TryGetItem (itemID, out Ship item) == false)
+        if (this.Items.TryGetItem (itemID, out Ship item) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
 
-        Character character = ItemFactory.GetItem <Character> (callerCharacterID);
+        Character character = this.Items.GetItem <Character> (callerCharacterID);
 
         if (isCorpItem == 1 && item.OwnerID != call.Session.CorporationID && item.OwnerID != callerCharacterID)
             throw new MktNotOwner ();
@@ -117,7 +121,7 @@ public class insuranceSvc : ClientBoundService
         using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (insuranceCost);
-            wallet.CreateJournalRecord (MarketReference.Insurance, ItemFactory.OwnerSCC.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}");
+            wallet.CreateJournalRecord (MarketReference.Insurance, this.Items.OwnerSCC.ID, -item.ID, -insuranceCost, $"Insurance fee for {item.Name}");
         }
 
         // insurance was charged to the player, so old insurances can be void now
@@ -132,7 +136,7 @@ public class insuranceSvc : ClientBoundService
         // TODO: CHECK IF THE INSURANCE SHOULD BE CHARGED TO THE CORP
 
         MailManager.SendMail (
-            ItemFactory.OwnerSCC.ID, callerCharacterID,
+            this.Items.OwnerSCC.ID, callerCharacterID,
             "Insurance Contract Issued",
             "Dear valued customer, <br><br>" +
             "Congratulations on the insurance on your ship. A very wise choice indeed.<br>" +
@@ -150,7 +154,7 @@ public class insuranceSvc : ClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        if (ItemFactory.TryGetItem (itemID, out Ship item) == false)
+        if (this.Items.TryGetItem (itemID, out Ship item) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
 
         if (item.OwnerID != call.Session.CorporationID && item.OwnerID != callerCharacterID)
@@ -169,7 +173,7 @@ public class insuranceSvc : ClientBoundService
             DateTime insuranceTime = DateTime.FromFileTimeUtc (contract.StartDate);
 
             MailManager.SendMail (
-                ItemFactory.OwnerSCC.ID, contract.OwnerID,
+                this.Items.OwnerSCC.ID, contract.OwnerID,
                 "Insurance Contract Expired",
                 "Dear valued customer, <br><br>" +
                 $"The insurance contract between yourself and SCC for the insurance of the ship <b>{contract.ShipName}</b> (<b>{contract.ShipType.Name}</b>) issued at" +
@@ -192,6 +196,6 @@ public class insuranceSvc : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        return new insuranceSvc (ItemFactory, DB, MarketDB, WalletManager, MailManager, BoundServiceManager, bindParams.ObjectID, call.Session);
+        return new insuranceSvc (this.Items, DB, MarketDB, WalletManager, MailManager, BoundServiceManager, bindParams.ObjectID, call.Session, this.SolarSystems);
     }
 }

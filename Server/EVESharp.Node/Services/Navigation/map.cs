@@ -1,9 +1,10 @@
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Inventory;
-using EVESharp.Node.Inventory.Items.Types;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -15,13 +16,13 @@ public class map : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private ItemFactory    ItemFactory    { get; }
-    private StationManager StationManager => ItemFactory.StationManager;
-    private CacheStorage   CacheStorage   { get; }
+    private IItems        Items          { get; }
+    private IStations    StationManager => this.Items.Stations;
+    private CacheStorage CacheStorage   { get; }
 
-    public map (ItemFactory itemFactory, CacheStorage cacheStorage)
+    public map (IItems items, CacheStorage cacheStorage)
     {
-        ItemFactory  = itemFactory;
+        this.Items  = items;
         CacheStorage = cacheStorage;
     }
 
@@ -52,7 +53,7 @@ public class map : Service
             }
         );
 
-        foreach ((int _, Station station) in ItemFactory.Stations)
+        foreach ((int _, Station station) in this.Items.Stations)
             stations.Rows.Add (
                 new PyList (5)
                 {
