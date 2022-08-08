@@ -1,6 +1,6 @@
 using MySql.Data.MySqlClient;
 
-namespace EVESharp.Orchestator.Models;
+namespace EVESharp.Orchestrator.Models;
 
 public class Database
 {
@@ -8,12 +8,12 @@ public class Database
 
     public Database (string connectionString)
     {
-        ConnectionString = connectionString;
+        this.ConnectionString = connectionString;
     }
 
     public MySqlConnection Get ()
     {
-        MySqlConnection connection = new MySqlConnection (ConnectionString);
+        MySqlConnection connection = new MySqlConnection (this.ConnectionString);
         connection.Open ();
 
         return connection;

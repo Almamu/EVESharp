@@ -1,5 +1,5 @@
-using EVESharp.Orchestator.Models;
-using EVESharp.Orchestator.Providers;
+using EVESharp.Orchestrator.Models;
+using EVESharp.Orchestrator.Providers;
 using MySql.Data.MySqlClient;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder (args);

@@ -3,6 +3,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.facWarMgr;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Packets.Complex;

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using IniParser.Model;
 
-namespace EVESharp.Node.Configuration;
+namespace EVESharp.Common.Configuration;
 
 public enum MachoNetMode
 {
@@ -20,7 +20,7 @@ public class MachoNet
     {
         string mode = (section ["mode"] ?? "single").ToLower ();
 
-        Mode = mode switch
+        this.Mode = mode switch
         {
             "proxy"  => MachoNetMode.Proxy,
             "single" => MachoNetMode.Single,
@@ -31,14 +31,14 @@ public class MachoNet
         if (section.ContainsKey ("port") == false)
         {
             // determine the port based on some random data so the nodes do not collide
-            if (Mode == MachoNetMode.Server)
-                Port = (ushort) new Random ().Next (26001, 27000);
+            if (this.Mode == MachoNetMode.Server)
+                this.Port = (ushort) new Random ().Next (26001, 27000);
             else
-                Port = 26000;
+                this.Port = 26000;
         }
         else
         {
-            Port = ushort.Parse (section ["port"]);
+            this.Port = ushort.Parse (section ["port"]);
         }
     }
 }

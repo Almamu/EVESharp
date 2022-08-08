@@ -23,6 +23,7 @@
 */
 
 using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;
 using EVESharp.PythonTypes.Types.Collections;

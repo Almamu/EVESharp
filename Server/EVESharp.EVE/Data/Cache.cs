@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.Node.Cache;
+using EVESharp.EVE.Network.Caching;
 
 namespace EVESharp.EVE.Data;
 

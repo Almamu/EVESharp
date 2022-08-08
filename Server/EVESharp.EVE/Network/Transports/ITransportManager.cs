@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.Node.Configuration;
+using EVESharp.Common.Configuration;
 
 namespace EVESharp.EVE.Network.Transports;
 

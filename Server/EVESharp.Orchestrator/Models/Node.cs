@@ -1,4 +1,4 @@
-namespace EVESharp.Orchestator.Models;
+namespace EVESharp.Orchestrator.Models;
 
 public class Node
 {

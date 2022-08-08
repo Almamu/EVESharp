@@ -28,6 +28,7 @@ using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Collections;

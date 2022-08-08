@@ -1,4 +1,4 @@
-namespace EVESharp.Node.Cache;
+namespace EVESharp.EVE.Network.Caching;
 
 /// <summary>
 /// Different types of cache objects, used on the Load mechanism that allow you to specify a SQL query

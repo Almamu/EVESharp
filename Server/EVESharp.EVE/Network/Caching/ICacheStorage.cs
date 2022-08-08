@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Cache;
+namespace EVESharp.EVE.Network.Caching;
 
 public interface ICacheStorage
 {

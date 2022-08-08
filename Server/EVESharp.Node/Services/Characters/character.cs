@@ -32,6 +32,7 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Chat;
 using EVESharp.EVE.Services;

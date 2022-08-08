@@ -23,6 +23,7 @@
 */
 
 using EVESharp.EVE;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;

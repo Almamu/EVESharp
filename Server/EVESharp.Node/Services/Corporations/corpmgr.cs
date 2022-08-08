@@ -1,5 +1,6 @@
 ﻿using System;
 using EVESharp.EVE.Exceptions.corpRegistry;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;

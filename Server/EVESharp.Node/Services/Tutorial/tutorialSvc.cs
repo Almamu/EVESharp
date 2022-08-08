@@ -1,3 +1,4 @@
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;

@@ -5,6 +5,7 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using EVESharp.Common.Configuration;
 using EVESharp.Common.Logging;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;

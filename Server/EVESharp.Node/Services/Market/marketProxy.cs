@@ -15,6 +15,7 @@ using EVESharp.EVE.Exceptions.inventory;
 using EVESharp.EVE.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Market;

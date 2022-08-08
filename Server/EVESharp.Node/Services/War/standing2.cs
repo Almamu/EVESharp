@@ -2,6 +2,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Standings;
 using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Character;
 using EVESharp.EVE.Packets.Complex;

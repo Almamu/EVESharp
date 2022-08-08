@@ -1,4 +1,4 @@
-namespace EVESharp.Orchestator.Providers;
+namespace EVESharp.Orchestrator.Providers;
 
 public interface IStartupInfoProvider
 {

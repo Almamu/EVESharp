@@ -6,6 +6,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Packets.Complex;

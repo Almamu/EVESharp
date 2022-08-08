@@ -1,9 +1,9 @@
-using EVESharp.Orchestator.Models;
-using EVESharp.Orchestator.Providers;
+using EVESharp.Orchestrator.Models;
+using EVESharp.Orchestrator.Providers;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 
-namespace EVESharp.Orchestator.Controllers;
+namespace EVESharp.Orchestrator.Controllers;
 
 [ApiController]
 [Route ("[controller]")]
@@ -16,10 +16,10 @@ public class NodesController : ControllerBase
 
     public NodesController (Database db, ILogger <NodesController> logger, IStartupInfoProvider startupInfoProvider, IConfiguration configuration)
     {
-        DB                  = db;
-        Logger              = logger;
-        Configuration       = configuration;
-        StartupInfoProvider = startupInfoProvider;
+        this.DB                  = db;
+        this.Logger              = logger;
+        this.Configuration       = configuration;
+        this.StartupInfoProvider = startupInfoProvider;
     }
 
     [HttpGet (Name = "GetNodeList")]
@@ -28,7 +28,7 @@ public class NodesController : ControllerBase
     {
         List <Node> result = new List <Node> ();
 
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand ("SELECT id, ip, port, role, lastHeartBeat FROM cluster;", connection);
 
@@ -57,7 +57,7 @@ public class NodesController : ControllerBase
     [Produces ("application/json")]
     public ActionResult <Node> GetNodeByAddress (string address)
     {
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand ("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE address = @address;", connection);
 
@@ -85,7 +85,7 @@ public class NodesController : ControllerBase
     [Produces ("application/json")]
     public ActionResult <Node> GetNodeInformation (int nodeID)
     {
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand ("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE id = @nodeID;", connection);
 
@@ -113,7 +113,7 @@ public class NodesController : ControllerBase
     [Produces ("application/json")]
     public ActionResult <List <Node>> GetProxies ()
     {
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand ("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE role = @mode;", connection);
 
@@ -145,7 +145,7 @@ public class NodesController : ControllerBase
     [Produces ("application/json")]
     public ActionResult <List <Node>> GetServers ()
     {
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand ("SELECT id, ip, port, role, lastHeartBeat FROM cluster WHERE role = @mode;", connection);
 
@@ -181,12 +181,12 @@ public class NodesController : ControllerBase
             return this.BadRequest ($"Unknown node role... {role}");
 
         long   currentTime = DateTime.UtcNow.ToFileTimeUtc ();
-        string ip          = Request.HttpContext.Connection.RemoteIpAddress?.ToString ()!;
+        string ip          = this.Request.HttpContext.Connection.RemoteIpAddress?.ToString ()!;
         Guid   address     = Guid.NewGuid ();
 
-        Logger.LogInformation ("Registering a new node with address {address}, coming from IP {ip}", address, ip);
+        this.Logger.LogInformation ("Registering a new node with address {address}, coming from IP {ip}", address, ip);
 
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand (
                 "INSERT INTO cluster(id, ip, address, port, role, lastHeartBeat)VALUES(NULL, @ip, @address, @port, @role, @lastHeartBeat);", connection
@@ -204,10 +204,10 @@ public class NodesController : ControllerBase
             // return the data required for the node to understand what it is
             return new
             {
-                NodeId  = nodeId,
-                Address = address.ToString (),
-                TimeInterval = int.Parse (Configuration.GetSection ("Cluster") ["TimedEventsInterval"]),
-                StartupTime = StartupInfoProvider.Time.ToFileTimeUtc ()
+                NodeId       = nodeId,
+                Address      = address.ToString (),
+                TimeInterval = int.Parse (this.Configuration.GetSection ("Cluster") ["TimedEventsInterval"]),
+                StartupTime  = this.StartupInfoProvider.Time.ToFileTimeUtc ()
             };
         }
     }
@@ -215,9 +215,9 @@ public class NodesController : ControllerBase
     [HttpPost ("heartbeat")]
     public void DoHeartbeat ([FromForm] string address, [FromForm] float load)
     {
-        Logger.LogInformation ("Received heartbeat from {address} with load {load}", address, load);
+        this.Logger.LogInformation ("Received heartbeat from {address} with load {load}", address, load);
 
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand ("UPDATE cluster SET lastHeartBeat = @lastHeartBeat, `load` = @load WHERE address LIKE @address;", connection);
 
@@ -234,7 +234,7 @@ public class NodesController : ControllerBase
     [Produces ("application/json")]
     public ActionResult <long> GetNextNode ()
     {
-        using (MySqlConnection connection = DB.Get ())
+        using (MySqlConnection connection = this.DB.Get ())
         {
             MySqlCommand cmd = new MySqlCommand (
                 "SELECT id, `load` FROM cluster WHERE lastHeartBeat > @lastHeartBeat AND role LIKE @role ORDER BY `load` DESC LIMIT 1;", connection
@@ -250,7 +250,7 @@ public class NodesController : ControllerBase
                 if (reader.Read () == false)
                     return this.BadRequest ();
 
-                Logger.LogInformation ("Returned node ({nodeID}) with lowest load ({load})", reader.GetInt32 (0), reader.GetDouble (1));
+                this.Logger.LogInformation ("Returned node ({nodeID}) with lowest load ({load})", reader.GetInt32 (0), reader.GetDouble (1));
 
                 return reader.GetInt64 (0);
             }
