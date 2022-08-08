@@ -23,10 +23,10 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using ItemDB = EVESharp.Node.Database.ItemDB;
-using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Alliances;
 
@@ -41,12 +41,12 @@ public class allianceRegistry : MultiClientBoundService
     private INotificationSender Notifications  { get; }
     private IItems              Items          { get; }
     private Alliance            Alliance       { get; }
-    private SessionManager      SessionManager { get; }
+    private ISessionManager      SessionManager { get; }
     private ClusterManager      ClusterManager { get; }
 
     public allianceRegistry (
         IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, IItems items, INotificationSender notificationSender,
-        BoundServiceManager manager,            SessionManager sessionManager, ClusterManager clusterManager, ItemDB itemDB
+        BoundServiceManager manager,            ISessionManager sessionManager, ClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
         Database       = databaseConnection;
@@ -63,7 +63,7 @@ public class allianceRegistry : MultiClientBoundService
 
     private allianceRegistry (
         Alliance alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, IItems items, INotificationSender notificationSender,
-        SessionManager sessionManager, MultiClientBoundService parent
+        ISessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
         Database       = databaseConnection;

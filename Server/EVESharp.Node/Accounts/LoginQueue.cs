@@ -23,6 +23,7 @@
 */
 
 using EVESharp.Database;
+using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Configuration;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
@@ -30,7 +31,7 @@ using EVESharp.EVE.Packets;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 
-namespace EVESharp.EVE.Accounts;
+namespace EVESharp.Node.Accounts;
 
 public class LoginQueue : MessageProcessor <LoginQueueEntry>
 {
@@ -41,8 +42,8 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
         : base (logger, 5)
     {
         // login should not be using too many processes
-        Database      = databaseConnection;
-        Configuration = configuration;
+        this.Database      = databaseConnection;
+        this.Configuration = configuration;
     }
 
     public void Enqueue (MachoUnauthenticatedTransport transport, AuthenticationReq req)
@@ -62,17 +63,17 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
         LoginStatus status = LoginStatus.Waiting;
         
         // make some accommodations for the auto-account mechanism
-        if (Database.ActExists (entry.Request.user_name) == false && this.Configuration.Autoaccount)
+        if (this.Database.ActExists (entry.Request.user_name) == false && this.Configuration.Autoaccount)
         {
-            Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
+            this.Log.Information ($"Auto account enabled, creating account for user {entry.Request.user_name}");
 
             // create the account
-            Database.ActCreate (entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);
+            this.Database.ActCreate (entry.Request.user_name, entry.Request.user_password, (ulong) this.Configuration.Role);
         }
 
-        if (Database.ActLogin (entry.Request.user_name, entry.Request.user_password, out int? accountID, out ulong? role, out bool? banned) == false || banned == true)
+        if (this.Database.ActLogin (entry.Request.user_name, entry.Request.user_password, out int? accountID, out ulong? role, out bool? banned) == false || banned == true)
         {
-            Log.Verbose (": Rejected by database");
+            this.Log.Verbose (": Rejected by database");
 
             status = LoginStatus.Failed;
         }
@@ -83,7 +84,7 @@ public class LoginQueue : MessageProcessor <LoginQueueEntry>
             status = LoginStatus.Success;
 
             // register player to the new address
-            Database.CluRegisterClientAddress ((int) accountID, entry.Connection.MachoNet.NodeID);
+            this.Database.CluRegisterClientAddress ((int) accountID, entry.Connection.MachoNet.NodeID);
         }
 
         entry.Connection.SendLoginNotification (status, (int) accountID, (ulong) role);

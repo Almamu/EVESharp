@@ -15,17 +15,17 @@ using Serilog;
 
 namespace EVESharp.Node.Server.Shared;
 
-public class ClusterManager
+public class ClusterManager : IClusterManager
 {
-    public  IMachoNet        MachoNet         { get; }
-    public  ILogger          Log              { get; }
-    public  ITransportManager TransportManager { get; }
-    public  HttpClient       HttpClient       { get; }
-    private DateTime         IntervalStart    { get; set; }
-    private int              IntervalDuration { get; set; }
-    private ITimers          Timers           { get; }
-    private  Timer <object?>  HeartbeatTimer   { get; }
-    private Timer <object?>  ClusterTimer     { get; set; }
+    private IMachoNet         MachoNet         { get; }
+    private ILogger           Log              { get; }
+    private ITransportManager TransportManager { get; }
+    private HttpClient        HttpClient       { get; }
+    private DateTime          IntervalStart    { get; set; }
+    private int               IntervalDuration { get; set; }
+    private ITimers           Timers           { get; }
+    private Timer <object?>   HeartbeatTimer   { get; }
+    private Timer <object?>   ClusterTimer     { get; set; }
     /// <summary>
     /// The event used when a timed event has to happen cluster-wide
     /// </summary>

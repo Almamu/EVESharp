@@ -9,19 +9,15 @@ using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Data.Inventory;
-using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.Node.Server.Shared.Messages;
-using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Corporations;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 using OnItemChange = EVESharp.Node.Notifications.Nodes.Inventory.OnItemChange;
-using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Server.Shared.Handlers;
 
@@ -34,11 +30,11 @@ public class LocalNotificationHandler
     public IItems         Items         { get; }
     public ISolarSystems       SolarSystems       { get; }
     public INotificationSender  Notifications       { get; }
-    public SessionManager      SessionManager      { get; }
+    public ISessionManager      SessionManager      { get; }
 
     public LocalNotificationHandler (
         IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IItems items, ISolarSystems solarSystems,
-        INotificationSender notificationSender, SessionManager sessionManager
+        INotificationSender notificationSender, ISessionManager sessionManager
     )
     {
         MachoNet            = machoNet;

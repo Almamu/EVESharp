@@ -13,6 +13,7 @@ using EVESharp.Node.Cache;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -36,11 +37,11 @@ public class facWarMgr : Service
     private         CacheStorage        CacheStorage   { get; }
     private         IItems              Items          { get; }
     private         INotificationSender Notifications  { get; }
-    private         SessionManager      SessionManager { get; }
+    private         ISessionManager      SessionManager { get; }
 
     public facWarMgr (
         ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, IItems items, INotificationSender notificationSender,
-        SessionManager sessionManager
+        ISessionManager sessionManager
     )
     {
         ChatDB         = chatDB;

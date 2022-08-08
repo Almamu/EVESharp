@@ -9,7 +9,7 @@ namespace EVESharp.EVE.Sessions;
 /// <summary>
 /// A simple session manager to keep track of all the sessions registered
 /// </summary>
-public class SessionManager
+public abstract class SessionManager : ISessionManager
 {
     /// <summary>
     /// The real storage of sessions happens here
@@ -23,6 +23,13 @@ public class SessionManager
     protected void RegisterSession(Session source)
     {
         this.mSessions.Add(source.UserID, source);
+    }
+
+    public abstract void InitializeSession (Session   session);
+    public abstract void PerformSessionUpdate (string idType, int id, Session newValues);
+    void ISessionManager.FreeSession (Session         session)
+    {
+        this.FreeSession (session);
     }
 
     /// <summary>

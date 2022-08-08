@@ -12,6 +12,7 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -27,11 +28,11 @@ public class ship : ClientBoundService
     private         IItems               Items              { get; }
     private         ITypes              Types              => this.Items.Types;
     private         ISolarSystems       SolarSystems       { get; }
-    private         SessionManager      SessionManager     { get; }
+    private         ISessionManager      SessionManager     { get; }
     private         IDogmaNotifications  DogmaNotifications { get; }
     private         IDatabaseConnection Database           { get; }
 
-    public ship (IItems items, BoundServiceManager manager, SessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
+    public ship (IItems items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
                  ISolarSystems solarSystems) : base (manager)
     {
         Items              = items;
@@ -42,7 +43,7 @@ public class ship : ClientBoundService
     }
 
     protected ship (
-        ItemEntity location, IItems items, BoundServiceManager manager, SessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
+        ItemEntity location, IItems items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
         ISolarSystems solarSystems
     ) : base (manager, session, location.ID)
     {

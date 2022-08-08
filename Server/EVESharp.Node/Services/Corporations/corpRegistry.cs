@@ -31,6 +31,7 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Server.Shared;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -64,7 +65,7 @@ public class corpRegistry : MultiClientBoundService
     public  OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
     private IAncestries                Ancestries          { get; }
     private IConstants                  Constants           { get; }
-    private SessionManager             SessionManager      { get; }
+    private ISessionManager             SessionManager      { get; }
     private ClusterManager             ClusterManager      { get; }
 
     // constants
@@ -74,7 +75,7 @@ public class corpRegistry : MultiClientBoundService
     public corpRegistry (
         CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets      wallets,      IItems items, IConstants constants, BoundServiceManager manager,
-        IAncestries    ancestries,  SessionManager      sessionManager,     ClusterManager clusterManager, ItemDB itemDB
+        IAncestries    ancestries,  ISessionManager      sessionManager,     ClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
         DB             = db;
@@ -97,7 +98,7 @@ public class corpRegistry : MultiClientBoundService
     protected corpRegistry (
         CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, INotificationSender notificationSender,
         MailManager    mailManager,    IWallets     wallets,       IConstants constants, IItems items, IAncestries ancestries,
-        SessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent, ItemDB itemDB
+        ISessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent, ItemDB itemDB
     ) : base (parent, corp.ID)
     {
         DB                                = db;

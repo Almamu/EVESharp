@@ -44,6 +44,7 @@ using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
+using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -69,14 +70,14 @@ public class character : Service
     private IWallets     Wallets  { get; }
     private IAncestries         Ancestries     { get; }
     private IBloodlines         Bloodlines     { get; }
-    private SessionManager     SessionManager { get; }
+    private ISessionManager     SessionManager { get; }
     private ILogger            Log            { get; }
 
     public character (
         CacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
         IItems        items,        ILogger       logger,        Character  configuration,
         INotificationSender notificationSender, IWallets wallets, IAncestries ancestries, IBloodlines bloodlines,
-        SessionManager     sessionManager
+        ISessionManager     sessionManager
     )
     {
         Log                 = logger;

@@ -24,7 +24,7 @@ public class SessionManager : EVE.Sessions.SessionManager
         TransportManager.OnClientResolved   += this.OnClientResolved;
     }
 
-    public void InitializeSession (Session session)
+    public override void InitializeSession (Session session)
     {
         // add the session to the list first
         this.RegisterSession (session);
@@ -48,7 +48,7 @@ public class SessionManager : EVE.Sessions.SessionManager
     /// <param name="idType"></param>
     /// <param name="id"></param>
     /// <param name="newValues">The new values for the session</param>
-    public void PerformSessionUpdate (string idType, int id, Session newValues)
+    public override void PerformSessionUpdate (string idType, int id, Session newValues)
     {
         switch (MachoNet.Mode)
         {

@@ -37,6 +37,8 @@ using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Sessions;
+using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Chat;
@@ -69,7 +71,6 @@ using EVESharp.Node.Services.Network;
 using EVESharp.Node.Services.Stations;
 using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
-using EVESharp.Node.Sessions;
 using EVESharp.Node.SimpleInject;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
@@ -81,6 +82,7 @@ using Constants = EVESharp.Node.Configuration.Constants;
 using Container = SimpleInjector.Container;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;
 using MessageProcessor = EVESharp.Node.Server.Single.Messages.MessageProcessor;
+using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node;
 
@@ -180,7 +182,7 @@ internal class Program
         // register all the dependencies we have available
         container.RegisterInstance (new HttpClient ());
         container.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
-        container.Register <SessionManager> (Lifestyle.Singleton);
+        container.Register <ISessionManager, SessionManager> (Lifestyle.Singleton);
         container.Register <CacheStorage> (Lifestyle.Singleton);
         container.Register <IMetaInventories, MetaInventories> (Lifestyle.Singleton);
         container.Register <IDefaultAttributes, DefaultAttributes> (Lifestyle.Singleton);
