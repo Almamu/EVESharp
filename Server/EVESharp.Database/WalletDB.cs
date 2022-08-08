@@ -119,4 +119,14 @@ public static class WalletDB
             }
         );
     }
+
+
+    /// <summary>
+    /// Obtains the keymap list for the wallet, ready for the EVE Client
+    /// </summary>
+    /// <returns></returns>
+    public static Rowset MktGetKeyMap (this IDatabaseConnection Database)
+    {
+        return Database.Rowset ("MktKeyMap");
+    }
 }

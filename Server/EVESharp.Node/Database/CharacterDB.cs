@@ -467,26 +467,6 @@ public class CharacterDB : DatabaseAccessor
     }
 
     /// <summary>
-    /// Obtains the keymap list for the wallet, ready for the EVE Client
-    /// </summary>
-    /// <returns></returns>
-    public Rowset GetKeyMap ()
-    {
-        IDbConnection connection = null;
-
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT accountKey as keyID, accountType as keyType, accountName as keyName, description FROM market_keyMap"
-        );
-
-        using (connection)
-        using (reader)
-        {
-            return Rowset.FromDataReader (Database, reader);
-        }
-    }
-
-    /// <summary>
     /// Loads the current skill queue for the given character
     /// </summary>
     /// <param name="character">Character to get the queue for</param>

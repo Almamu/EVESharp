@@ -1,8 +1,8 @@
-/*Table structure for table `market_keyMap` */
+/*Table structure for table `mktKeyMap` */
 
-DROP TABLE IF EXISTS `market_keyMap`;
+DROP TABLE IF EXISTS `mktKeyMap`;
 
-CREATE TABLE `market_keyMap` (
+CREATE TABLE `mktKeyMap` (
   `accountKey` int(10) unsigned NOT NULL default '0',
   `accountType` varchar(100) NOT NULL default '',
   `accountName` varchar(100) NOT NULL default '',
@@ -10,9 +10,9 @@ CREATE TABLE `market_keyMap` (
   PRIMARY KEY  (`accountKey`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Data for the table `market_keyMap` */
+/*Data for the table `mktKeyMap` */
 
-insert  into `market_keyMap`(`accountKey`,`accountType`,`accountName`,`description`) values
+insert  into `mktKeyMap`(`accountKey`,`accountType`,`accountName`,`description`) values
 	(1000,'A','cash',''),
 	(1001,'A','cash2',''),
 	(1002,'A','cash3',''),

@@ -62,7 +62,7 @@ public class account : Service
 
     public PyDataType GetKeyMap (CallInformation call)
     {
-        return DB.GetKeyMap ();
+        return Database.MktGetKeyMap ();
     }
 
     public PyDataType GetEntryTypes (CallInformation call)
