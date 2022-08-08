@@ -687,7 +687,7 @@ public class Items : IItems
             this.DestroyItems (inventory.Items);
 
         // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT NEED EXTRA CLEANUP
-        this.ItemDB.DestroyItem (item);
+        Database.InvDestroyItem (item);
     }
 
     private void OnItemPersisted (ItemEntity item)
@@ -734,7 +734,7 @@ public class Items : IItems
     private void OnItemDisposed (ItemEntity item)
     {
         // update the ownership information
-        this.ItemDB.UnloadItem (item.ID);
+        Database.InvSetItemNode (item.ID, 0);
     }
 
     public void DestroyItems (ConcurrentDictionary <int, ItemEntity> items)

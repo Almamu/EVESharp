@@ -22,7 +22,6 @@ using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using ItemDB = EVESharp.Node.Database.ItemDB;
 
 namespace EVESharp.Node.Services.Alliances;
 
@@ -33,7 +32,6 @@ public class allianceRegistry : MultiClientBoundService
     private IDatabaseConnection Database       { get; }
     private CorporationDB       CorporationDB  { get; }
     private ChatDB              ChatDB         { get; }
-    private ItemDB              ItemDB         { get; }
     private INotificationSender Notifications  { get; }
     private IItems              Items          { get; }
     private Alliance            Alliance       { get; }
@@ -42,7 +40,7 @@ public class allianceRegistry : MultiClientBoundService
 
     public allianceRegistry (
         IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, IItems items, INotificationSender notificationSender,
-        BoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager, ItemDB itemDB
+        BoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager
     ) : base (manager)
     {
         Database       = databaseConnection;
@@ -52,7 +50,6 @@ public class allianceRegistry : MultiClientBoundService
         this.Items     = items;
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
-        ItemDB         = itemDB;
 
         ClusterManager.OnClusterTimer += PerformTimedEvents;
     }
@@ -103,7 +100,7 @@ public class allianceRegistry : MultiClientBoundService
             // first update the corporation to join it to the alliance in the database
             CorporationDB.UpdateCorporationInformation (entry.CorporationID, entry.AllianceID, DateTime.UtcNow.ToFileTimeUtc (), entry.ExecutorCorpID);
             // now check if any node has it loaded and notify it about the changes
-            long nodeID = this.ItemDB.GetItemNode (entry.CorporationID);
+            long nodeID = Database.InvGetItemNode (entry.CorporationID);
 
             if (nodeID > 0)
             {

@@ -29,7 +29,6 @@ using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using ItemDB = EVESharp.Node.Database.ItemDB;
 using OnCorporationChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationChanged;
 using OnCorporationMemberChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationMemberChanged;
 
@@ -47,18 +46,17 @@ public class corpRegistry : MultiClientBoundService
     private CorporationDB              DB                  { get; }
     private ChatDB                     ChatDB              { get; }
     private CharacterDB                CharacterDB         { get; }
-    private ItemDB                     ItemDB              { get; }
     private IDatabaseConnection        Database            { get; }
     private IItems                     Items               { get; }
-    private IWallets             Wallets       { get; }
+    private IWallets                   Wallets             { get; }
     private INotificationSender        Notifications       { get; }
     private MailManager                MailManager         { get; }
     public  MembersSparseRowsetService MembersSparseRowset { get; private set; }
     public  OfficesSparseRowsetService OfficesSparseRowset { get; private set; }
     private IAncestries                Ancestries          { get; }
-    private IConstants                  Constants           { get; }
-    private ISessionManager             SessionManager      { get; }
-    private IClusterManager             ClusterManager      { get; }
+    private IConstants                 Constants           { get; }
+    private ISessionManager            SessionManager      { get; }
+    private IClusterManager            ClusterManager      { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
@@ -67,7 +65,7 @@ public class corpRegistry : MultiClientBoundService
     public corpRegistry (
         CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets      wallets,      IItems items, IConstants constants, BoundServiceManager manager,
-        IAncestries    ancestries,  ISessionManager      sessionManager,     IClusterManager clusterManager, ItemDB itemDB
+        IAncestries    ancestries,  ISessionManager      sessionManager,     IClusterManager clusterManager
     ) : base (manager)
     {
         DB             = db;
@@ -82,7 +80,6 @@ public class corpRegistry : MultiClientBoundService
         Ancestries     = ancestries;
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
-        ItemDB         = itemDB;
 
         ClusterManager.OnClusterTimer += this.PerformTimedEvents;
     }
@@ -90,7 +87,7 @@ public class corpRegistry : MultiClientBoundService
     protected corpRegistry (
         CorporationDB  db,             IDatabaseConnection databaseConnection, ChatDB    chatDB, CharacterDB characterDB, INotificationSender notificationSender,
         MailManager    mailManager,    IWallets     wallets,       IConstants constants, IItems items, IAncestries ancestries,
-        ISessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent, ItemDB itemDB
+        ISessionManager sessionManager, Corporation        corp,                int       isMaster, corpRegistry parent
     ) : base (parent, corp.ID)
     {
         DB                                = db;
@@ -108,7 +105,6 @@ public class corpRegistry : MultiClientBoundService
         CorporationAdvertisementFlatFee   = Constants.CorporationAdvertisementFlatFee;
         CorporationAdvertisementDailyRate = Constants.CorporationAdvertisementDailyRate;
         Ancestries                        = ancestries;
-        ItemDB                            = itemDB;
     }
 
     /// <summary>
@@ -1000,7 +996,7 @@ public class corpRegistry : MultiClientBoundService
             }
 
             Notifications.NotifyNode (
-                this.ItemDB.GetItemNode (characterID),
+                Database.InvGetItemNode (characterID),
                 new OnCorporationMemberUpdated (
                     characterID, currentRoles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
                     rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, currentBaseID,
@@ -1190,7 +1186,7 @@ public class corpRegistry : MultiClientBoundService
 
         // notify the node about the changes
         Notifications.NotifyNode (
-            this.ItemDB.GetItemNode (characterID),
+            Database.InvGetItemNode (characterID),
             new OnCorporationMemberUpdated (
                 characterID, roles, grantableRoles, rolesAtHQ, grantableRolesAtHQ,
                 rolesAtBase, grantableRolesAtBase, rolesAtOther, grantableRolesAtOther, baseID, currentBlockRoles, titleMask ?? 0
@@ -1423,7 +1419,7 @@ public class corpRegistry : MultiClientBoundService
 
         return new corpRegistry (
             DB, Database, ChatDB, CharacterDB, Notifications, MailManager, this.Wallets, Constants,
-            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this, this.ItemDB
+            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this
         );
     }
 
@@ -1558,7 +1554,7 @@ public class corpRegistry : MultiClientBoundService
             CharacterDB.CreateEmploymentRecord (characterID, corporationID, DateTime.UtcNow.ToFileTimeUtc ());
 
             // check if the character is connected and update it's session
-            int characterNodeID = this.ItemDB.GetItemNode (characterID);
+            long characterNodeID = Database.InvGetItemNode (characterID);
 
             if (characterNodeID > 0)
             {
@@ -1579,8 +1575,8 @@ public class corpRegistry : MultiClientBoundService
                     new Notifications.Nodes.Corps.OnCorporationMemberChanged (characterID, oldCorporationID, corporationID);
 
                 // TODO: WORKOUT A BETTER WAY OF NOTIFYING THIS TO THE NODE, IT MIGHT BE BETTER TO INSPECT THE SESSION CHANGE INSTEAD OF DOING IT LIKE THIS
-                long newCorporationNodeID = this.ItemDB.GetItemNode (corporationID);
-                long oldCorporationNodeID = this.ItemDB.GetItemNode (oldCorporationID);
+                long newCorporationNodeID = Database.InvGetItemNode (corporationID);
+                long oldCorporationNodeID = Database.InvGetItemNode (oldCorporationID);
 
                 // get the node where the character is loaded
                 // the node where the corporation is loaded also needs to get notified so the members rowset can be updated

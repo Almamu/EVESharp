@@ -696,15 +696,6 @@ public class ItemDB : DatabaseAccessor
         }
     }
 
-    public void UnloadItem (int itemID)
-    {
-        // non-user generated items are not owned by anyone
-        if (itemID < ItemRanges.USERGENERATED_ID_MIN)
-            return;
-
-        Database.Prepare ("UPDATE invItems SET nodeID = 0 WHERE itemID = @itemID", new Dictionary <string, object> {{"@itemID", itemID}});
-    }
-
     private Dictionary <int, Attribute> LoadAttributesForItem (int itemID)
     {
         IDbConnection connection = null;
@@ -925,22 +916,6 @@ public class ItemDB : DatabaseAccessor
         );
     }
 
-    public void DestroyItem (ItemEntity item)
-    {
-        Database.Prepare (
-            "DELETE FROM invItems WHERE itemID = @itemID",
-            new Dictionary <string, object> {{"@itemID", item.ID}}
-        );
-        Database.Prepare (
-            "DELETE FROM eveNames WHERE itemID = @itemID",
-            new Dictionary <string, object> {{"@itemID", item.ID}}
-        );
-        Database.Prepare (
-            "DELETE FROM invItemsAttributes WHERE itemID = @itemID",
-            new Dictionary <string, object> {{"@itemID", item.ID}}
-        );
-    }
-
     public void UpdateItemLocation (int itemID, int newLocationID)
     {
         Database.Prepare (
@@ -975,24 +950,5 @@ public class ItemDB : DatabaseAccessor
                 {"@quantity", newQuantity}
             }
         );
-    }
-
-    public int GetItemNode (int itemID)
-    {
-        IDbConnection connection = null;
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT nodeID FROM invItems WHERE itemID = @itemID",
-            new Dictionary <string, object> {{"@itemID", itemID}}
-        );
-
-        using (connection)
-        using (reader)
-        {
-            if (reader.Read () == false)
-                return 0;
-
-            return reader.GetInt32 (0);
-        }
     }
 }

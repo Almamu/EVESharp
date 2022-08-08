@@ -306,7 +306,7 @@ public class corpStationMgr : ClientBoundService
         // notify all the characters about the bill received
         Notifications.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
         // notify the node with the new office
-        int nodeID = this.ItemDB.GetItemNode (call.Session.CorporationID);
+        long nodeID = Database.InvGetItemNode (call.Session.CorporationID);
         
         if (nodeID > 0)
             Notifications.NotifyNode (nodeID, new OnCorporationOfficeRented {CorporationID = call.Session.CorporationID, StationID = stationID, OfficeFolderID = item.ID, TypeID = (int) TypeID.OfficeFolder});
