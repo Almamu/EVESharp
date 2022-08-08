@@ -3,7 +3,7 @@ using System.IO;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Dogma.Exception;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFASSOCIATION : Opcode
 {
@@ -16,7 +16,7 @@ public class OpcodeDEFASSOCIATION : Opcode
         if (Enum.TryParse (reader.ReadString (), out Association association) == false)
             throw new DogmaMachineException ("Unknown value for DEFASSOCIATION");
 
-        Association = association;
+        this.Association = association;
 
         return this;
     }

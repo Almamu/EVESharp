@@ -12,7 +12,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

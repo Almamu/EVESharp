@@ -1,29 +1,26 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
-using Type = EVESharp.EVE.Data.Inventory.Type;
 
-namespace EVESharp.Node.Data.Inventory;
+namespace EVESharp.EVE.Data.Inventory;
 
 public interface IItems
 {
-    public IAttributes   AttributeManager { get; }
-    public ICategories   Categories       { get; }
-    public IGroups       Groups           { get; }
-    public ITypes        Types            { get; }
-    public IStations     Stations         { get; }
-    public ISolarSystems SolarSystems     { get; }
-    public IAncestries   Ancestries       { get; }
-    public IBloodlines   Bloodlines       { get; }
-    public IFactions     Factions         { get; }
-    public IExpressions  Expressions      { get; }
+    public IDefaultAttributes DefaultAttributes { get; }
+    public IAttributes        Attributes        { get; }
+    public ICategories        Categories        { get; }
+    public IGroups            Groups            { get; }
+    public ITypes             Types             { get; }
+    public IStations          Stations          { get; }
+    public ISolarSystems      SolarSystems      { get; }
+    public IAncestries        Ancestries        { get; }
+    public IBloodlines        Bloodlines        { get; }
+    public IFactions          Factions          { get; }
+    public IExpressions       Expressions       { get; }
     
-    public IMetaInventoryManager MetaInventoryManager { get; }
+    public IMetaInventories MetaInventories { get; }
     
     public EVESystem                     OwnerBank         { get; }
     public EVESystem                     LocationSystem    { get; }
@@ -103,7 +100,7 @@ public interface IItems
     /// <param name="stationID">The stationID to get</param>
     /// <returns>The item</returns>
     /// <exception cref="ArgumentOutOfRangeException">If the id is not a station</exception>
-    Station GetStaticStation (int stationID);
+    Items.Types.Station GetStaticStation (int stationID);
 
     /// <summary>
     /// Gets the <see cref="ItemEntity"/> of the given solar system

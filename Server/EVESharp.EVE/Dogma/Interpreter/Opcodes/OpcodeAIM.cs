@@ -2,9 +2,9 @@
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Dogma.Exception;
-using EVESharp.Node.Sessions;
+using EVESharp.EVE.Sessions;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 /// <summary>
 /// AIM stands for AddItemModifier
@@ -18,8 +18,8 @@ public class OpcodeAIM : OpcodeRunnable
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Opcode leftSide  = Interpreter.Step (reader);
-        Opcode rightSide = Interpreter.Step (reader);
+        Opcode leftSide  = this.Interpreter.Step (reader);
+        Opcode rightSide = this.Interpreter.Step (reader);
 
         // ensure that both sides can return a value
         if (leftSide is not OpcodeEFF left)
@@ -27,24 +27,24 @@ public class OpcodeAIM : OpcodeRunnable
         if (rightSide is not OpcodeDEFATTRIBUTE right)
             throw new DogmaMachineException ("The right side of a AIM operand must be DEFATTRIBUTE");
 
-        Change    = left;
-        Attribute = right;
+        this.Change    = left;
+        this.Attribute = right;
 
         return this;
     }
 
     public override void Execute ()
     {
-        ItemEntity     item      = Change.RightSide.ItemToAffect.GetItem ();
-        ItemEntity     target    = Interpreter.Environment.Self;
-        AttributeTypes attribute = Change.RightSide.AttributeToAffect.Attribute;
+        ItemEntity     item      = this.Change.RightSide.ItemToAffect.GetItem ();
+        ItemEntity     target    = this.Interpreter.Environment.Self;
+        AttributeTypes attribute = this.Change.RightSide.AttributeToAffect.Attribute;
 
         // add the modifier to the attribute
-        item.Attributes [attribute].AddModifier (Change.LeftSide.Association, target.Attributes [Attribute.Attribute]);
+        item.Attributes [attribute].AddModifier (this.Change.LeftSide.Association, target.Attributes [this.Attribute.Attribute]);
 
         // notify the character
-        Interpreter.Environment.DogmaNotifications.NotifyAttributeChange (
-            Interpreter.Environment.Session.EnsureCharacterIsSelected (),
+        this.Interpreter.Environment.DogmaNotifications.NotifyAttributeChange (
+            this.Interpreter.Environment.Session.EnsureCharacterIsSelected (),
             attribute,
             item
         );

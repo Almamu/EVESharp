@@ -1,6 +1,4 @@
-using EVESharp.EVE.Data.Inventory;
-
-namespace EVESharp.Node.Inventory;
+namespace EVESharp.EVE.Data.Inventory;
 
 public interface IGroups
 {

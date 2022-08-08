@@ -1,3 +1,4 @@
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
@@ -5,7 +6,6 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -17,14 +17,14 @@ public class charmgr : Service
     private         CharacterDB    DB            { get; }
     private         MarketDB       MarketDB      { get; }
     private         IItems    Items   { get; }
-    private         IWalletManager WalletManager { get; }
+    private         IWallets Wallets { get; }
 
-    public charmgr (CharacterDB db, MarketDB marketDB, IItems items, IWalletManager WalletManager)
+    public charmgr (CharacterDB db, MarketDB marketDB, IItems items, IWallets wallets)
     {
         DB                 = db;
         MarketDB           = marketDB;
         this.Items         = items;
-        this.WalletManager = WalletManager;
+        this.Wallets = wallets;
     }
 
     public PyDataType GetPublicInfo (CallInformation call, PyInteger characterID)
@@ -51,7 +51,7 @@ public class charmgr : Service
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         // access the wallet and do the required changes
-        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             // ensure the character has enough balance
             wallet.EnsureEnoughBalance (bounty);

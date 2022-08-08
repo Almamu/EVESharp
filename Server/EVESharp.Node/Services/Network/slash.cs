@@ -13,10 +13,10 @@ using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Skills;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Sessions;
@@ -38,11 +38,11 @@ public class slash : Service
     private         ILogger            Log                { get; }
     private         CharacterDB        CharacterDB        { get; }
     private         INotificationSender Notifications      { get; }
-    private         IWalletManager     WalletManager      { get; }
+    private         IWallets     Wallets      { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
 
     public slash (
-        ILogger    logger, IItems items, CharacterDB characterDB, INotificationSender notificationSender, IWalletManager walletManager,
+        ILogger    logger, IItems items, CharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
         IDogmaNotifications dogmaNotifications
     )
     {
@@ -50,7 +50,7 @@ public class slash : Service
         this.Items              = items;
         CharacterDB             = characterDB;
         Notifications           = notificationSender;
-        WalletManager           = walletManager;
+        this.Wallets            = wallets;
         this.DogmaNotifications = dogmaNotifications;
 
         // register commands
@@ -128,7 +128,7 @@ public class slash : Service
             targetCharacterID = matches [0];
         }
 
-        using IWallet wallet = WalletManager.AcquireWallet (targetCharacterID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (targetCharacterID, WalletKeys.MAIN);
         {
             if (iskQuantity < 0)
             {

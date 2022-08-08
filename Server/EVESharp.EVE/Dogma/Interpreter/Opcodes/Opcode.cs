@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public abstract class Opcode
 {
@@ -8,7 +8,7 @@ public abstract class Opcode
 
     public Opcode (Interpreter interpreter)
     {
-        Interpreter = interpreter;
+        this.Interpreter = interpreter;
     }
 
     public abstract Opcode LoadOpcode (BinaryReader reader);

@@ -5,6 +5,7 @@ using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
@@ -16,7 +17,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -355,7 +355,7 @@ public class BoundInventory : ClientBoundService
                 if (item.OwnerID != oldOwnerID)
                     Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
                 // update meta inventories too
-                this.Items.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
+                this.Items.MetaInventories.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
                 // finally persist the item changes
                 item.Persist ();
@@ -461,7 +461,7 @@ public class BoundInventory : ClientBoundService
                 // notify the new owner
                 Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
                 // update meta inventories too
-                this.Items.MetaInventoryManager.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
+                this.Items.MetaInventories.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
 
                 // ensure the new inventory knows
                 this.mInventory.AddItem (item);

@@ -1,7 +1,7 @@
 ﻿using EVESharp.Common.Network.Messages;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Notifications;
 using EVESharp.Node.Data.Inventory;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared.Handlers;
 using EVESharp.Node.Server.Shared.Helpers;

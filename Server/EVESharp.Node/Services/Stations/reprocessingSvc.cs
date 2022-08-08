@@ -16,7 +16,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -298,7 +297,7 @@ public class reprocessingSvc : ClientBoundService
 
         Corporation corporation = this.Items.GetItem <Corporation> (station.OwnerID);
         ItemInventory inventory =
-            this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
+            this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 
         return new reprocessingSvc (
             ReprocessingDB, StandingDB, corporation, station, inventory, this.Items, BoundServiceManager, this.DogmaNotifications,

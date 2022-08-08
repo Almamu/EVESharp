@@ -5,7 +5,6 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Database.Inventory;
@@ -81,7 +80,7 @@ public static class InventoryItemsDB
         }
     }
 
-    public static Dictionary <int, Type> LoadItemTypes (this IDatabaseConnection Database, IAttributes attributes, IGroups groups, IExpressions expressions)
+    public static Dictionary <int, Type> LoadItemTypes (this IDatabaseConnection Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressions)
     {
         // item effects should be loaded before as they're needed for the types instantiation
         Dictionary <int, Dictionary <int, Effect>> effects = Database.InvLoadItemEffects (expressions);
@@ -101,8 +100,8 @@ public static class InventoryItemsDB
             {
                 int typeID = reader.GetInt32 (0);
 
-                if (attributes.DefaultAttributes.TryGetValue (typeID, out Dictionary <int, Attribute> defaultAttributes) == false)
-                    defaultAttributes = new Dictionary <int, Attribute> ();
+                if (defaultAttributes.TryGetValue (typeID, out Dictionary <int, Attribute> typeAttributes) == false)
+                    typeAttributes = new Dictionary <int, Attribute> ();
 
                 if (effects.TryGetValue (typeID, out Dictionary <int, Effect> typeEffects) == false)
                     typeEffects = new Dictionary <int, Effect> ();
@@ -123,7 +122,7 @@ public static class InventoryItemsDB
                     reader.GetBoolean (12),
                     reader.GetInt32OrDefault (13),
                     reader.GetDouble (14),
-                    defaultAttributes,
+                    typeAttributes,
                     typeEffects
                 );
 

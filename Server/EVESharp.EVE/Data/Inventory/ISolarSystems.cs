@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 
-namespace EVESharp.Node.Data.Inventory;
+namespace EVESharp.EVE.Data.Inventory;
 
 public interface ISolarSystems : IDictionary <int, SolarSystem>
 {

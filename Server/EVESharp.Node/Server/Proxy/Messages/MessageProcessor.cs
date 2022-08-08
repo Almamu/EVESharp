@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Notifications;
 using EVESharp.Node.Data.Inventory;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;

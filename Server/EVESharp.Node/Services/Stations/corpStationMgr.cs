@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -19,7 +20,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
@@ -42,14 +42,14 @@ public class corpStationMgr : ClientBoundService
     private         StationDB           StationDB     { get; }
     private         ITypes              Types         => this.Items.Types;
     private         ISolarSystems       SolarSystems  { get; }
-    private         IWalletManager      WalletManager { get; }
+    private         IWallets      Wallets { get; }
     private         IConstants           Constants     { get; }
     private         INotificationSender Notifications { get; }
     private         IDatabaseConnection Database      { get; }
 
     public corpStationMgr (
         MarketDB            marketDB, StationDB     stationDb,     INotificationSender  notificationSender, IItems items, IConstants constants,
-        BoundServiceManager manager, ISolarSystems solarSystems, IWalletManager walletManager, IDatabaseConnection database, ItemDB itemDB
+        BoundServiceManager manager, ISolarSystems solarSystems, IWallets wallets, IDatabaseConnection database, ItemDB itemDB
     ) : base (manager)
     {
         MarketDB      = marketDB;
@@ -57,7 +57,7 @@ public class corpStationMgr : ClientBoundService
         Notifications = notificationSender;
         Items         = items;
         Constants     = constants;
-        WalletManager = walletManager;
+        this.Wallets  = wallets;
         Database      = database;
         SolarSystems  = solarSystems;
         ItemDB        = itemDB;
@@ -66,7 +66,7 @@ public class corpStationMgr : ClientBoundService
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr (
         MarketDB            marketDB, StationDB stationDb, INotificationSender notificationSender, IItems items, IConstants constants,
-        BoundServiceManager manager,  IWalletManager walletManager, Session session, ItemDB itemDB
+        BoundServiceManager manager,  IWallets wallets, Session session, ItemDB itemDB
     ) : base (manager, session, 0)
     {
         MarketDB      = marketDB;
@@ -74,7 +74,7 @@ public class corpStationMgr : ClientBoundService
         Notifications = notificationSender;
         Items         = items;
         Constants     = constants;
-        WalletManager = walletManager;
+        this.Wallets  = wallets;
         ItemDB        = itemDB;
     }
 
@@ -163,7 +163,7 @@ public class corpStationMgr : ClientBoundService
                 throw new MedicalYouAlreadyHaveACloneContractAtThatStation ();
         }
 
-        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             double contractCost = Constants.CostCloneContract;
 
@@ -237,7 +237,7 @@ public class corpStationMgr : ClientBoundService
 
         Station station = this.Items.GetStaticStation (stationID);
 
-        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (newCloneType.BasePrice);
             wallet.CreateTransactionRecord (
@@ -288,7 +288,7 @@ public class corpStationMgr : ClientBoundService
         int ownerCorporationID = this.Items.Stations [stationID].OwnerID;
 
         // perform the transaction
-        using (IWallet corpWallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (IWallet corpWallet = this.Wallets.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             corpWallet.EnsureEnoughBalance (rentalCost);
             corpWallet.CreateJournalRecord (MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
@@ -339,7 +339,7 @@ public class corpStationMgr : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new corpStationMgr (
-            MarketDB, StationDB, Notifications, this.Items, Constants, BoundServiceManager, WalletManager,
+            MarketDB, StationDB, Notifications, this.Items, Constants, BoundServiceManager, this.Wallets,
             call.Session, this.ItemDB
         );
     }

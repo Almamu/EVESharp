@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using EVESharp.EVE.Dogma.Exception;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeSKILLCHECK : OpcodeWithBooleanOutput
 {
@@ -11,13 +11,13 @@ public class OpcodeSKILLCHECK : OpcodeWithBooleanOutput
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Opcode message = Interpreter.Step (reader);
+        Opcode message = this.Interpreter.Step (reader);
 
         // the previous opcode should be a DEFSTRING which is the error message to send to the user
         if (message is not OpcodeDEFSTRING defstring)
             throw new DogmaMachineException ("The previous opcode is not a string");
 
-        ErrorMessage = defstring;
+        this.ErrorMessage = defstring;
 
         return this;
     }
@@ -27,7 +27,7 @@ public class OpcodeSKILLCHECK : OpcodeWithBooleanOutput
         // TODO: HONOUR THE STRING PARAMETER FOR THE EXCEPTION
 
         // check if this character has the required skills to fit self
-        Interpreter.Environment.Self.CheckPrerequisites (Interpreter.Environment.Character);
+        this.Interpreter.Environment.Self.CheckPrerequisites (this.Interpreter.Environment.Character);
 
         return true;
     }

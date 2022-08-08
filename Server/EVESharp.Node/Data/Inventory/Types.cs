@@ -28,7 +28,6 @@ using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -38,9 +37,9 @@ public class Types : ITypes
     private readonly Dictionary <int, Type> mTypes;
     public Type this [TypeID id] => this [(int) id];
 
-    public Types (IDatabaseConnection Database, IAttributes attributes, IGroups groups, IExpressions expressionManager)
+    public Types (IDatabaseConnection Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressionManager)
     {
-        this.mTypes = Database.LoadItemTypes (attributes, groups, expressionManager);
+        this.mTypes = Database.LoadItemTypes (attributes, defaultAttributes, groups, expressionManager);
     }
 
     public bool ContainsKey (int typeID)

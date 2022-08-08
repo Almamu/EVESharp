@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Certificates;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.certificateMgr;
 using EVESharp.EVE.Notifications;
@@ -11,7 +12,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

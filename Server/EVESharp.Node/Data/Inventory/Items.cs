@@ -26,6 +26,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -34,7 +35,6 @@ using EVESharp.Node.Configuration;
 using EVESharp.Node.Data.Inventory.Exceptions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
@@ -50,26 +50,27 @@ public class Items : IItems
 {
     private readonly Dictionary <int, ItemEntity> mItemList = new Dictionary <int, ItemEntity> ();
 
-    public IAttributes           AttributeManager     { get; }
-    public ICategories           Categories           { get; }
-    public IGroups               Groups               { get; }
-    public ITypes                Types                { get; }
-    public IStations             Stations             { get; }
-    public ISolarSystems         SolarSystems         { get; }
-    public IAncestries           Ancestries           { get; }
-    public IBloodlines           Bloodlines           { get; }
-    public IFactions             Factions             { get; }
-    public IExpressions          Expressions          { get; }
-    public IMetaInventoryManager MetaInventoryManager { get; }
-    public IDogmaNotifications   DogmaNotifications   { get; }
-    public ItemDB                ItemDB               { get; }
-    public CharacterDB           CharacterDB          { get; }
-    public CorporationDB         CorporationDB        { get; }
-    public InsuranceDB           InsuranceDB          { get; }
-    public SkillDB               SkillDB              { get; }
-    public ILogger               Log                  { get; }
-    public IConstants             Constants            { get; }
-    public IMachoNet             MachoNet             { get; }
+    public IDefaultAttributes  DefaultAttributes  { get; }
+    public IAttributes         Attributes         { get; }
+    public ICategories         Categories         { get; }
+    public IGroups             Groups             { get; }
+    public ITypes              Types              { get; }
+    public IStations           Stations           { get; }
+    public ISolarSystems       SolarSystems       { get; }
+    public IAncestries         Ancestries         { get; }
+    public IBloodlines         Bloodlines         { get; }
+    public IFactions           Factions           { get; }
+    public IExpressions        Expressions        { get; }
+    public IMetaInventories    MetaInventories    { get; }
+    public IDogmaNotifications DogmaNotifications { get; }
+    public ItemDB              ItemDB             { get; }
+    public CharacterDB         CharacterDB        { get; }
+    public CorporationDB       CorporationDB      { get; }
+    public InsuranceDB         InsuranceDB        { get; }
+    public SkillDB             SkillDB            { get; }
+    public ILogger             Log                { get; }
+    public IConstants          Constants          { get; }
+    public IMachoNet           MachoNet           { get; }
 
     public EVESystem    OwnerBank         { get; private set; }
     public EVESystem    LocationSystem    { get; private set; }
@@ -82,29 +83,30 @@ public class Items : IItems
     protected IDatabaseConnection Database { get; }
 
     public Items (
-        ILogger           logger, IMachoNet machoNet, IDatabaseConnection databaseConnection, IConstants constants, MetaInventoryManager metaInventoryManager,
+        ILogger           logger, IMachoNet machoNet, IDatabaseConnection databaseConnection, IConstants constants, IMetaInventories metaInventories,
         IExpressions expressions, ItemDB itemDB, CharacterDB characterDB, InsuranceDB insuranceDB, SkillDB skillDB, CorporationDB corporationDB,
         IAttributes attributes, IGroups groups, ICategories categories, ITypes types, IAncestries ancestries, IBloodlines bloodlines,
-        IStations stations, ISolarSystems solarSystems, IFactions factions, IDogmaNotifications dogmaNotifications
+        IStations stations, ISolarSystems solarSystems, IFactions factions, IDefaultAttributes defaultAttributes, IDogmaNotifications dogmaNotifications
     )
     {
         this.Log = logger;
 
-        this.Database                                    =  databaseConnection;
-        this.MachoNet                                    =  machoNet;
-        this.Constants                                   =  constants;
-        this.MetaInventoryManager                        =  metaInventoryManager;
-        this.Expressions                                 =  expressions;
-        this.MetaInventoryManager.OnMetaInventoryCreated += this.OnMetaInventoryCreated;
-        this.ItemDB                                      =  itemDB;
-        this.CharacterDB                                 =  characterDB;
-        this.InsuranceDB                                 =  insuranceDB;
-        this.SkillDB                                     =  skillDB;
-        this.CorporationDB                               =  corporationDB;
-        this.DogmaNotifications                          =  dogmaNotifications;
-        this.Factions                                    =  factions;
+        this.Database                               =  databaseConnection;
+        this.MachoNet                               =  machoNet;
+        this.Constants                              =  constants;
+        this.MetaInventories                        =  metaInventories;
+        this.Expressions                            =  expressions;
+        this.MetaInventories.OnMetaInventoryCreated += this.OnMetaInventoryCreated;
+        this.ItemDB                                 =  itemDB;
+        this.CharacterDB                            =  characterDB;
+        this.InsuranceDB                            =  insuranceDB;
+        this.SkillDB                                =  skillDB;
+        this.CorporationDB                          =  corporationDB;
+        this.DogmaNotifications                     =  dogmaNotifications;
+        this.Factions                               =  factions;
+        this.DefaultAttributes                      =  defaultAttributes;
 
-        this.AttributeManager = attributes;
+        this.Attributes = attributes;
         this.Groups           = groups;
         this.Categories       = categories;
         this.Types            = types;
@@ -328,7 +330,7 @@ public class Items : IItems
 
             // notify the meta inventory manager about the new item only if the item is user-generated
             if (item.ID >= ItemRanges.USERGENERATED_ID_MIN)
-                this.MetaInventoryManager.OnItemLoaded (wrapperItem);
+                this.MetaInventories.OnItemLoaded (wrapperItem);
 
             // ensure the item is in the loaded list
             this.mItemList.Add (item.ID, wrapperItem);
@@ -588,7 +590,7 @@ public class Items : IItems
         lock (this)
         {
             // first ensure there's no meta inventory holding this item hostage
-            if (this.MetaInventoryManager.GetOwnerInventoryAtLocation (item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _))
+            if (this.MetaInventories.GetOwnerInventoryAtLocation (item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _))
                 return;
 
             if (this.mItemList.Remove (item.ID) == false)
@@ -616,7 +618,7 @@ public class Items : IItems
                 throw new ArgumentException ("Cannot destroy an item that was not loaded by this item manager");
 
             // ensure the meta inventories know this item is not there anymore
-            this.MetaInventoryManager.OnItemDestroyed (item);
+            this.MetaInventories.OnItemDestroyed (item);
 
             // make sure the location it's at knows the item is no more
             if (this.TryGetItem (item.LocationID, out ItemEntity location) && location is ItemInventory inventory)

@@ -42,7 +42,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -67,7 +66,7 @@ public class character : Service
     private ITypes       Types    => this.Items.Types;
     private CacheStorage       CacheStorage   { get; }
     private INotificationSender Notifications  { get; }
-    private IWalletManager     WalletManager  { get; }
+    private IWallets     Wallets  { get; }
     private IAncestries         Ancestries     { get; }
     private IBloodlines         Bloodlines     { get; }
     private SessionManager     SessionManager { get; }
@@ -76,7 +75,7 @@ public class character : Service
     public character (
         CacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
         IItems        items,        ILogger       logger,        Character  configuration,
-        INotificationSender notificationSender, IWalletManager walletManager, IAncestries ancestries, IBloodlines bloodlines,
+        INotificationSender notificationSender, IWallets wallets, IAncestries ancestries, IBloodlines bloodlines,
         SessionManager     sessionManager
     )
     {
@@ -88,7 +87,7 @@ public class character : Service
         this.Items          = items;
         CacheStorage        = cacheStorage;
         Notifications       = notificationSender;
-        WalletManager       = walletManager;
+        this.Wallets        = wallets;
         Ancestries          = ancestries;
         Bloodlines          = bloodlines;
         SessionManager      = sessionManager;
@@ -285,7 +284,7 @@ public class character : Service
         );
 
         // create the wallet for the player
-        WalletManager.CreateWallet (itemID, WalletKeys.MAIN, this.mConfiguration.Balance);
+        this.Wallets.CreateWallet (itemID, WalletKeys.MAIN, this.mConfiguration.Balance);
 
         return this.Items.LoadItem (itemID) as EVE.Data.Inventory.Items.Types.Character;
     }
@@ -381,7 +380,7 @@ public class character : Service
         character.ActiveCloneID = clone.ID;
 
         // get the wallet for the player and give the money specified in the configuration
-        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.CreateJournalRecord (MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
         }
@@ -492,7 +491,7 @@ public class character : Service
         updates.RaceID          = Ancestries [character.AncestryID].Bloodline.RaceID;
 
         // check if the character has any accounting roles and set the correct accountKey based on the data
-        if (WalletManager.IsAccessAllowed (updates, character.CorpAccountKey, updates.CorporationID))
+        if (this.Wallets.IsAccessAllowed (updates, character.CorpAccountKey, updates.CorporationID))
             updates.CorpAccountKey = character.CorpAccountKey;
 
         // set the war faction id if present

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -25,7 +26,6 @@ using EVESharp.Node.Configuration;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
@@ -50,12 +50,12 @@ public class marketProxy : Service
     private IConstants          Constants          { get; }
     private ISolarSystems      SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
-    private IWalletManager     WalletManager      { get; }
+    private IWallets     Wallets      { get; }
     private IDogmaNotifications DogmaNotifications { get; }
 
     public marketProxy (
         MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, IItems items, CacheStorage cacheStorage,
-        IConstants constants, INotificationSender notificationSender, IWalletManager walletManager, IDogmaNotifications dogmaNotifications, ClusterManager clusterManager,
+        IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, ClusterManager clusterManager,
         ISolarSystems solarSystems
     )
     {
@@ -67,7 +67,7 @@ public class marketProxy : Service
         Items              = items;
         Constants          = constants;
         Notifications      = notificationSender;
-        WalletManager      = walletManager;
+        this.Wallets       = wallets;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
 
@@ -316,7 +316,7 @@ public class marketProxy : Service
                 {
                     // give back the escrow for the character
                     // TODO: THERE IS A POTENTIAL DEADLOCK HERE IF WE BUY FROM OURSELVES
-                    using IWallet escrowWallet = WalletManager.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+                    using IWallet escrowWallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
                     {
                         escrowWallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, escrowLeft);
                     }
@@ -352,7 +352,7 @@ public class marketProxy : Service
                     wallet.CreateJournalRecord (MarketReference.TransactionTax, null, null, -tax);
 
                 wallet.CreateTransactionRecord (TransactionType.Sell, character.ID, orderOwnerID, typeID, quantityToSell, price, stationID);
-                WalletManager.CreateTransactionRecord (
+                this.Wallets.CreateTransactionRecord (
                     orderOwnerID, TransactionType.Buy, order.CharacterID, character.ID, typeID, quantityToSell, price, stationID,
                     order.AccountID
                 );
@@ -452,7 +452,7 @@ public class marketProxy : Service
 
         // obtain wallet lock too
         // everything is checked already, perform table locking and do all the job here
-        using IWallet          wallet     = WalletManager.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
+        using IWallet       wallet     = this.Wallets.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
         using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
@@ -570,7 +570,7 @@ public class marketProxy : Service
                 this.CalculateSalesTax (CharacterDB.GetSkillLevelForCharacter (TypeID.Accounting, order.CharacterID), quantity, price, out tax, out _);
 
                 // acquire wallet journal for seller so we can update their balance to add the funds that he got
-                using IWallet sellerWallet = WalletManager.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+                using IWallet sellerWallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
                 {
                     sellerWallet.CreateJournalRecord (MarketReference.MarketTransaction, orderOwnerID, null, price * quantityToBuy);
                     // calculate sales tax for the seller
@@ -614,7 +614,7 @@ public class marketProxy : Service
         // ensure the character can place the order where he's trying to
         this.CheckBuyOrderDistancePermissions (character, stationID, duration);
 
-        using IWallet        wallet     = WalletManager.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
+        using IWallet       wallet     = this.Wallets.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
         using IDbConnection connection = DB.AcquireMarketLock ();
 
         try
@@ -692,7 +692,7 @@ public class marketProxy : Service
         // for sell orders just look into if the user can query that wallet
         if (useCorp == true)
         {
-            if (WalletManager.IsTakeAllowed (call.Session, call.Session.CorpAccountKey, call.Session.CorporationID) == false)
+            if (this.Wallets.IsTakeAllowed (call.Session, call.Session.CorpAccountKey, call.Session.CorporationID) == false)
                 throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
             if (CorporationRole.Trader.Is (call.Session.CorporationRole) == false)
                 throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT11);
@@ -749,7 +749,7 @@ public class marketProxy : Service
             // check for escrow
             if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
             {
-                using IWallet wallet = WalletManager.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+                using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
                 {
                     wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, order.Escrow);
                 }
@@ -833,7 +833,7 @@ public class marketProxy : Service
 
             int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
 
-            using IWallet wallet = WalletManager.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+            using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
             {
                 if (order.Bid == TransactionType.Buy)
                 {
@@ -905,7 +905,7 @@ public class marketProxy : Service
         DB.RemoveOrder (connection, order.OrderID);
 
         // give back the escrow paid by the player
-        using IWallet wallet = WalletManager.AcquireWallet (order.IsCorp ? order.CorporationID : order.CharacterID, order.AccountID, order.IsCorp);
+        using IWallet wallet = this.Wallets.AcquireWallet (order.IsCorp ? order.CorporationID : order.CharacterID, order.AccountID, order.IsCorp);
         {
             wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, order.Escrow);
         }

@@ -17,7 +17,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -41,13 +40,13 @@ public class repairSvc : ClientBoundService
     private          RepairDB            RepairDB           { get; }
     private          InsuranceDB         InsuranceDB        { get; }
     private          INotificationSender Notifications      { get; }
-    private          IWalletManager      WalletManager      { get; }
+    private          IWallets      Wallets      { get; }
     private          IDogmaNotifications DogmaNotifications { get; }
     private          IDatabaseConnection Database           { get; }
 
     public repairSvc (
         RepairDB            repairDb,    MarketDB            marketDb, InsuranceDB   insuranceDb,   INotificationSender notificationSender,
-        IItems         items, BoundServiceManager manager,  IWalletManager walletManager, IDogmaNotifications         dogmaNotifications,
+        IItems         items, BoundServiceManager manager,  IWallets wallets, IDogmaNotifications         dogmaNotifications,
         ISolarSystems solarSystems, IDatabaseConnection database
     ) : base (manager)
     {
@@ -56,7 +55,7 @@ public class repairSvc : ClientBoundService
         RepairDB           = repairDb;
         InsuranceDB        = insuranceDb;
         Notifications      = notificationSender;
-        WalletManager      = walletManager;
+        this.Wallets       = wallets;
         DogmaNotifications = dogmaNotifications;
         Database           = database;
         SolarSystems       = solarSystems;
@@ -64,7 +63,7 @@ public class repairSvc : ClientBoundService
 
     protected repairSvc (
         RepairDB      repairDb,  MarketDB    marketDb,    InsuranceDB         insuranceDb, INotificationSender notificationSender,
-        ItemInventory inventory, IItems items, BoundServiceManager manager,     IWalletManager walletManager, IDogmaNotifications dogmaNotifications, Session session
+        ItemInventory inventory, IItems items, BoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session
     ) : base (manager, session, inventory.ID)
     {
         this.mInventory         = inventory;
@@ -73,7 +72,7 @@ public class repairSvc : ClientBoundService
         RepairDB                = repairDb;
         InsuranceDB             = insuranceDb;
         Notifications           = notificationSender;
-        WalletManager           = walletManager;
+        this.Wallets            = wallets;
         this.DogmaNotifications = dogmaNotifications;
     }
 
@@ -167,7 +166,7 @@ public class repairSvc : ClientBoundService
         Station station = this.Items.GetStaticStation (call.Session.StationID);
 
         // take the wallet lock and ensure the character has enough balance
-        using IWallet wallet = WalletManager.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (iskRepairValue);
             // build a list of items to be fixed
@@ -362,11 +361,11 @@ public class repairSvc : ClientBoundService
             throw new CanOnlyDoInStations ();
 
         ItemInventory inventory =
-            this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
+            this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
 
         return new repairSvc (
             RepairDB, MarketDB, InsuranceDB, Notifications, inventory, this.Items, BoundServiceManager,
-            WalletManager, this.DogmaNotifications, call.Session
+            this.Wallets, this.DogmaNotifications, call.Session
         );
     }
 }

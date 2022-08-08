@@ -1,8 +1,9 @@
-﻿using EVESharp.EVE.Data.Inventory.Items.Types;
+﻿using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
-using EVESharp.Node.Inventory;
 
 namespace EVESharp.Node.Dogma;
 

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFSTRING : Opcode
 {
@@ -10,7 +10,7 @@ public class OpcodeDEFSTRING : Opcode
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Definition = reader.ReadString ();
+        this.Definition = reader.ReadString ();
 
         return this;
     }

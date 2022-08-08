@@ -2,9 +2,9 @@
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Dogma.Exception;
-using EVESharp.Node.Sessions;
+using EVESharp.EVE.Sessions;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeSET : OpcodeRunnable
 {
@@ -15,17 +15,17 @@ public class OpcodeSET : OpcodeRunnable
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        LeftSide = Interpreter.Step (reader);
-        Value    = Interpreter.Step (reader);
+        this.LeftSide = this.Interpreter.Step (reader);
+        this.Value    = this.Interpreter.Step (reader);
 
         return this;
     }
 
     public override void Execute ()
     {
-        if (LeftSide is OpcodeATT att)
+        if (this.LeftSide is OpcodeATT att)
         {
-            if (Value is OpcodeDEFINT defint)
+            if (this.Value is OpcodeDEFINT defint)
             {
                 ItemEntity     item      = att.ItemToAffect.GetItem ();
                 AttributeTypes attribute = att.AttributeToAffect.Attribute;
@@ -33,8 +33,8 @@ public class OpcodeSET : OpcodeRunnable
                 item.Attributes [att.AttributeToAffect.Attribute].Integer = defint.Value;
 
                 // notify the character
-                Interpreter.Environment.DogmaNotifications.NotifyAttributeChange (
-                    Interpreter.Environment.Session.EnsureCharacterIsSelected (),
+                this.Interpreter.Environment.DogmaNotifications.NotifyAttributeChange (
+                    this.Interpreter.Environment.Session.EnsureCharacterIsSelected (),
                     attribute,
                     item
                 );

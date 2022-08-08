@@ -1,4 +1,4 @@
-namespace EVESharp.Node.Database;
+namespace EVESharp.EVE.Data.Inventory;
 
 public enum SkillHistoryReason
 {

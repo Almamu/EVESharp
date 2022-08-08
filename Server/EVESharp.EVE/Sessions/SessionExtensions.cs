@@ -1,8 +1,6 @@
 ﻿using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.EVE.Sessions;
 
-namespace EVESharp.Node.Sessions;
+namespace EVESharp.EVE.Sessions;
 
 public static class SessionExtensions
 {

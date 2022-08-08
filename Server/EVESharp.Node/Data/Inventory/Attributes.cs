@@ -23,6 +23,7 @@
 */
 
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
@@ -30,18 +31,11 @@ using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Data.Inventory;
 
-public class AttributeManager : IAttributes
+public class Attributes : ReadOnlyDictionary<int, AttributeType>, IAttributes
 {
-    private Dictionary <int, AttributeType> mAttributes;
-
-    public Dictionary <int, Dictionary <int, Attribute>> DefaultAttributes { get; }
-
-    public AttributeType this [int            id] => this.mAttributes [id];
     public AttributeType this [AttributeTypes id] => this [(int) id];
 
-    public AttributeManager (IDatabaseConnection Database)
+    public Attributes (IDatabaseConnection Database) : base(Database.InvDgmLoadAttributes ())
     {
-        this.mAttributes       = Database.InvDgmLoadAttributes ();
-        this.DefaultAttributes = Database.InvDgmLoadDefaultAttributes (this);
     }
 }

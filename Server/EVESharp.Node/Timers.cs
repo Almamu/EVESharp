@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.EVE;
 using Serilog;
 
 namespace EVESharp.Node;
@@ -9,7 +10,7 @@ namespace EVESharp.Node;
 /// The timers used here are precise to the second, but might not fire up at the exact second
 /// as it'll depend on the load on it. Used only for non-time sensitive stuff
 /// </summary>
-public class Timers
+public class Timers : ITimers
 {
     private ILogger Log { get; }
 

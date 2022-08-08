@@ -22,9 +22,9 @@ public class Wallet : IWallet
     public  IDatabaseConnection Database        { get; }
     public  INotificationSender  Notifications   { get; }
     public  bool                ForCorporation  { get; }
-    public  IWalletManager      WalletManager   { get; }
+    public  IWallets      Wallets   { get; }
 
-    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, INotificationSender notificationSender, IWalletManager walletManager)
+    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, INotificationSender notificationSender, IWallets wallets)
     {
         // set some data first
         this.OwnerID        = ownerID;
@@ -32,7 +32,7 @@ public class Wallet : IWallet
         this.ForCorporation = isCorporation;
         this.Database       = database;
         this.Notifications  = notificationSender;
-        this.WalletManager  = walletManager;
+        this.Wallets  = wallets;
         
         // obtain exclusive control over the wallet
         Database.GetLock (ref this.Connection, this.GenerateLockName ());
@@ -117,7 +117,7 @@ public class Wallet : IWallet
         Balance += amount;
 
         // create journal entry
-        WalletManager.CreateJournalForOwner (
+        this.Wallets.CreateJournalForOwner (
             reference, OwnerID, ownerID1, ownerID2, referenceID, amount,
             Balance, reason, WalletKey
         );
@@ -137,7 +137,7 @@ public class Wallet : IWallet
         Balance += amount;
 
         // create journal entry
-        WalletManager.CreateJournalForOwner (
+        this.Wallets.CreateJournalForOwner (
             reference, OwnerID, OwnerID, ownerID2, referenceID, amount,
             Balance, reason, WalletKey
         );
@@ -158,7 +158,7 @@ public class Wallet : IWallet
         Balance += amount;
         // market transactions do not affect the wallet value because these are paid either when placing the sell/buy order
         // or when fullfiling it
-        WalletManager.CreateTransactionRecord (
+        this.Wallets.CreateTransactionRecord (
             OwnerID, type, characterID, otherID, typeID, quantity, amount, stationID,
             WalletKey
         );

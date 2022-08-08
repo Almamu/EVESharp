@@ -1,6 +1,4 @@
-using EVESharp.EVE.Data.Configuration;
-
-namespace EVESharp.Node.Configuration;
+namespace EVESharp.EVE.Data.Configuration;
 
 public interface IConstants
 {

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using EVESharp.EVE.Dogma.Exception;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeOR : OpcodeWithBooleanOutput
 {
@@ -12,8 +12,8 @@ public class OpcodeOR : OpcodeWithBooleanOutput
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Opcode leftSide  = Interpreter.Step (reader);
-        Opcode rightSide = Interpreter.Step (reader);
+        Opcode leftSide  = this.Interpreter.Step (reader);
+        Opcode rightSide = this.Interpreter.Step (reader);
 
         // ensure that both sides can return a value
         if (leftSide is not OpcodeWithBooleanOutput left)
@@ -21,14 +21,14 @@ public class OpcodeOR : OpcodeWithBooleanOutput
         if (rightSide is not OpcodeWithBooleanOutput right)
             throw new DogmaMachineException ("The right side of an OR operand must return a boolean value");
 
-        LeftSide  = left;
-        RightSide = right;
+        this.LeftSide  = left;
+        this.RightSide = right;
 
         return this;
     }
 
     public override bool Execute ()
     {
-        return LeftSide.Execute () || RightSide.Execute ();
+        return this.LeftSide.Execute () || this.RightSide.Execute ();
     }
 }

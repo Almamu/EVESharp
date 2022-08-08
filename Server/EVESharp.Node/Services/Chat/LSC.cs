@@ -12,7 +12,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.PythonTypes;

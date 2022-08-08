@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using EVESharp.EVE.Dogma.Exception;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeIF : OpcodeWithBooleanOutput
 {
@@ -12,8 +12,8 @@ public class OpcodeIF : OpcodeWithBooleanOutput
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Opcode leftSide  = Interpreter.Step (reader);
-        Opcode rightSide = Interpreter.Step (reader);
+        Opcode leftSide  = this.Interpreter.Step (reader);
+        Opcode rightSide = this.Interpreter.Step (reader);
 
         // ensure that both sides can return a value
         if (leftSide is not OpcodeWithBooleanOutput left)
@@ -22,22 +22,22 @@ public class OpcodeIF : OpcodeWithBooleanOutput
         if (rightSide is not OpcodeRunnable && rightSide is not OpcodeWithBooleanOutput && rightSide is not OpcodeWithDoubleOutput)
             throw new DogmaMachineException ("The right side of an IF operand must be some kind of runnable");
 
-        Condition   = left;
-        RunWhenTrue = rightSide;
+        this.Condition   = left;
+        this.RunWhenTrue = rightSide;
 
         return this;
     }
 
     public override bool Execute ()
     {
-        if (Condition.Execute ())
+        if (this.Condition.Execute ())
         {
             // run the right side
-            if (RunWhenTrue is OpcodeRunnable runnable)
+            if (this.RunWhenTrue is OpcodeRunnable runnable)
                 runnable.Execute ();
-            else if (RunWhenTrue is OpcodeWithBooleanOutput booleanRunnable)
+            else if (this.RunWhenTrue is OpcodeWithBooleanOutput booleanRunnable)
                 booleanRunnable.Execute ();
-            else if (RunWhenTrue is OpcodeWithDoubleOutput doubleRunnable)
+            else if (this.RunWhenTrue is OpcodeWithDoubleOutput doubleRunnable)
                 doubleRunnable.Execute ();
 
             return true;

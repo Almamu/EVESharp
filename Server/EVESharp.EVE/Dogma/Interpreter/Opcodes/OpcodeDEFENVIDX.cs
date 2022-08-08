@@ -3,9 +3,8 @@ using System.IO;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Dogma.Exception;
 using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFENVIDX : Opcode
 {
@@ -18,7 +17,7 @@ public class OpcodeDEFENVIDX : Opcode
         if (Enum.TryParse (reader.ReadString (), out EVE.Data.Dogma.Environment environment) == false)
             throw new DogmaMachineException ("Cannot determine environment id");
 
-        Environment = environment;
+        this.Environment = environment;
 
         return this;
     }
@@ -27,18 +26,18 @@ public class OpcodeDEFENVIDX : Opcode
     {
         ItemEntity item = null;
 
-        switch (Environment)
+        switch (this.Environment)
         {
             case EVE.Data.Dogma.Environment.Self:
-                item = Interpreter.Environment.Self;
+                item = this.Interpreter.Environment.Self;
                 break;
 
             case EVE.Data.Dogma.Environment.Char:
-                item = Interpreter.Environment.Character;
+                item = this.Interpreter.Environment.Character;
                 break;
 
             case EVE.Data.Dogma.Environment.Ship:
-                item = Interpreter.Environment.Ship;
+                item = this.Interpreter.Environment.Ship;
                 break;
 
             case EVE.Data.Dogma.Environment.Target:

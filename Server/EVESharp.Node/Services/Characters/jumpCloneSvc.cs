@@ -14,7 +14,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -35,34 +34,34 @@ public class jumpCloneSvc : ClientBoundService
     private ITypes              Types         => this.Items.Types;
     private ISolarSystems       SolarSystems  { get; }
     private INotificationSender Notifications { get; }
-    private IWalletManager      WalletManager { get; }
+    private IWallets      Wallets { get; }
     private IDatabaseConnection Database      { get; }
 
     public jumpCloneSvc (
         ItemDB        itemDB,        MarketDB      marketDB,      IItems        items,
-        ISolarSystems solarSystems, IWalletManager walletManager, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
+        ISolarSystems solarSystems, IWallets wallets, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
-        ItemDB        = itemDB;
-        MarketDB      = marketDB;
-        this.Items    = items;
-        this.SolarSystems  = solarSystems;
-        WalletManager = walletManager;
-        Notifications = notificationSender;
-        Database      = database;
+        ItemDB            = itemDB;
+        MarketDB          = marketDB;
+        this.Items        = items;
+        this.SolarSystems = solarSystems;
+        this.Wallets      = wallets;
+        Notifications     = notificationSender;
+        Database          = database;
     }
 
     protected jumpCloneSvc (
         int           locationID,    ItemDB              itemDB,  MarketDB      marketDB,      IItems        items,
-        ISolarSystems solarSystems, BoundServiceManager manager, IWalletManager walletManager, INotificationSender notificationSender, Session session
+        ISolarSystems solarSystems, BoundServiceManager manager, IWallets wallets, INotificationSender notificationSender, Session session
     ) : base (manager, session, locationID)
     {
-        ItemDB        = itemDB;
-        MarketDB      = marketDB;
-        this.Items    = items;
-        this.SolarSystems  = solarSystems;
-        WalletManager = walletManager;
-        Notifications = notificationSender;
+        ItemDB            = itemDB;
+        MarketDB          = marketDB;
+        this.Items        = items;
+        this.SolarSystems = solarSystems;
+        this.Wallets      = wallets;
+        Notifications     = notificationSender;
     }
 
     /// <summary>
@@ -160,7 +159,7 @@ public class jumpCloneSvc : ClientBoundService
         // get character's station
         Station station = this.Items.GetStaticStation (stationID);
 
-        using IWallet wallet = WalletManager.AcquireWallet (character.ID, WalletKeys.MAIN);
+        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
         {
             wallet.EnsureEnoughBalance (cost);
             wallet.CreateJournalRecord (MarketReference.JumpCloneInstallationFee, null, station.ID, -cost, $"Installed clone at {station.Name}");
@@ -197,7 +196,7 @@ public class jumpCloneSvc : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new jumpCloneSvc (
-            bindParams.ObjectID, ItemDB, MarketDB, this.Items, this.SolarSystems, BoundServiceManager, WalletManager, Notifications,
+            bindParams.ObjectID, ItemDB, MarketDB, this.Items, this.SolarSystems, BoundServiceManager, this.Wallets, Notifications,
             call.Session
         );
     }

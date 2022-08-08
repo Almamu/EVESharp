@@ -9,12 +9,12 @@ using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Market;
 
-public class WalletManager : IWalletManager
+public class Wallets : IWallets
 {
     private INotificationSender  Notifications { get; }
     private IDatabaseConnection Database      { get; }
 
-    public WalletManager (IDatabaseConnection database, INotificationSender notificationSender)
+    public Wallets (IDatabaseConnection database, INotificationSender notificationSender)
     {
         Database      = database;
         Notifications = notificationSender;

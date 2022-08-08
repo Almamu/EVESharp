@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Dogma.Exception;
-using EVESharp.Node.Dogma.Interpreter.Opcodes;
+using EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
-namespace EVESharp.Node.Dogma.Interpreter;
+namespace EVESharp.EVE.Dogma.Interpreter;
 
 public class Interpreter
 {
@@ -14,7 +14,7 @@ public class Interpreter
 
     public Interpreter (Environment environment)
     {
-        Environment = environment;
+        this.Environment = environment;
 
         // register all the opcode handlers implemented for now
         this.mOpcodes [EffectOperand.DEFSTRING]      = typeof (OpcodeDEFSTRING);

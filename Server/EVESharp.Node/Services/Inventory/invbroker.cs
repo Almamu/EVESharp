@@ -15,7 +15,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -86,7 +85,7 @@ public class invbroker : ClientBoundService
 
         // create a meta inventory only if required
         if (inventoryItem is not Ship && inventoryItem is not Character)
-            inventory = this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
+            inventory = this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
 
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
@@ -164,7 +163,7 @@ public class invbroker : ClientBoundService
         ItemInventory inventoryItem = this.Items.LoadItem <ItemInventory> (this.mObjectID);
 
         // create a metainventory for it
-        ItemInventory metaInventory = this.Items.MetaInventoryManager.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
+        ItemInventory metaInventory = this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
 
         return this.BindInventory (
             this.CheckInventoryBeforeLoading (metaInventory),

@@ -1,4 +1,4 @@
-﻿namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+﻿namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public abstract class OpcodeRunnable : Opcode
 {

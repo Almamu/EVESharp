@@ -21,22 +21,22 @@ public class account : Service
 {
     public override AccessLevel         AccessLevel   => AccessLevel.None;
     private         CharacterDB         DB            { get; }
-    private         IWalletManager       WalletManager { get; }
+    private         IWallets       Wallets { get; }
     private         CacheStorage        CacheStorage  { get; }
     private         IDatabaseConnection Database      { get; }
 
-    public account (IDatabaseConnection databaseConnection, CharacterDB db, IWalletManager walletManager, CacheStorage cacheStorage)
+    public account (IDatabaseConnection databaseConnection, CharacterDB db, IWallets wallets, CacheStorage cacheStorage)
     {
-        Database      = databaseConnection;
-        DB            = db;
-        WalletManager = walletManager;
-        CacheStorage  = cacheStorage;
+        Database     = databaseConnection;
+        DB           = db;
+        this.Wallets = wallets;
+        CacheStorage = cacheStorage;
     }
 
     [MustBeCharacter]
     private PyDataType GetCashBalance (Session session)
     {
-        return WalletManager.GetWalletBalance (session.CharacterID);
+        return this.Wallets.GetWalletBalance (session.CharacterID);
     }
 
     public PyDataType GetCashBalance (CallInformation call, PyBool isCorpWallet)
@@ -54,10 +54,10 @@ public class account : Service
         if (isCorpWallet == 0)
             return this.GetCashBalance (call.Session);
 
-        if (WalletManager.IsAccessAllowed (call.Session, walletKey, call.Session.CorporationID) == false)
+        if (this.Wallets.IsAccessAllowed (call.Session, walletKey, call.Session.CorporationID) == false)
             throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
-        return WalletManager.GetWalletBalance (call.Session.CorporationID, walletKey);
+        return this.Wallets.GetWalletBalance (call.Session.CorporationID, walletKey);
     }
 
     public PyDataType GetKeyMap (CallInformation call)
@@ -95,7 +95,7 @@ public class account : Service
         if (isCorpWallet == true)
             entityID = call.Session.CorporationID;
 
-        if (WalletManager.IsAccessAllowed (call.Session, accountKey, entityID) == false)
+        if (this.Wallets.IsAccessAllowed (call.Session, accountKey, entityID) == false)
             throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
         // journal requires accountant roles for corporation
@@ -111,19 +111,19 @@ public class account : Service
         // build a list of divisions the user can access
         List <int> walletKeys = new List <int> ();
 
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.MAIN, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.MAIN, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.MAIN);
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.SECOND, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.SECOND, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.SECOND);
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.THIRD, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.THIRD, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.THIRD);
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.FOURTH, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.FOURTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.FOURTH);
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.FIFTH, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.FIFTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.FIFTH);
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.SIXTH, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.SIXTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.SIXTH);
-        if (WalletManager.IsAccessAllowed (call.Session, WalletKeys.SEVENTH, call.Session.CorporationID))
+        if (this.Wallets.IsAccessAllowed (call.Session, WalletKeys.SEVENTH, call.Session.CorporationID))
             walletKeys.Add (WalletKeys.SEVENTH);
 
         return Database.MktWalletGet (call.Session.CorporationID, walletKeys);
@@ -141,14 +141,14 @@ public class account : Service
 
         // acquire the origin wallet, subtract quantity
         // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-        using (IWallet originWallet = WalletManager.AcquireWallet (callerCharacterID, WalletKeys.MAIN))
+        using (IWallet originWallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN))
         {
             originWallet.EnsureEnoughBalance (quantity);
             originWallet.CreateJournalRecord (MarketReference.CorporationPayment, destinationID, null, -quantity, reason);
         }
 
         // acquire the destination wallet, add quantity
-        using (IWallet destinationWallet = WalletManager.AcquireWallet (destinationID, accountKey, true))
+        using (IWallet destinationWallet = this.Wallets.AcquireWallet (destinationID, accountKey, true))
         {
             destinationWallet.CreateJournalRecord (MarketReference.CorporationPayment, callerCharacterID, destinationID, -1, quantity, reason);
         }
@@ -159,12 +159,12 @@ public class account : Service
     public PyDataType GiveCashFromCorpAccount (CallInformation call, PyInteger destinationID, PyDecimal quantity, PyInteger accountKey)
     {
         // ensure the character can take from the account in question
-        if (WalletManager.IsTakeAllowed (call.Session, accountKey, call.Session.CorporationID) == false)
+        if (this.Wallets.IsTakeAllowed (call.Session, accountKey, call.Session.CorporationID) == false)
             throw new CrpAccessDenied (MLS.UI_CORP_ACCESSTOWALLETDIVISIONDENIED);
 
         // acquire the origin wallet, subtract quantity
         // TODO: CHECK IF THE WALLETKEY IS INDICATED IN SOME WAY
-        using (IWallet originWallet = WalletManager.AcquireWallet (call.Session.CorporationID, accountKey, true))
+        using (IWallet originWallet = this.Wallets.AcquireWallet (call.Session.CorporationID, accountKey, true))
         {
             originWallet.EnsureEnoughBalance (quantity);
             originWallet.CreateJournalRecord (MarketReference.CorporationPayment, destinationID, call.Session.CharacterID, -quantity);
@@ -172,7 +172,7 @@ public class account : Service
 
         // TODO: CHECK IF THE DESTINATION IS A CORPORATION OR NOT
         // acquire the destination wallet, add quantity
-        using (IWallet destinationWallet = WalletManager.AcquireWallet (destinationID, WalletKeys.MAIN))
+        using (IWallet destinationWallet = this.Wallets.AcquireWallet (destinationID, WalletKeys.MAIN))
         {
             destinationWallet.CreateJournalRecord (MarketReference.CorporationPayment, call.Session.CorporationID, destinationID, -1, quantity);
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.EVE;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 

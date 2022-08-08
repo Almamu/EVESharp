@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using EVESharp.EVE.Data.Inventory;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFATTRIBUTE : Opcode
 {
@@ -11,7 +11,7 @@ public class OpcodeDEFATTRIBUTE : Opcode
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Attribute = (AttributeTypes) reader.ReadInt32 ();
+        this.Attribute = (AttributeTypes) reader.ReadInt32 ();
 
         return this;
     }

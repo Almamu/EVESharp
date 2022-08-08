@@ -1,10 +1,9 @@
 using EVESharp.EVE.Data.Market;
-using EVESharp.EVE.Market;
 using EVESharp.EVE.Sessions;
 
-namespace EVESharp.Node.Market;
+namespace EVESharp.EVE.Market;
 
-public interface IWalletManager
+public interface IWallets
 {
     /// <summary>
     /// Provides access to the specified wallet

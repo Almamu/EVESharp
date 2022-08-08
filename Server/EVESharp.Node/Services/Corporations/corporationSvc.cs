@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corporationSvc;
@@ -11,7 +13,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
@@ -26,20 +27,20 @@ public class corporationSvc : Service
     public override AccessLevel        AccessLevel   => AccessLevel.None;
     private         IDatabaseConnection Database      { get; }
     private         CorporationDB      DB            { get; }
-    private         IWalletManager     WalletManager { get; }
+    private         IWallets     Wallets { get; }
     private         IConstants          Constants     { get; }
     private         IItems        Items   { get; }
     private         INotificationSender Notifications { get; }
 
     public corporationSvc (
-        IDatabaseConnection databaseConnection, CorporationDB db, IConstants constants, IWalletManager walletManager, IItems items,
+        IDatabaseConnection databaseConnection, CorporationDB db, IConstants constants, IWallets wallets, IItems items,
         INotificationSender  notificationSender
     )
     {
         Database      = databaseConnection;
         DB            = db;
         Constants     = constants;
-        WalletManager = walletManager;
+        this.Wallets  = wallets;
         this.Items    = items;
         Notifications = notificationSender;
     }
@@ -161,7 +162,7 @@ public class corporationSvc : Service
         if (pay == false)
             throw new ConfirmCreatingMedal (Constants.MedalCost);
 
-        using (IWallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (IWallet wallet = this.Wallets.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             wallet.EnsureEnoughBalance (Constants.MedalCost);
             wallet.CreateJournalRecord (MarketReference.MedalCreation, Constants.MedalTaxCorporation, null, -Constants.MedalCost);
@@ -228,7 +229,7 @@ public class corporationSvc : Service
         if (pay == false)
             throw new ConfirmGivingMedal (Constants.MedalCost);
 
-        using (IWallet wallet = WalletManager.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        using (IWallet wallet = this.Wallets.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
         {
             wallet.EnsureEnoughBalance (Constants.MedalCost);
             wallet.CreateJournalRecord (MarketReference.MedalIssuing, Constants.MedalTaxCorporation, null, -Constants.MedalCost);

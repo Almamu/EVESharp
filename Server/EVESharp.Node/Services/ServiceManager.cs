@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using EVESharp.EVE;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
@@ -52,7 +53,7 @@ namespace EVESharp.Node.Services;
 public class ServiceManager : IServiceManager <string>
 {
     public           CacheStorage                 CacheStorage     { get; }
-    public           Timers                 Timers     { get; }
+    public           ITimers                 Timers     { get; }
     private          ILogger                      Log              { get; }
     public           objectCaching                objectCaching    { get; }
     public           machoNet                     machoNet         { get; }
@@ -109,7 +110,7 @@ public class ServiceManager : IServiceManager <string>
     }
     
     public ServiceManager (
-        CacheStorage     storage, ILogger logger, Timers timers,
+        CacheStorage     storage, ILogger logger, ITimers timers,
         machoNet         machoNet,
         objectCaching    objectCaching,
         alert            alert,

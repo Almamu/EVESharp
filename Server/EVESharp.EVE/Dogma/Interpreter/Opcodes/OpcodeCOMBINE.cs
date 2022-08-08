@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using EVESharp.EVE.Dogma.Exception;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeCOMBINE : OpcodeRunnable
 {
@@ -12,8 +12,8 @@ public class OpcodeCOMBINE : OpcodeRunnable
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Opcode leftSide  = Interpreter.Step (reader);
-        Opcode rightSide = Interpreter.Step (reader);
+        Opcode leftSide  = this.Interpreter.Step (reader);
+        Opcode rightSide = this.Interpreter.Step (reader);
 
         // ensure that both sides can return a value
         if (leftSide is not OpcodeRunnable && leftSide is not OpcodeWithBooleanOutput && leftSide is not OpcodeWithDoubleOutput)
@@ -21,8 +21,8 @@ public class OpcodeCOMBINE : OpcodeRunnable
         if (rightSide is not OpcodeRunnable && rightSide is not OpcodeWithBooleanOutput && rightSide is not OpcodeWithDoubleOutput)
             throw new DogmaMachineException ("The right side of a COMBINE operand must be some kind of runnable");
 
-        LeftSide  = leftSide;
-        RightSide = rightSide;
+        this.LeftSide  = leftSide;
+        this.RightSide = rightSide;
 
         return this;
     }
@@ -39,7 +39,7 @@ public class OpcodeCOMBINE : OpcodeRunnable
 
     public override void Execute ()
     {
-        this.ExecuteSide (LeftSide);
-        this.ExecuteSide (RightSide);
+        this.ExecuteSide (this.LeftSide);
+        this.ExecuteSide (this.RightSide);
     }
 }

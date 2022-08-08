@@ -2,7 +2,7 @@
 using System.Timers;
 using Serilog;
 
-namespace EVESharp.Node;
+namespace EVESharp.EVE;
 
 /// <summary>
 /// Timer entry information
@@ -43,7 +43,7 @@ public class Timer<T> : IDisposable
             if (this.ShouldStop)
                 this.mTimer.Enabled = false;
             // log the timer running
-            Log.Debug ("Firing callback for timer with state {State}", this.State);
+            this.Log.Debug ("Firing callback for timer with state {State}", this.State);
             // run the callback
             this.Callback (this.State);
             // dispose of the timer
@@ -52,8 +52,8 @@ public class Timer<T> : IDisposable
         }
         catch (Exception e)
         {
-            Log.Error ("Callback for timer threw an exception {e}", e);
-            Log.Error (e.StackTrace);
+            this.Log.Error ("Callback for timer threw an exception {e}", e);
+            this.Log.Error (e.StackTrace);
         }
     }
     

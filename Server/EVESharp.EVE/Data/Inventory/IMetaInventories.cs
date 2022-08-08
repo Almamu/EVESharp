@@ -1,10 +1,9 @@
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 
-namespace EVESharp.Node.Data.Inventory;
+namespace EVESharp.EVE.Data.Inventory;
 
-public interface IMetaInventoryManager
+public interface IMetaInventories : IDictionary <int, Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>>>
 {
     public delegate void MetaInventoryItemEvent (ItemInventoryByOwnerID metaInventory);
     /// <summary>

@@ -1,9 +1,8 @@
 ﻿using System.IO;
 using EVESharp.EVE.Dogma.Exception;
 using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Packets.Exceptions;
 
-namespace EVESharp.Node.Dogma.Interpreter.Opcodes;
+namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 /// <summary>
 /// UE stands for UserError
@@ -16,18 +15,18 @@ public class OpcodeUE : OpcodeWithBooleanOutput
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        Opcode leftSide = Interpreter.Step (reader);
+        Opcode leftSide = this.Interpreter.Step (reader);
 
         if (leftSide is not OpcodeDEFSTRING defstring)
             throw new DogmaMachineException ("OpcodeUE (user error) must specify a exception name to throw");
 
-        LeftSide = defstring;
+        this.LeftSide = defstring;
 
         return this;
     }
 
     public override bool Execute ()
     {
-        throw new CustomError (LeftSide.Definition);
+        throw new CustomError (this.LeftSide.Definition);
     }
 }

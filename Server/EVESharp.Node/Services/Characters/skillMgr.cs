@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.Database;
+using EVESharp.EVE;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -18,7 +19,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -35,7 +35,7 @@ public class skillMgr : ClientBoundService
     public override AccessLevel         AccessLevel        => AccessLevel.None;
     private         SkillDB             DB                 { get; }
     private         IItems               Items              { get; }
-    private         Timers              Timers             { get; }
+    private         ITimers              Timers             { get; }
     private         ISolarSystems       SolarSystems       { get; }
     private         ILogger             Log                { get; }
     private         Character           Character          { get; }
@@ -45,7 +45,7 @@ public class skillMgr : ClientBoundService
     private         IDatabaseConnection Database           { get; }
 
     public skillMgr (
-        SkillDB             db,      IItems items, Timers              timers, IDogmaNotifications dogmaNotifications,
+        SkillDB             db,      IItems items, ITimers              timers, IDogmaNotifications dogmaNotifications,
         BoundServiceManager manager, ILogger     logger,      IDatabaseConnection database, ISolarSystems solarSystems
     ) : base (manager)
     {
@@ -59,7 +59,7 @@ public class skillMgr : ClientBoundService
     }
 
     protected skillMgr (
-        SkillDB             db,      IItems items, Timers timers, IDogmaNotifications dogmaNotifications,
+        SkillDB             db,      IItems items, ITimers timers, IDogmaNotifications dogmaNotifications,
         BoundServiceManager manager, ILogger     logger,      Session      session, ISolarSystems solarSystems
     ) : base (manager, session, session.CharacterID)
     {

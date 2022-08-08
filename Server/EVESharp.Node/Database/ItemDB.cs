@@ -35,7 +35,6 @@ using EVESharp.EVE.Data.Inventory.Items.Types.Information;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Data.Inventory.Exceptions;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 

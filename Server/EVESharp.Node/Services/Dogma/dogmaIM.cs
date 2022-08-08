@@ -15,7 +15,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -28,12 +27,13 @@ public class dogmaIM : ClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private IItems               Items            { get; }
-    private IAttributes         AttributeManager => this.Items.AttributeManager;
-    private ISolarSystems       SolarSystems     { get; }
-    private INotificationSender  Notifications    { get; }
-    private EffectsManager      EffectsManager   { get; }
-    private IDatabaseConnection Database         { get; }
+    private IItems              Items             { get; }
+    private IAttributes         Attributes        => this.Items.Attributes;
+    private IDefaultAttributes  DefaultAttributes => this.Items.DefaultAttributes;
+    private ISolarSystems       SolarSystems      { get; }
+    private INotificationSender Notifications     { get; }
+    private EffectsManager      EffectsManager    { get; }
+    private IDatabaseConnection Database          { get; }
 
     public dogmaIM (EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database,
                     ISolarSystems solarSystems) : base (manager)
@@ -219,7 +219,7 @@ public class dogmaIM : ClientBoundService
             [0] = null,
             [1] = null,
             [2] = $"Server value: {item.Attributes [attributeID]}",
-            [3] = $"Base value: {AttributeManager.DefaultAttributes [item.Type.ID] [attributeID]}",
+            [3] = $"Base value: {this.DefaultAttributes [item.Type.ID] [attributeID]}",
             [4] = $"Reason: {reason}"
         };
     }

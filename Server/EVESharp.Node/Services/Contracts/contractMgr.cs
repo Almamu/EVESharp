@@ -17,7 +17,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
-using EVESharp.Node.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Inventory;
@@ -42,12 +41,12 @@ public class contractMgr : Service
     private ITypes              Types              => this.Items.Types;
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
-    private IWalletManager      WalletManager      { get; }
+    private IWallets      Wallets      { get; }
     private IDogmaNotifications DogmaNotifications { get; }
 
     public contractMgr (
         ContractDB    db,            ItemDB itemDB, MarketDB marketDB, CharacterDB characterDB, IItems items, INotificationSender notificationSender,
-        IWalletManager walletManager, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
+        IWallets wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
     )
     {
         DB                 = db;
@@ -56,7 +55,7 @@ public class contractMgr : Service
         CharacterDB        = characterDB;
         Items              = items;
         Notifications      = notificationSender;
-        WalletManager      = walletManager;
+        this.Wallets       = wallets;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
     }
@@ -226,7 +225,7 @@ public class contractMgr : Service
             // take reward from the character
             if (reward > 0)
             {
-                using IWallet wallet = WalletManager.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
+                using IWallet wallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
                 {
                     wallet.EnsureEnoughBalance (reward);
                     wallet.CreateJournalRecord (MarketReference.ContractRewardAdded, null, null, -reward);
@@ -498,7 +497,7 @@ public class contractMgr : Service
                 throw new ConBidTooLow (quantity, nextMinimumBid);
 
             // take the bid's money off the wallet
-            using IWallet bidderWallet = WalletManager.AcquireWallet (bidderID, WalletKeys.MAIN);
+            using IWallet bidderWallet = this.Wallets.AcquireWallet (bidderID, WalletKeys.MAIN);
             {
                 bidderWallet.EnsureEnoughBalance (quantity);
                 bidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBid, null, null, -quantity);
@@ -521,7 +520,7 @@ public class contractMgr : Service
             ulong bidID = DB.PlaceBid (connection, contractID, quantity, bidderID, forCorp);
 
             // return the money for the player that was the highest bidder
-            using IWallet maximumBidderWallet = WalletManager.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
+            using IWallet maximumBidderWallet = this.Wallets.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
             {
                 maximumBidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBidRefund, null, null, maximumBid);
             }
@@ -556,7 +555,7 @@ public class contractMgr : Service
                 if (change.Quantity == 0)
                 {
                     // remove item from the meta inventories
-                    this.Items.MetaInventoryManager.OnItemDestroyed (item);
+                    this.Items.MetaInventories.OnItemDestroyed (item);
                     // temporarily move the item to the recycler, let the current owner know
                     item.LocationID = this.Items.LocationRecycler.ID;
                     this.DogmaNotifications.QueueMultiEvent (
@@ -568,7 +567,7 @@ public class contractMgr : Service
                     item.OwnerID    = contract.IssuerID;
                     Notifications.NotifyCharacter (contract.IssuerID, EVE.Notifications.Inventory.OnItemChange.BuildNewItemChange (item));
                     // add the item back to meta inventories if required
-                    this.Items.MetaInventoryManager.OnItemLoaded (item);
+                    this.Items.MetaInventories.OnItemLoaded (item);
                 }
                 else
                 {

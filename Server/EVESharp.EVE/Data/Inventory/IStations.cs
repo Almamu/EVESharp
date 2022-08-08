@@ -1,15 +1,11 @@
-using System.Collections;
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Inventory.Station;
-using Type = EVESharp.EVE.Data.Inventory.Station.Type;
 
-namespace EVESharp.Node.Inventory;
+namespace EVESharp.EVE.Data.Inventory;
 
-public interface IStations : IDictionary <int, Station>
+public interface IStations : IDictionary <int, Items.Types.Station>
 {
-    Dictionary <int, Operation> Operations   { get; }
-    Dictionary <int, Type>      StationTypes { get; }
+    Dictionary <int, Operation> Operations { get; }
+    Dictionary <int, Station.Type>      StationTypes { get; }
     Dictionary <int, string> Services     { get; }
 }

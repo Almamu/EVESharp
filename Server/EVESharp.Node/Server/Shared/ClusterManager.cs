@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Logging;
+using EVESharp.EVE;
 using EVESharp.EVE.Packets;
 using EVESharp.Node.Server.Shared.Transports;
 using Serilog;
@@ -20,7 +21,7 @@ public class ClusterManager
     public  HttpClient       HttpClient       { get; }
     private DateTime         IntervalStart    { get; set; }
     private int              IntervalDuration { get; set; }
-    private Timers           Timers           { get; }
+    private ITimers          Timers           { get; }
     public  Timer <object?>  HeartbeatTimer   { get; }
     private Timer <object?>  ClusterTimer     { get; set; }
     /// <summary>
@@ -28,7 +29,7 @@ public class ClusterManager
     /// </summary>
     public EventHandler OnClusterTimer { get; set; }
 
-    public ClusterManager (IMachoNet machoNet, TransportManager transportManager, HttpClient httpClient, Timers timers, ILogger logger)
+    public ClusterManager (IMachoNet machoNet, TransportManager transportManager, HttpClient httpClient, ITimers timers, ILogger logger)
     {
         MachoNet         = machoNet;
         Log              = logger;

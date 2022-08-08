@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.EVE;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared;
@@ -17,11 +18,11 @@ public class RemoteServiceManager
     private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
     private          int                          mNextCallID;
 
-    private Timers              Timers   { get; }
+    private ITimers              Timers   { get; }
     private IMachoNet           MachoNet { get; }
     private IDatabaseConnection Database { get; }
     
-    public RemoteServiceManager (IMachoNet machoNet, Timers timers, IDatabaseConnection databaseConnection)
+    public RemoteServiceManager (IMachoNet machoNet, ITimers timers, IDatabaseConnection databaseConnection)
     {
         Timers   = timers;
         MachoNet = machoNet;
