@@ -12,7 +12,6 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Corporations;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;

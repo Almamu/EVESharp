@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
-using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Type = EVESharp.EVE.Data.Inventory.Station.Type;
 
 namespace EVESharp.Node.Database;
 

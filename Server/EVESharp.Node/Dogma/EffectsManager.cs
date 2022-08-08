@@ -3,7 +3,6 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Data.Inventory;
 
 namespace EVESharp.Node.Dogma;
 

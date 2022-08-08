@@ -6,7 +6,6 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Client.Notifications.Database;
 using EVESharp.Node.Database;
-using EVESharp.Node.Notifications;
 using EVESharp.Node.Services.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

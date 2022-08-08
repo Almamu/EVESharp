@@ -6,8 +6,6 @@ using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Server.Shared;
-using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
 

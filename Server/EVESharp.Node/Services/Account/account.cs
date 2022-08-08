@@ -11,7 +11,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
-using EVESharp.Node.Market;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 

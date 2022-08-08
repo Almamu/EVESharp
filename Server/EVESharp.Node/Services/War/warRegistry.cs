@@ -2,7 +2,6 @@ using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.War;

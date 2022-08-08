@@ -32,15 +32,11 @@ using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
-using EVESharp.Node.Configuration;
 using EVESharp.Node.Data.Inventory.Exceptions;
 using EVESharp.Node.Database;
-using EVESharp.Node.Dogma;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
-using Character = EVESharp.EVE.Data.Inventory.Items.Types.Character;
-using Container = SimpleInjector.Container;
+using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;
 using Item = EVESharp.EVE.Data.Inventory.Items.Types.Information.Item;
 using ItemDB = EVESharp.Node.Database.ItemDB;
 using Type = EVESharp.EVE.Data.Inventory.Type;
@@ -309,19 +305,19 @@ public class Items : IItems
             ItemEntity wrapperItem = item.Type.Group.Category.ID switch
             {
                 // catch all for system items
-                (int) EVE.Data.Inventory.CategoryID.System => this.LoadSystem (item),
+                (int) CategoryID.System => this.LoadSystem (item),
                 // celestial items are a kind of subcategory
                 // load them in specific ways based on the type of celestial item
-                (int) EVE.Data.Inventory.CategoryID.Celestial => this.LoadCelestial (item),
-                (int) EVE.Data.Inventory.CategoryID.Blueprint => this.LoadBlueprint (item),
+                (int) CategoryID.Celestial => this.LoadCelestial (item),
+                (int) CategoryID.Blueprint => this.LoadBlueprint (item),
                 // owner items are a kind of subcategory too
-                (int) EVE.Data.Inventory.CategoryID.Owner       => this.LoadOwner (item),
-                (int) EVE.Data.Inventory.CategoryID.Skill       => this.LoadSkill (item),
-                (int) EVE.Data.Inventory.CategoryID.Ship        => this.LoadShip (item),
-                (int) EVE.Data.Inventory.CategoryID.Station     => this.LoadStation (item),
-                (int) EVE.Data.Inventory.CategoryID.Accessories => this.LoadAccessories (item),
-                (int) EVE.Data.Inventory.CategoryID.Implant     => this.LoadImplant (item),
-                (int) EVE.Data.Inventory.CategoryID.Module      => this.LoadModule (item),
+                (int) CategoryID.Owner       => this.LoadOwner (item),
+                (int) CategoryID.Skill       => this.LoadSkill (item),
+                (int) CategoryID.Ship        => this.LoadShip (item),
+                (int) CategoryID.Station     => this.LoadStation (item),
+                (int) CategoryID.Accessories => this.LoadAccessories (item),
+                (int) CategoryID.Implant     => this.LoadImplant (item),
+                (int) CategoryID.Module      => this.LoadModule (item),
                 _                                               => new EVE.Data.Inventory.Items.Types.Item (item)
             };
 
@@ -378,19 +374,19 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) EVE.Data.Inventory.GroupID.SolarSystem:
+            case (int) GroupID.SolarSystem:
                 return this.LoadSolarSystem (item);
-            case (int) EVE.Data.Inventory.GroupID.Station:
+            case (int) GroupID.Station:
                 return this.LoadStation (item);
-            case (int) EVE.Data.Inventory.GroupID.Constellation:
+            case (int) GroupID.Constellation:
                 return this.LoadConstellation (item);
-            case (int) EVE.Data.Inventory.GroupID.Region:
+            case (int) GroupID.Region:
                 return this.LoadRegion (item);
-            case (int) EVE.Data.Inventory.GroupID.CargoContainer:
-            case (int) EVE.Data.Inventory.GroupID.SecureCargoContainer:
-            case (int) EVE.Data.Inventory.GroupID.AuditLogSecureContainer:
-            case (int) EVE.Data.Inventory.GroupID.FreightContainer:
-            case (int) EVE.Data.Inventory.GroupID.Tool:
+            case (int) GroupID.CargoContainer:
+            case (int) GroupID.SecureCargoContainer:
+            case (int) GroupID.AuditLogSecureContainer:
+            case (int) GroupID.FreightContainer:
+            case (int) GroupID.Tool:
                 return this.LoadContainer (item);
             default:
                 this.Log.Warning ($"Loading celestial {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -408,13 +404,13 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) EVE.Data.Inventory.GroupID.Character:
+            case (int) GroupID.Character:
                 return new Character (this.ItemDB.LoadCharacter (item));
-            case (int) EVE.Data.Inventory.GroupID.Corporation:
+            case (int) GroupID.Corporation:
                 return new Corporation (this.ItemDB.LoadCorporation (item));
-            case (int) EVE.Data.Inventory.GroupID.Faction:
+            case (int) GroupID.Faction:
                 return this.LoadFaction (item);
-            case (int) EVE.Data.Inventory.GroupID.Alliance:
+            case (int) GroupID.Alliance:
                 return new Alliance (this.ItemDB.LoadAlliance (item));
             default:
                 this.Log.Warning ($"Loading owner {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -432,7 +428,7 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) EVE.Data.Inventory.GroupID.Clone:
+            case (int) GroupID.Clone:
                 return new Clone (item);
             default:
                 this.Log.Warning ($"Loading accessory {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -465,9 +461,9 @@ public class Items : IItems
     {
         switch (item.Type.Group.ID)
         {
-            case (int) EVE.Data.Inventory.GroupID.StationServices:
+            case (int) GroupID.StationServices:
                 return this.LoadStationServices (item);
-            case (int) EVE.Data.Inventory.GroupID.Station:
+            case (int) GroupID.Station:
                 return this.Stations [item.ID] = new Station (this.ItemDB.LoadStation (item));
             default:
                 this.Log.Warning ($"Loading station item {item.ID} from item group {item.Type.Group.ID} as normal item");
@@ -501,7 +497,7 @@ public class Items : IItems
 
     private ItemEntity LoadContainer (Item item)
     {
-        return new EVE.Data.Inventory.Items.Types.Container (item);
+        return new Container (item);
     }
 
     private ShipModule LoadModule (Item item)

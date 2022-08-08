@@ -1,7 +1,6 @@
 ﻿using System;
 using EVESharp.EVE.Notifications;
 using EVESharp.Node.Database;
-using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

@@ -1,8 +1,6 @@
 ﻿using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Services;
-using EVESharp.Node.Server.Shared;
-using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 

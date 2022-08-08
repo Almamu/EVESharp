@@ -3,12 +3,9 @@ using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Data.Inventory;
-using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared.Handlers;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Services;
-using EVESharp.Node.Sessions;
 using Serilog;
 
 namespace EVESharp.Node.Server.Shared.Messages;

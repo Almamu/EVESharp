@@ -7,7 +7,6 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Wallet;
-using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Market;

@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
-using EVESharp.EVE.Data.Corporation;
+﻿using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Sessions;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;

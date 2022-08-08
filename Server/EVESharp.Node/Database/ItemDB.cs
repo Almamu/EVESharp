@@ -27,14 +27,11 @@ using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
 using EVESharp.Database;
-using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types.Information;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Data.Inventory.Exceptions;
-using EVESharp.Node.Dogma;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;
 
@@ -58,7 +55,7 @@ public class ItemDB : DatabaseAccessor
         IDbConnection connection = null;
         DbDataReader reader = Database.Select (
             ref connection,
-            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) EVE.Data.Inventory.GroupID.Station} OR groupID = {(int) EVE.Data.Inventory.GroupID.Faction} OR groupID = {(int) EVE.Data.Inventory.GroupID.SolarSystem} OR groupID = {(int) EVE.Data.Inventory.GroupID.Corporation} OR groupID = {(int) EVE.Data.Inventory.GroupID.System})"
+            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Faction} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.System})"
         );
 
         using (connection)
@@ -884,7 +881,7 @@ public class ItemDB : DatabaseAccessor
             {
                 {"@ownerID", ownerID},
                 {"@locationID", locationID},
-                {"@blueprintCategoryID", EVE.Data.Inventory.CategoryID.Blueprint}
+                {"@blueprintCategoryID", CategoryID.Blueprint}
             }
         );
     }

@@ -1,10 +1,7 @@
-﻿using System.Data;
-using EVESharp.Database;
+﻿using EVESharp.Database;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Notifications;
-using EVESharp.EVE.Sessions;
-using EVESharp.Node.Notifications;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Market;

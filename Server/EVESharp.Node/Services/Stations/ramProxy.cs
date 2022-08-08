@@ -1,10 +1,8 @@
 ﻿using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;

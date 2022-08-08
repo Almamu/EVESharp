@@ -20,27 +20,18 @@ using EVESharp.EVE.Notifications.Alliances;
 using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Chat;
-using EVESharp.Node.Configuration;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Market;
-using EVESharp.Node.Notifications;
 using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.Node.Server.Shared;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using Character = EVESharp.EVE.Data.Inventory.Items.Types.Character;
 using ItemDB = EVESharp.Node.Database.ItemDB;
 using OnCorporationChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationChanged;
 using OnCorporationMemberChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationMemberChanged;
-using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.Corporations;
 

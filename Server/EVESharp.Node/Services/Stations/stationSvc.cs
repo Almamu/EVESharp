@@ -3,7 +3,6 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Stations;

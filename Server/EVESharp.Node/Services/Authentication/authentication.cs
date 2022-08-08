@@ -24,7 +24,6 @@
 
 using EVESharp.EVE.Configuration;
 using EVESharp.EVE.Services;
-using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

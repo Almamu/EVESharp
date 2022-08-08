@@ -5,7 +5,6 @@ using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
-using EVESharp.EVE.Market;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Wallet;
@@ -13,10 +12,7 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Notifications;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 

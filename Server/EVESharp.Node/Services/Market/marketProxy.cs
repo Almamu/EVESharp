@@ -18,20 +18,12 @@ using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Market;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Configuration;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Dogma;
-using EVESharp.Node.Market;
-using EVESharp.Node.Notifications;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Primitives;
-using Character = EVESharp.EVE.Data.Inventory.Items.Types.Character;
 
 namespace EVESharp.Node.Services.Market;
 

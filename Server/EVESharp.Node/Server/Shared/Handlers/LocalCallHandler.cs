@@ -8,8 +8,6 @@ using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Helpers;
-using EVESharp.Node.Server.Shared.Messages;
-using EVESharp.Node.Server.Shared.Transports;
 using EVESharp.Node.Services;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Network;

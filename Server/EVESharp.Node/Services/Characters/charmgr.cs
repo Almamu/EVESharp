@@ -4,9 +4,7 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Market;
 using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.Node.Services.Characters;

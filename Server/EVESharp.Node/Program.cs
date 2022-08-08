@@ -50,8 +50,8 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
-using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
+using EVESharp.Node.Server.Single.Messages;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Alliances;
@@ -81,7 +81,6 @@ using SimpleInjector;
 using Constants = EVESharp.Node.Configuration.Constants;
 using Container = SimpleInjector.Container;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;
-using MessageProcessor = EVESharp.Node.Server.Single.Messages.MessageProcessor;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node;

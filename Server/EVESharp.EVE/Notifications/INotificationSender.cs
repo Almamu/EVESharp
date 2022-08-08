@@ -31,27 +31,21 @@ public interface INotificationSender
         [Session.CORP_ROLE] = ComparisonType.Bitmask,
     };
     
-    void NotifyCharacters (PyList <PyInteger> characterIDs,  string             type, PyTuple notification);
-    void NotifyCharacters (PyList <PyInteger> characterIDs,  ClientNotification notification);
-    void NotifyCharacter (int                 characterID,   string             type, PyTuple notification);
-    void NotifyCharacter (int                 characterID,   ClientNotification entry);
-    void NotifyOwner (int                     ownerID,       ClientNotification entry);
-    void NotifyOwners (PyList <PyInteger>     ownerIDs,      ClientNotification notification);
-    void NotifyOwnerAtLocation (int           ownerID,       int                locationID, ClientNotification entry);
-    void NotifyCorporation (int               corporationID, string             type,       PyTuple            notification);
-    void NotifyCorporation (int               corporationID, ClientNotification notification);
-    void NotifyStation (int                   stationID,     string             type, PyTuple notification);
-    void NotifyStation (int                   stationID,     ClientNotification notification);
-    void NotifyAlliance (int                  allianceID,    ClientNotification notification);
-    void NotifyCorporationByRole (int         corporationID, long               roleMask, ClientNotification notification);
-    void NotifyCorporationByRole (int         corporationID, CorporationRole    role,     ClientNotification notification);
-
-    /// <summary>
-    /// Send a notification to the given node
-    /// </summary>
-    /// <param name="nodeID">The node to notify</param>
-    /// <param name="notification">The notification to send</param>
-    void NotifyNode (long nodeID, InterNodeNotification notification);
+    void NotifyCharacters (PyList <PyInteger> characterIDs,  string                type, PyTuple notification);
+    void NotifyCharacters (PyList <PyInteger> characterIDs,  ClientNotification    notification);
+    void NotifyCharacter (int                 characterID,   string                type, PyTuple notification);
+    void NotifyCharacter (int                 characterID,   ClientNotification    entry);
+    void NotifyOwner (int                     ownerID,       ClientNotification    entry);
+    void NotifyOwners (PyList <PyInteger>     ownerIDs,      ClientNotification    notification);
+    void NotifyOwnerAtLocation (int           ownerID,       int                   locationID, ClientNotification entry);
+    void NotifyCorporation (int               corporationID, string                type,       PyTuple            notification);
+    void NotifyCorporation (int               corporationID, ClientNotification    notification);
+    void NotifyStation (int                   stationID,     string                type, PyTuple notification);
+    void NotifyStation (int                   stationID,     ClientNotification    notification);
+    void NotifyAlliance (int                  allianceID,    ClientNotification    notification);
+    void NotifyCorporationByRole (int         corporationID, long                  roleMask, ClientNotification notification);
+    void NotifyCorporationByRole (int         corporationID, CorporationRole       role,     ClientNotification notification);
+    void NotifyNode (long                     nodeID,        InterNodeNotification notification);
 
     void SendNotification (NotificationIdType idType,           int                id,            ClientNotification data);
     void SendNotification (NotificationIdType idType,           PyTuple            ids,           ClientNotification data);
@@ -64,5 +58,5 @@ public interface INotificationSender
     void SendNotification (NotificationIdType idType,           PyList             idsOfInterest, ClientNotification data);
     void SendNotification (string             notificationType, NotificationIdType idType,        PyList             idsOfInterest, ClientNotification data);
     void SendNotification (string             notificationType, NotificationIdType idType,        PyList             idsOfInterest, PyTuple            data);
-    void SendNotification (string notificationType, string idType, PyList idsOfInterest, PyTuple data);
+    void SendNotification (string             notificationType, string             idType,        PyList             idsOfInterest, PyTuple            data);
 }

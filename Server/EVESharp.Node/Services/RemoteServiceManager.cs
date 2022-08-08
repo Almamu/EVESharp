@@ -5,7 +5,6 @@ using EVESharp.EVE;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Server.Shared;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;

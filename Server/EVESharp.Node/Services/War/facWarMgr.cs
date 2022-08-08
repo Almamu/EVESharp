@@ -10,14 +10,10 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Database;
-using EVESharp.Node.Notifications;
-using EVESharp.Node.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
-using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node.Services.War;
 

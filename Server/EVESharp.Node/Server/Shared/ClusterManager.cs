@@ -10,7 +10,6 @@ using EVESharp.EVE;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets;
-using EVESharp.Node.Server.Shared.Transports;
 using Serilog;
 
 namespace EVESharp.Node.Server.Shared;
