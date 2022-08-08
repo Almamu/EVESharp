@@ -106,7 +106,7 @@ internal class Program
             () =>
             {
                 logChannel.Information ("Initializing cache");
-                CacheStorage cacheStorage = dependencies.GetInstance <CacheStorage> ();
+                ICacheStorage cacheStorage = dependencies.GetInstance <ICacheStorage> ();
                 // prime bulk data
                 cacheStorage.Load (
                     EVE.Data.Cache.LoginCacheTable,
@@ -183,7 +183,7 @@ internal class Program
         container.RegisterInstance (new HttpClient ());
         container.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
         container.Register <ISessionManager, SessionManager> (Lifestyle.Singleton);
-        container.Register <CacheStorage> (Lifestyle.Singleton);
+        container.Register <ICacheStorage, CacheStorage> (Lifestyle.Singleton);
         container.Register <IMetaInventories, MetaInventories> (Lifestyle.Singleton);
         container.Register <IDefaultAttributes, DefaultAttributes> (Lifestyle.Singleton);
         container.Register <IAttributes, Attributes> (Lifestyle.Singleton);
@@ -278,13 +278,11 @@ internal class Program
         container.Register <factory> (Lifestyle.Singleton);
         container.Register <petitioner> (Lifestyle.Singleton);
         container.Register <allianceRegistry> (Lifestyle.Singleton);
-        container.Register <LoginQueue> (Lifestyle.Singleton);
-        container.Register <ClusterManager> (Lifestyle.Singleton);
+        container.Register <MessageProcessor <LoginQueueEntry>, LoginQueue> (Lifestyle.Singleton);
+        container.Register <IClusterManager, ClusterManager> (Lifestyle.Singleton);
         container.Register <ITransportManager, TransportManager> (Lifestyle.Singleton);
         container.Register <EffectsManager> (Lifestyle.Singleton);
-        
-        container.Register <MessageProcessor <LoginQueueEntry>, LoginQueue> (Lifestyle.Singleton);
-        
+
         return container;
     }
 
@@ -364,7 +362,7 @@ internal class Program
                 machoNet.Initialize ();
 
                 // based on the mode do some things with the cluster manager
-                ClusterManager cluster = dependencies.GetInstance <ClusterManager> ();
+                IClusterManager cluster = dependencies.GetInstance <IClusterManager> ();
 
                 // register with the server
                 if (machoNet.Mode != RunMode.Single)

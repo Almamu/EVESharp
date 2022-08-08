@@ -34,9 +34,9 @@ namespace EVESharp.Node.Services.Network;
 public class machoNet : Service
 {
     public override AccessLevel  AccessLevel  => AccessLevel.None;
-    private         CacheStorage CacheStorage { get; }
+    private         ICacheStorage CacheStorage { get; }
 
-    public machoNet (CacheStorage cacheStorage)
+    public machoNet (ICacheStorage cacheStorage)
     {
         CacheStorage = cacheStorage;
     }

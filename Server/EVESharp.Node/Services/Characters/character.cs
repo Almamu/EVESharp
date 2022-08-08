@@ -65,7 +65,7 @@ public class character : Service
     private ChatDB             ChatDB         { get; }
     private IItems              Items          { get; }
     private ITypes       Types    => this.Items.Types;
-    private CacheStorage       CacheStorage   { get; }
+    private ICacheStorage       CacheStorage   { get; }
     private INotificationSender Notifications  { get; }
     private IWallets     Wallets  { get; }
     private IAncestries         Ancestries     { get; }
@@ -74,7 +74,7 @@ public class character : Service
     private ILogger            Log            { get; }
 
     public character (
-        CacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
+        ICacheStorage       cacheStorage,       CharacterDB   db,            ChatDB     chatDB, CorporationDB corporationDB,
         IItems        items,        ILogger       logger,        Character  configuration,
         INotificationSender notificationSender, IWallets wallets, IAncestries ancestries, IBloodlines bloodlines,
         ISessionManager     sessionManager

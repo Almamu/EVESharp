@@ -52,7 +52,7 @@ namespace EVESharp.Node.Services;
 
 public class ServiceManager : IServiceManager <string>
 {
-    public           CacheStorage                 CacheStorage     { get; }
+    public           ICacheStorage                 CacheStorage     { get; }
     public           ITimers                 Timers     { get; }
     private          ILogger                      Log              { get; }
     public           objectCaching                objectCaching    { get; }
@@ -110,7 +110,7 @@ public class ServiceManager : IServiceManager <string>
     }
     
     public ServiceManager (
-        CacheStorage     storage, ILogger logger, ITimers timers,
+        ICacheStorage     storage, ILogger logger, ITimers timers,
         machoNet         machoNet,
         objectCaching    objectCaching,
         alert            alert,

@@ -36,9 +36,9 @@ public class objectCaching : Service
 {
     public override AccessLevel  AccessLevel  => AccessLevel.None;
     private         ILogger      Log          { get; }
-    private         CacheStorage CacheStorage { get; }
+    private         ICacheStorage CacheStorage { get; }
 
-    public objectCaching (CacheStorage cacheStorage, ILogger logger)
+    public objectCaching (ICacheStorage cacheStorage, ILogger logger)
     {
         Log          = logger;
         CacheStorage = cacheStorage;

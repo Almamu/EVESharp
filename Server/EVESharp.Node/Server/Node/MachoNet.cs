@@ -27,8 +27,8 @@ public class MachoNet : IMachoNet
     private IDatabaseConnection  Database      { get; }
 
     public MachoNet (
-        IDatabaseConnection databaseConnection, HttpClient httpClient, ITransportManager transportManager, LoginQueue loginQueue,
-        General             configuration,      ILogger   logger
+        IDatabaseConnection databaseConnection, HttpClient httpClient, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
+        General             configuration,      ILogger    logger
     )
     {
         Database         = databaseConnection;

@@ -18,9 +18,9 @@ public class map : Service
 
     private IItems        Items          { get; }
     private IStations    StationManager => this.Items.Stations;
-    private CacheStorage CacheStorage   { get; }
+    private ICacheStorage CacheStorage   { get; }
 
-    public map (IItems items, CacheStorage cacheStorage)
+    public map (IItems items, ICacheStorage cacheStorage)
     {
         this.Items  = items;
         CacheStorage = cacheStorage;

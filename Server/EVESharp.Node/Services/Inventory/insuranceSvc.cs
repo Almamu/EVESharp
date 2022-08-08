@@ -7,6 +7,7 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.insuranceSvc;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
@@ -36,7 +37,7 @@ public class insuranceSvc : ClientBoundService
     private          IDatabaseConnection Database      { get; }
 
     public insuranceSvc (
-        ClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database,
+        IClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager, IDatabaseConnection database,
         ISolarSystems solarSystems
     ) : base (manager)
     {

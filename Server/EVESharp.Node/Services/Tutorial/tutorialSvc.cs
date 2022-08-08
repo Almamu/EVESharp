@@ -11,10 +11,10 @@ namespace EVESharp.Node.Services.Tutorial;
 public class tutorialSvc : Service
 {
     public override AccessLevel  AccessLevel  => AccessLevel.Station;
-    private         CacheStorage CacheStorage { get; }
+    private         ICacheStorage CacheStorage { get; }
     private         TutorialsDB  DB           { get; }
 
-    public tutorialSvc (CacheStorage cacheStorage, TutorialsDB db)
+    public tutorialSvc (ICacheStorage cacheStorage, TutorialsDB db)
     {
         CacheStorage = cacheStorage;
         DB           = db;

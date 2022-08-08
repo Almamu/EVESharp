@@ -32,8 +32,8 @@ public class MachoNet : IMachoNet
     private HttpClient           HttpClient    { get; }
 
     public MachoNet (
-        HttpClient httpClient, IDatabaseConnection databaseConnection, ITransportManager transportManager, LoginQueue loginQueue,
-        General   configuration, ILogger    logger
+        HttpClient httpClient,    IDatabaseConnection databaseConnection, ITransportManager transportManager, MessageProcessor <LoginQueueEntry> loginQueue,
+        General    configuration, ILogger             logger
     )
     {
         HttpClient       = httpClient;

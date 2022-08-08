@@ -13,6 +13,7 @@ using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
 using EVESharp.EVE.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Market;
@@ -43,7 +44,7 @@ public class marketProxy : Service
     private MarketDB           DB                 { get; }
     private CharacterDB        CharacterDB        { get; }
     private ItemDB             ItemDB             { get; }
-    private CacheStorage       CacheStorage       { get; }
+    private ICacheStorage       CacheStorage       { get; }
     private IItems              Items              { get; }
     private ITypes             Types              => this.Items.Types;
     private SolarSystemDB      SolarSystemDB      { get; }
@@ -54,8 +55,8 @@ public class marketProxy : Service
     private IDogmaNotifications DogmaNotifications { get; }
 
     public marketProxy (
-        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, IItems items, CacheStorage cacheStorage,
-        IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, ClusterManager clusterManager,
+        MarketDB  db,        CharacterDB        characterDB, ItemDB itemDB, SolarSystemDB solarSystemDB, IItems items, ICacheStorage cacheStorage,
+        IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
         ISolarSystems solarSystems
     )
     {

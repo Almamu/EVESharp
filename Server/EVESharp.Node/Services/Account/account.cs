@@ -22,14 +22,14 @@ public class account : Service
     public override AccessLevel         AccessLevel   => AccessLevel.None;
     private         CharacterDB         DB            { get; }
     private         IWallets       Wallets { get; }
-    private         CacheStorage        CacheStorage  { get; }
+    private         ICacheStorage        CacheStorage  { get; }
     private         IDatabaseConnection Database      { get; }
 
-    public account (IDatabaseConnection databaseConnection, CharacterDB db, IWallets wallets, CacheStorage cacheStorage)
+    public account (IDatabaseConnection databaseConnection, CharacterDB db, IWallets wallets, ICacheStorage cacheStorage)
     {
         Database     = databaseConnection;
         DB           = db;
-        this.Wallets = wallets;
+        Wallets      = wallets;
         CacheStorage = cacheStorage;
     }
 

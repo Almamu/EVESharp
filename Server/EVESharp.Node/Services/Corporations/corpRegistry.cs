@@ -14,6 +14,7 @@ using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Alliances;
 using EVESharp.EVE.Notifications.Corporations;
@@ -66,7 +67,7 @@ public class corpRegistry : MultiClientBoundService
     private IAncestries                Ancestries          { get; }
     private IConstants                  Constants           { get; }
     private ISessionManager             SessionManager      { get; }
-    private ClusterManager             ClusterManager      { get; }
+    private IClusterManager             ClusterManager      { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
@@ -75,7 +76,7 @@ public class corpRegistry : MultiClientBoundService
     public corpRegistry (
         CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB      chatDB, CharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets      wallets,      IItems items, IConstants constants, BoundServiceManager manager,
-        IAncestries    ancestries,  ISessionManager      sessionManager,     ClusterManager clusterManager, ItemDB itemDB
+        IAncestries    ancestries,  ISessionManager      sessionManager,     IClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
         DB             = db;

@@ -12,9 +12,9 @@ public class stationSvc : Service
 {
     public override AccessLevel  AccessLevel  => AccessLevel.None;
     private         IItems  Items  { get; }
-    private         CacheStorage CacheStorage { get; }
+    private         ICacheStorage CacheStorage { get; }
 
-    public stationSvc (IItems items, CacheStorage cacheStorage)
+    public stationSvc (IItems items, ICacheStorage cacheStorage)
     {
         this.Items  = items;
         CacheStorage = cacheStorage;

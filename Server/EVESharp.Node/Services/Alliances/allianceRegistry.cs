@@ -12,6 +12,7 @@ using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.allianceRegistry;
 using EVESharp.EVE.Exceptions.corpRegistry;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Alliances;
 using EVESharp.EVE.Packets.Exceptions;
@@ -42,11 +43,11 @@ public class allianceRegistry : MultiClientBoundService
     private IItems              Items          { get; }
     private Alliance            Alliance       { get; }
     private ISessionManager      SessionManager { get; }
-    private ClusterManager      ClusterManager { get; }
+    private IClusterManager      ClusterManager { get; }
 
     public allianceRegistry (
         IDatabaseConnection databaseConnection, CorporationDB  corporationDB,  ChatDB chatDB, IItems items, INotificationSender notificationSender,
-        BoundServiceManager manager,            ISessionManager sessionManager, ClusterManager clusterManager, ItemDB itemDB
+        BoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager, ItemDB itemDB
     ) : base (manager)
     {
         Database       = databaseConnection;

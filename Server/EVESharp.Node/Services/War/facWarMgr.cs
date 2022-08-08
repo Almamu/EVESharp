@@ -34,13 +34,13 @@ public class facWarMgr : Service
     public override AccessLevel         AccessLevel    => AccessLevel.None;
     private         ChatDB              ChatDB         { get; }
     private         CharacterDB         CharacterDB    { get; }
-    private         CacheStorage        CacheStorage   { get; }
+    private         ICacheStorage        CacheStorage   { get; }
     private         IItems              Items          { get; }
     private         INotificationSender Notifications  { get; }
     private         ISessionManager      SessionManager { get; }
 
     public facWarMgr (
-        ChatDB         chatDB, CharacterDB characterDB, CacheStorage cacheStorage, IItems items, INotificationSender notificationSender,
+        ChatDB         chatDB, CharacterDB characterDB, ICacheStorage cacheStorage, IItems items, INotificationSender notificationSender,
         ISessionManager sessionManager
     )
     {

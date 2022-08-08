@@ -45,7 +45,7 @@ public class SolarSystems : Dictionary<int, SolarSystem>, ISolarSystems
     private          IStations              Stations       { get; }
     private          IMachoNet              MachoNet       { get; }
     private          HttpClient             HttpClient     { get; }
-    private          ClusterManager         ClusterManager { get; }
+    private          IClusterManager         ClusterManager { get; }
 
     public SolarSystem this [TypeID id]
     {
@@ -53,7 +53,7 @@ public class SolarSystems : Dictionary<int, SolarSystem>, ISolarSystems
         set => this [(int) id] = value;
     }
     
-    public SolarSystems (HttpClient httpClient, IStations stations, ClusterManager clusterManager, IDatabaseConnection databaseConnection, IMachoNet machoNet)
+    public SolarSystems (HttpClient httpClient, IStations stations, IClusterManager clusterManager, IDatabaseConnection databaseConnection, IMachoNet machoNet)
     {
         this.HttpClient     = httpClient;
         this.MachoNet       = machoNet;

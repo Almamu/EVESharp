@@ -23,12 +23,12 @@ public class certificateMgr : Service
 {
     public override AccessLevel                           AccessLevel              => AccessLevel.None;
     private         IItems                                Items                    { get; }
-    private         CacheStorage                          CacheStorage             { get; }
+    private         ICacheStorage                          CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
     private         IDogmaNotifications                   DogmaNotifications       { get; }
     private         IDatabaseConnection                   Database                 { get; }
 
-    public certificateMgr (IItems items, CacheStorage cacheStorage, IDogmaNotifications dogmaNotifications, IDatabaseConnection database)
+    public certificateMgr (IItems items, ICacheStorage cacheStorage, IDogmaNotifications dogmaNotifications, IDatabaseConnection database)
     {
         Database                = database;
         this.Items              = items;

@@ -22,11 +22,11 @@ public class standing2 : Service
 {
     public override AccessLevel        AccessLevel   => AccessLevel.None;
     private         StandingDB         DB            { get; }
-    private         CacheStorage       CacheStorage  { get; }
+    private         ICacheStorage       CacheStorage  { get; }
     private         IItems        Items   { get; }
     private         INotificationSender Notifications { get; }
 
-    public standing2 (CacheStorage cacheStorage, StandingDB db, IItems items, INotificationSender notificationSender)
+    public standing2 (ICacheStorage cacheStorage, StandingDB db, IItems items, INotificationSender notificationSender)
     {
         CacheStorage  = cacheStorage;
         DB            = db;
