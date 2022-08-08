@@ -107,7 +107,6 @@ public class ServiceManager : IServiceManager <string>
     /// </summary>
     protected ServiceManager ()
     {
-        
     }
     
     public ServiceManager (

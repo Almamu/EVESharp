@@ -10,6 +10,5 @@ public class DefaultAttributes : Dictionary <int, Dictionary <int, Attribute>>, 
 {
     public DefaultAttributes (IDatabaseConnection Database, IAttributes attributes) : base (Database.InvDgmLoadDefaultAttributes (attributes))
     {
-        
     }
 }

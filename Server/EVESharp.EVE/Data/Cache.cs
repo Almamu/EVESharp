@@ -6,7 +6,6 @@ namespace EVESharp.EVE.Data;
 
 public static class Cache
 {
-    
     /// <summary>
     /// BulkData fetched by the EVE client on login
     /// </summary>
@@ -265,5 +264,4 @@ public static class Cache
         CacheObjectType.Rowset,
         CacheObjectType.Rowset
     };
-
 }

@@ -96,7 +96,6 @@ public class MachoNet : IMachoNet
                 // a packet destinated to any node should be handled locally by us
                 this.QueueInputPacket (origin, packet);
                 break;
-
         }
     }
 

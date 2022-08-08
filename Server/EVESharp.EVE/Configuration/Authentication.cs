@@ -42,7 +42,6 @@ public class Authentication
             default:
                 this.MessageType = AuthenticationMessageType.NoMessage;
                 break;
-
         }
 
         if (section.ContainsKey ("autoaccount") == false)

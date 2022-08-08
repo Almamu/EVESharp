@@ -266,7 +266,6 @@ public class Attribute
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer * value;
                 break;
-
         }
 
         return clone;
@@ -293,7 +292,6 @@ public class Attribute
             case ItemAttributeValueType.Double:
                 clone.Float *= value;
                 break;
-
         }
 
         return clone;
@@ -318,7 +316,6 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Integer *= value.Integer;
                         break;
-
                 }
                 break;
 
@@ -332,10 +329,8 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer * value.Float;
                         break;
-
                 }
                 break;
-
         }
 
         return clone;
@@ -357,7 +352,6 @@ public class Attribute
             case ItemAttributeValueType.Double:
                 clone.Float /= value;
                 break;
-
         }
 
         return clone;
@@ -379,7 +373,6 @@ public class Attribute
             case ItemAttributeValueType.Double:
                 clone.Float /= value;
                 break;
-
         }
 
         return clone;
@@ -404,7 +397,6 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Float = (double) clone.Integer / value.Integer;
                         break;
-
                 }
                 break;
 
@@ -418,10 +410,8 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer / value.Float;
                         break;
-
                 }
                 break;
-
         }
 
         return clone;
@@ -443,7 +433,6 @@ public class Attribute
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer + value;
                 break;
-
         }
 
         return clone;
@@ -465,7 +454,6 @@ public class Attribute
             case ItemAttributeValueType.Double:
                 clone.Float += value;
                 break;
-
         }
 
         return clone;
@@ -490,7 +478,6 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Integer += value.Integer;
                         break;
-
                 }
                 break;
 
@@ -504,10 +491,8 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer + value.Float;
                         break;
-
                 }
                 break;
-
         }
 
         return clone;
@@ -529,7 +514,6 @@ public class Attribute
             case ItemAttributeValueType.Integer:
                 clone.Float = clone.Integer - value;
                 break;
-
         }
 
         return clone;
@@ -551,7 +535,6 @@ public class Attribute
             case ItemAttributeValueType.Double:
                 clone.Float -= value;
                 break;
-
         }
 
         return clone;
@@ -576,7 +559,6 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Integer -= value.Integer;
                         break;
-
                 }
                 break;
 
@@ -590,10 +572,8 @@ public class Attribute
                     case ItemAttributeValueType.Integer:
                         clone.Float = clone.Integer - value.Float;
                         break;
-
                 }
                 break;
-
         }
 
         return clone;

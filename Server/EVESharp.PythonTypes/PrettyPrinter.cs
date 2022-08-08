@@ -139,7 +139,6 @@ public class PrettyPrinter
             default:
                 this.mStringBuilder.AppendLine ("[--PyUnknown--]");
                 break;
-
         }
     }
 

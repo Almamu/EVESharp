@@ -60,8 +60,7 @@ public class OnCorporationMemberUpdated : InterNodeNotification
             ["titleMask"]             = TitleMask
         };
     }
-
-
+    
     public static implicit operator OnCorporationMemberUpdated (PyTuple notification)
     {
         if (notification.Count != 2)

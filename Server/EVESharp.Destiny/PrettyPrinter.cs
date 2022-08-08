@@ -40,36 +40,29 @@ public static class PrettyPrinter
                 PrintGotoState (sb, indention + Indention, ball.GotoState);
                 break;
 
-
             case BallMode.Warp:
                 PrintWarpState (sb, indention + Indention, ball.WarpState);
                 break;
-
-
+            
             case BallMode.Missile:
                 PrintMissileState (sb, indention + Indention, ball.MissileState);
                 break;
-
-
+            
             case BallMode.Formation:
                 PrintFormationState (sb, indention + Indention, ball.FormationState);
                 break;
-
 
             case BallMode.Follow:
                 PrintFollowState (sb, indention + Indention, ball.FollowState);
                 break;
 
-
             case BallMode.Mushroom:
                 PrintMushroomState (sb, indention + Indention, ball.MushroomState);
                 break;
 
-
             case BallMode.Troll:
                 PrintTrollState (sb, indention + Indention, ball.TrollState);
                 break;
-
         }
 
         if (ball.MiniBalls != null)

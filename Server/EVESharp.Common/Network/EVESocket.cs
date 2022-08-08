@@ -91,7 +91,6 @@ public abstract class EVESocket
                     handled = true;
                     this.FireOnConnectionLostHandler ();
                     break;
-
             }
 
         // call the custom exception handler only if the exception cannot be handled by the socket itself

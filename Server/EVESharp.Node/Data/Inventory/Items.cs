@@ -718,7 +718,6 @@ public class Items : IItems
                 case Character character:
                     this.CharacterDB.UpdateCharacterInformation (character);
                     break;
-
             }
         }
 
@@ -748,8 +747,7 @@ public class Items : IItems
         foreach (KeyValuePair <int, ItemEntity> pair in items)
             this.DestroyItem (pair.Value);
     }
-
-
+    
     public void DestroyItems (List <ItemEntity> items)
     {
         foreach (ItemEntity item in items)

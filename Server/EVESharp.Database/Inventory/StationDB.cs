@@ -9,7 +9,6 @@ namespace EVESharp.Database.Inventory;
 
 public static class StationDB
 {
-
     public static Dictionary <int, Operation> StaLoadOperations (this IDatabaseConnection Database)
     {
         IDbConnection connection = null;

@@ -142,7 +142,6 @@ public class TransportManager : ITransportManager
             case MachoProxyTransport:
                 ProxyTransports.Remove (transport.Session.NodeID);
                 break;
-
         }
 
         OnTransportRemoved?.Invoke (this, transport);

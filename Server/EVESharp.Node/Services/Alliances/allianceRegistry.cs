@@ -125,8 +125,7 @@ public class allianceRegistry : MultiClientBoundService
         // finally remove all the applications
         Database.CrpAlliancesHousekeepApplications (minimumTime);
     }
-
-
+    
     protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("allianceRegistry", parameters.ObjectID);

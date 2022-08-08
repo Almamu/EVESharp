@@ -17,7 +17,6 @@ public static class AccountDB
 
     public static void CluRegisterClientAddress (this IDatabaseConnection Database, int clientID, long proxyNodeID)
     {
-        
         Database.Procedure (
             "CluRegisterClientAddress",
             new Dictionary <string, object>

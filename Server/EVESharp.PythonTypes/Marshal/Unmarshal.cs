@@ -589,8 +589,7 @@ public class Unmarshal
                 case FieldType.Str:
                     data [column.Name] = this.Process (false);
                     break;
-
-
+                
                 default:
                     throw new InvalidDataException ($"Unknown column type {column.Type}");
             }

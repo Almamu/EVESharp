@@ -36,38 +36,31 @@ public class UpdateReader
             case BallMode.Orbit:
                 ret.FollowState = str.ReadStruct <FollowState> ();
                 break;
-
-
+            
             case BallMode.Formation:
                 ret.FormationState = str.ReadStruct <FormationState> ();
                 break;
-
 
             case BallMode.Troll:
                 ret.TrollState = str.ReadStruct <TrollState> ();
                 break;
 
-
             case BallMode.Missile:
                 ret.MissileState = str.ReadStruct <MissileState> ();
                 break;
 
-
             case BallMode.Goto:
                 ret.GotoState = str.ReadStruct <GotoState> ();
                 break;
-
-
+            
             case BallMode.Warp:
                 ret.WarpState = str.ReadStruct <WarpState> ();
                 break;
 
-
             case BallMode.Mushroom:
                 ret.MushroomState = str.ReadStruct <MushroomState> ();
                 break;
-
-
+            
             case BallMode.Stop:
             case BallMode.Field:
             case BallMode.Rigid:

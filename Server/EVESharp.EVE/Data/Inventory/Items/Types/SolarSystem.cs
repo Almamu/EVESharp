@@ -64,8 +64,7 @@ public class SolarSystem : ItemInventory
         this.SolarSystemInformation = info;
         this.BelongsToUs            = false;
     }
-
-
+    
     protected override void LoadContents (Flags ignoreFlags = Flags.None)
     {
         throw new NotImplementedException ();
