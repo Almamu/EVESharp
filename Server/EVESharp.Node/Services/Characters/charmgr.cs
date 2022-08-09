@@ -45,12 +45,8 @@ public class charmgr : Service
     [MustBeCharacter]
     public PyDataType AddToBounty (CallInformation call, PyInteger characterID, PyInteger bounty)
     {
-        // get character's object
-        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
-
         // access the wallet and do the required changes
-        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
-
+        using IWallet wallet = this.Wallets.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
         {
             // ensure the character has enough balance
             wallet.EnsureEnoughBalance (bounty);
@@ -59,7 +55,7 @@ public class charmgr : Service
         }
 
         // create the bounty record and update the information in the database
-        DB.AddToBounty (character.ID, characterID, bounty);
+        DB.AddToBounty (call.Session.CharacterID, characterID, bounty);
 
         return null;
     }

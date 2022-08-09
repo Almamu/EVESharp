@@ -83,7 +83,7 @@ public class bookmarkTests
     [SetUp]
     public void SetUp ()
     {
-        this.mHarmony.Setup (this.GetType ());
+        this.mHarmony.Setup (this);
         
         mItemsMock.Setup (x => x.GetItem (It.Is<int> (v => v == ITEMID))).Returns (
             this.mItem
@@ -103,6 +103,12 @@ public class bookmarkTests
 
         // create mocks
         this.mBookmarkSvc = new bookmark (mDatabaseMock.Object, mItemsMock.Object, mRemoteServiceManagerMock.Object);
+    }
+
+    [TearDown]
+    public void TearDown ()
+    {
+        this.mHarmony.UnpatchAll ();
     }
 
     [Test]
