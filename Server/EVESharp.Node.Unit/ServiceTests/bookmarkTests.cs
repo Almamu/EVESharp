@@ -69,6 +69,16 @@ public class bookmarkTests
         
         return false;
     }
+
+    [HarmonyPatch(typeof(BookmarkDB), nameof(BookmarkDB.ChrBookmarksDelete))]
+    static bool ChrBookmarksDelete (IDatabaseConnection Database, int ownerID, PyList <PyInteger> bookmarkIDs)
+    {
+        Assert.AreEqual (1,                          bookmarkIDs.Count);
+        Assert.IsTrue (bookmarkIDs [0] == BOOKMARKID);
+        Assert.AreEqual (Utils.Sessions.CHARACTERID, ownerID);
+        
+        return false;
+    }
     
     [SetUp]
     public void SetUp ()
@@ -111,5 +121,12 @@ public class bookmarkTests
         // verify mocks
         this.mItemsMock.Verify ();
         this.mRemoteServiceManagerMock.Verify ();
+    }
+
+    [Test]
+    public void DeleteBookmarkTest ()
+    {
+        this.mBookmarkSvc.DeleteBookmarks (Utils.Service.GenerateServiceCall (this.mSession), new PyList () {BOOKMARKID});
+        this.mBookmarkSvc.DeleteBookmarks (Utils.Service.GenerateServiceCall (this.mSession), new PyList ());
     }
 }
