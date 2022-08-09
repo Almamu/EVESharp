@@ -4,6 +4,7 @@ using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
@@ -13,7 +14,7 @@ using Serilog;
 
 namespace EVESharp.Node.Services;
 
-public class RemoteServiceManager
+public class RemoteServiceManager : IRemoteServiceManager
 {
     private readonly Dictionary <int, RemoteCall> mCallCallbacks = new Dictionary <int, RemoteCall> ();
     private          int                          mNextCallID;

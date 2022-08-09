@@ -17,9 +17,9 @@ public class bookmark : Service
     public override AccessLevel          AccessLevel          => AccessLevel.None;
     private         IDatabaseConnection  Database             { get; }
     private         IItems               Items                { get; }
-    private         RemoteServiceManager RemoteServiceManager { get; }
+    private         IRemoteServiceManager RemoteServiceManager { get; }
 
-    public bookmark (IDatabaseConnection connection, IItems items, RemoteServiceManager remoteServiceManager)
+    public bookmark (IDatabaseConnection connection, IItems items, IRemoteServiceManager remoteServiceManager)
     {
         Database             = connection;
         this.Items           = items;
@@ -31,7 +31,7 @@ public class bookmark : Service
         return Database.ChrBookmarksGet (call.Session.CharacterID);
     }
 
-    public PyDataType BookmarkLocation (CallInformation call, PyInteger itemID, PyDataType unk, PyString name, PyString comment)
+    public PyTuple BookmarkLocation (CallInformation call, PyInteger itemID, PyDataType unk, PyString name, PyString comment)
     {
         if (ItemRanges.IsStaticData (itemID) == false)
             throw new CustomError ("Bookmarks for non-static locations are not supported yet!");

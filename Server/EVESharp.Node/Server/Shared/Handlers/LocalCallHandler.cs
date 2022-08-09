@@ -6,6 +6,7 @@ using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Services;
@@ -22,13 +23,13 @@ public class LocalCallHandler
     public  IMachoNet            MachoNet             { get; }
     public  ServiceManager       ServiceManager       { get; }
     public  BoundServiceManager  BoundServiceManager  { get; }
-    public  RemoteServiceManager RemoteServiceManager { get; }
+    public  IRemoteServiceManager RemoteServiceManager { get; }
     public  ILogger              Log                  { get; }
     public  PacketCallHelper     PacketCallHelper     { get; }
 
     public LocalCallHandler
     (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager,
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
         PacketCallHelper packetCallHelper
     )
     {

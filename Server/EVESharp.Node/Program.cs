@@ -39,6 +39,7 @@ using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Agents;
@@ -203,7 +204,7 @@ internal class Program
         container.Register <ISolarSystems, SolarSystems> (Lifestyle.Singleton);
         container.Register <ServiceManager> (Lifestyle.Singleton);
         container.Register <BoundServiceManager> (Lifestyle.Singleton);
-        container.Register <RemoteServiceManager> (Lifestyle.Singleton);
+        container.Register <IRemoteServiceManager, RemoteServiceManager> (Lifestyle.Singleton);
         container.Register <PacketCallHelper> (Lifestyle.Singleton);
         container.Register <INotificationSender, NotificationSender> (Lifestyle.Singleton);
         container.Register <IExpressions, Expressions> (Lifestyle.Singleton);

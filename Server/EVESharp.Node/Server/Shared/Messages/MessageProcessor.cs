@@ -2,6 +2,7 @@
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Handlers;
 using EVESharp.Node.Server.Shared.Helpers;
@@ -22,11 +23,11 @@ public abstract class MessageProcessor : MessageProcessor <MachoMessage>
     protected ServiceManager           ServiceManager           { get; }
     protected BoundServiceManager      BoundServiceManager      { get; }
     protected ISessionManager          SessionManager           { get; }
-    protected RemoteServiceManager     RemoteServiceManager     { get; }
+    protected IRemoteServiceManager     RemoteServiceManager     { get; }
 
     protected MessageProcessor
     (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager,
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
         PacketCallHelper packetCallHelper, IItems items, ISolarSystems solarSystems, INotificationSender notifications, ISessionManager sessionManager,
         int numberOfThreads
     ) : base (logger, numberOfThreads)

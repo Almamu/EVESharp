@@ -1,9 +1,8 @@
 ﻿using System;
-using EVESharp.EVE;
 using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.Node.Services;
+namespace EVESharp.EVE.Services;
 
 /// <summary>
 /// Stores information for the calls that are waiting an answer from a client/node

@@ -3,6 +3,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Services;
@@ -15,7 +16,7 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
 {
     public MessageProcessor
     (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, RemoteServiceManager remoteServiceManager,
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
         PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems, ISessionManager sessionManager
     ) :
         base (

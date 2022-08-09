@@ -37,13 +37,13 @@ public class LSC : Service
     private IItems               Items                { get; }
     private INotificationSender  Notifications        { get; }
     private MailManager          MailManager          { get; }
-    private RemoteServiceManager RemoteServiceManager { get; }
+    private IRemoteServiceManager RemoteServiceManager { get; }
     private PacketCallHelper     PacketCallHelper     { get; }
 
     public LSC
     (
         ChatDB              db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          IItems           items, ILogger logger,
-        INotificationSender notificationSender, MailManager mailManager, RemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
+        INotificationSender notificationSender, MailManager mailManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
     )
     {
         DB                   = db;
