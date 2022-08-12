@@ -1,4 +1,7 @@
 ﻿using EVESharp.EVE.Accounts;
+using EVESharp.EVE.Messages;
+using EVESharp.EVE.Messages.Processor;
+using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.PythonTypes.Types.Collections;
@@ -37,11 +40,11 @@ public interface IMachoNet
     /// <summary>
     /// The login queue used for processing logins
     /// </summary>
-    public MessageProcessor <LoginQueueEntry> LoginQueue { get; }
+    public IQueueProcessor <LoginQueueEntry> LoginProcessor { get; }
     /// <summary>
     /// The message processor to use for this IMachoNet instance
     /// </summary>
-    public MessageProcessor <MachoMessage> MessageProcessor { get; set; }
+    public IQueueProcessor <MachoMessage> MessageProcessor { get; set; }
     /// <summary>
     /// The transport manager in use for this IMachoNet instance
     /// </summary>

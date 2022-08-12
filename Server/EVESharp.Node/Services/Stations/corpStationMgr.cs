@@ -32,7 +32,6 @@ public class corpStationMgr : ClientBoundService
     public override AccessLevel         AccessLevel   => AccessLevel.None;
     private         IItems              Items         { get; }
     private         ItemDB              ItemDB        { get; }
-    private         MarketDB            MarketDB      { get; }
     private         StationDB           StationDB     { get; }
     private         ITypes              Types         => this.Items.Types;
     private         ISolarSystems       SolarSystems  { get; }
@@ -43,11 +42,10 @@ public class corpStationMgr : ClientBoundService
 
     public corpStationMgr
     (
-        MarketDB            marketDB, StationDB     stationDb,    INotificationSender notificationSender, IItems              items,    IConstants constants,
+        StationDB     stationDb,    INotificationSender notificationSender, IItems              items,    IConstants constants,
         BoundServiceManager manager,  ISolarSystems solarSystems, IWallets            wallets,            IDatabaseConnection database, ItemDB     itemDB
     ) : base (manager)
     {
-        MarketDB      = marketDB;
         StationDB     = stationDb;
         Notifications = notificationSender;
         Items         = items;
@@ -61,11 +59,10 @@ public class corpStationMgr : ClientBoundService
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr
     (
-        MarketDB            marketDB, StationDB stationDb, INotificationSender notificationSender, IItems items, IConstants constants,
+        StationDB stationDb, INotificationSender notificationSender, IItems items, IConstants constants,
         BoundServiceManager manager,  IWallets  wallets,   Session             session,            ItemDB itemDB
     ) : base (manager, session, 0)
     {
-        MarketDB      = marketDB;
         StationDB     = stationDb;
         Notifications = notificationSender;
         Items         = items;
@@ -350,7 +347,7 @@ public class corpStationMgr : ClientBoundService
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
         return new corpStationMgr (
-            MarketDB, StationDB, Notifications, this.Items, Constants, BoundServiceManager, this.Wallets,
+            StationDB, Notifications, this.Items, Constants, BoundServiceManager, this.Wallets,
             call.Session, this.ItemDB
         );
     }

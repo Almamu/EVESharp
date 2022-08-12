@@ -213,7 +213,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
         {
             this.Log.Debug ("Received QueueCheck command");
             // send player position on the queue
-            this.Socket.Send (new PyInteger (this.MachoNet.LoginQueue.Count ()));
+            this.Socket.Send (new PyInteger (this.MachoNet.LoginProcessor.Queue.Count));
             // send low level version exchange required
             this.SendLowLevelVersionExchange ();
             // wait for a new low level version exchange again
@@ -270,7 +270,7 @@ public class MachoUnauthenticatedTransport : MachoTransport
             this.Session.LanguageID = request.user_languageid;
 
         // add the user to the authentication queue
-        this.MachoNet.LoginQueue.Enqueue (
+        this.MachoNet.LoginProcessor?.Queue.Enqueue (
             new LoginQueueEntry
             {
                 Connection = this,

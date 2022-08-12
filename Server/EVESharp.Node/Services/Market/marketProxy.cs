@@ -39,7 +39,6 @@ public class marketProxy : Service
 
     private MarketDB            DB                 { get; }
     private CharacterDB         CharacterDB        { get; }
-    private ItemDB              ItemDB             { get; }
     private ICacheStorage       CacheStorage       { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
@@ -52,14 +51,13 @@ public class marketProxy : Service
 
     public marketProxy
     (
-        MarketDB db, CharacterDB characterDB, ItemDB itemDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
+        MarketDB db, CharacterDB characterDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
         IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
         ISolarSystems solarSystems
     )
     {
         DB                 = db;
         CharacterDB        = characterDB;
-        ItemDB             = itemDB;
         Database           = database;
         CacheStorage       = cacheStorage;
         Items              = items;

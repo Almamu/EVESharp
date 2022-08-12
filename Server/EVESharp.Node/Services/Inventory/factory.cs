@@ -6,7 +6,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 namespace EVESharp.Node.Services.Inventory;
 
 [MustBeCharacter]
-public class factory : Service
+public class  factory : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
     public          FactoryDB   DB          { get; }

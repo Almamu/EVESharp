@@ -1,4 +1,5 @@
-﻿using EVESharp.EVE.Network.Transports;
+﻿using EVESharp.EVE.Messages;
+using EVESharp.EVE.Network.Transports;
 using EVESharp.PythonTypes.Types.Network;
 
 namespace EVESharp.EVE.Network.Messages;

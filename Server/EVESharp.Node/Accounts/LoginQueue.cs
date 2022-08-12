@@ -25,39 +25,27 @@
 using EVESharp.Database;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Configuration;
-using EVESharp.EVE.Network.Messages;
-using EVESharp.EVE.Network.Transports;
-using EVESharp.EVE.Packets;
+using EVESharp.EVE.Messages.Queue;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 
 namespace EVESharp.Node.Accounts;
 
-public class LoginQueue : MessageProcessor <LoginQueueEntry>
+public class LoginQueue : MessageQueue <LoginQueueEntry>
 {
     private Authentication      Configuration { get; }
     private IDatabaseConnection Database      { get; }
+    private ILogger             Log           { get; }
 
     public LoginQueue (IDatabaseConnection databaseConnection, Authentication configuration, ILogger logger)
-        : base (logger, 5)
     {
         // login should not be using too many processes
         this.Database      = databaseConnection;
         this.Configuration = configuration;
+        this.Log           = logger;
     }
 
-    public void Enqueue (MachoUnauthenticatedTransport transport, AuthenticationReq req)
-    {
-        this.Enqueue (
-            new LoginQueueEntry
-            {
-                Connection = transport,
-                Request    = req
-            }
-        );
-    }
-
-    protected override void HandleMessage (LoginQueueEntry entry)
+    public override void HandleMessage (LoginQueueEntry entry)
     {
         this.Log.Debug ("Processing login for " + entry.Request.user_name);
         LoginStatus status = LoginStatus.Waiting;

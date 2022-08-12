@@ -12,19 +12,19 @@ using Serilog;
 
 namespace EVESharp.Node.Server.Single.Messages;
 
-public class MessageProcessor : Shared.Messages.MessageProcessor
+public class MessageQueue : Shared.Messages.MessageQueue
 {
-    public MessageProcessor
+    public MessageQueue
     (
         IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
         PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems, ISessionManager sessionManager
     ) :
         base (
             machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
-            notificationSender, sessionManager, 100
+            notificationSender, sessionManager
         ) { }
 
-    protected override void HandleMessage (MachoMessage machoMessage)
+    public override void HandleMessage (MachoMessage machoMessage)
     {
         // check destinations to ensure the packet can be handled
         switch (machoMessage.Packet.Destination)

@@ -15,19 +15,19 @@ using Serilog;
 
 namespace EVESharp.Node.Server.Node.Messages;
 
-public class MessageProcessor : Shared.Messages.MessageProcessor
+public class MessageQueue : Shared.Messages.MessageQueue
 {
-    public MessageProcessor
+    public MessageQueue
     (
         IMachoNet       machoNet,       ILogger             logger, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems,
         ServiceManager  serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper,
         ISessionManager sessionManager
     ) : base (
         machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
-        notificationSender, sessionManager, 100
+        notificationSender, sessionManager
     ) { }
 
-    protected override void HandleMessage (MachoMessage machoMessage)
+    public override void HandleMessage (MachoMessage machoMessage)
     {
         switch (machoMessage.Packet.Type)
         {

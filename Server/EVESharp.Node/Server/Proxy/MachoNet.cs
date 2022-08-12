@@ -4,6 +4,9 @@ using System.Net.Http;
 using EVESharp.Common.Logging;
 using EVESharp.Database;
 using EVESharp.EVE.Accounts;
+using EVESharp.EVE.Messages;
+using EVESharp.EVE.Messages.Processor;
+using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
@@ -20,32 +23,31 @@ namespace EVESharp.Node.Server.Proxy;
 public class MachoNet : IMachoNet
 {
     private General              Configuration { get; }
-    private MachoServerTransport Transport     { get; set; }
     private IDatabaseConnection  Database      { get; }
 
     public MachoNet
     (
-        ITransportManager   transportManager, MessageProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger,
+        ITransportManager   transportManager, IQueueProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger,
         IDatabaseConnection databaseConnection
     )
     {
-        LoginQueue       = loginQueue;
+        LoginProcessor   = loginQueue;
         TransportManager = transportManager;
         Configuration    = configuration;
         Log              = logger;
         Database         = databaseConnection;
     }
 
-    public long                               NodeID           { get; set; }
-    public string                             Address          { get; set; }
-    public RunMode                            Mode             => RunMode.Proxy;
-    public ushort                             Port             => Configuration.MachoNet.Port;
-    public ILogger                            Log              { get; }
-    public string                             OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
-    public MessageProcessor <LoginQueueEntry> LoginQueue       { get; }
-    public MessageProcessor <MachoMessage>    MessageProcessor { get; set; }
-    public ITransportManager                  TransportManager { get; }
-    public PyList <PyObjectData>              LiveUpdates      => Database.EveFetchLiveUpdates ();
+    public long                              NodeID           { get; set; }
+    public string                            Address          { get; set; }
+    public RunMode                           Mode             => RunMode.Proxy;
+    public ushort                            Port             => Configuration.MachoNet.Port;
+    public ILogger                           Log              { get; }
+    public string                            OrchestratorURL  => Configuration.Cluster.OrchestatorURL;
+    public IQueueProcessor <LoginQueueEntry> LoginProcessor   { get; }
+    public IQueueProcessor <MachoMessage>    MessageProcessor { get; set; }
+    public ITransportManager                 TransportManager { get; }
+    public PyList <PyObjectData>             LiveUpdates      => Database.EveFetchLiveUpdates ();
 
     public void Initialize ()
     {
@@ -55,6 +57,9 @@ public class MachoNet : IMachoNet
         Log.Information ("Starting MachoNet in proxy mode");
         Log.Verbose ("Starting MachoNet in proxy mode");
         Log.Debug ("Starting MachoNet in proxy mode");
+        
+        // start the login queue processing
+        this.LoginProcessor.Start ();
 
         // start the server socket
         this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
@@ -104,7 +109,7 @@ public class MachoNet : IMachoNet
     public void QueueInputPacket (MachoTransport origin, PyPacket packet)
     {
         // add the packet to the processor
-        MessageProcessor.Enqueue (
+        this.MessageProcessor?.Queue.Enqueue (
             new MachoMessage
             {
                 Packet    = packet,

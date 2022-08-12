@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using EVESharp.Common.Configuration;
 using EVESharp.Common.Logging;
+using EVESharp.Common.Network;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.Node.Configuration;
@@ -55,12 +56,16 @@ public class TransportManager : ITransportManager
 
     public MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
     {
-        return this.ServerTransport = new MachoServerTransport (configuration.Port, HttpClient, machoNet, Log.ForContext <MachoServerTransport> ("Listener"));
+        return this.ServerTransport = new MachoServerTransport (configuration.Port, machoNet, Log.ForContext <MachoServerTransport> ("Listener"));
     }
 
-    public void NewTransport (MachoUnauthenticatedTransport transport)
+    public void NewTransport (IMachoNet machoNet, EVEClientSocket socket)
     {
-        UnauthenticatedTransports.Add (transport);
+        UnauthenticatedTransports.Add (
+            new MachoUnauthenticatedTransport (
+                machoNet, this.HttpClient, socket, Log.ForContext <MachoUnauthenticatedTransport> (socket.GetRemoteAddress ())
+            )
+        );
     }
 
     /// <summary>

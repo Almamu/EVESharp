@@ -1,4 +1,4 @@
-﻿namespace EVESharp.Node.Services.Contracts;
+﻿namespace EVESharp.EVE.Data.Market;
 
 public enum ContractTypes
 {

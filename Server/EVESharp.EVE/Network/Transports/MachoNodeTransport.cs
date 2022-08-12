@@ -10,7 +10,6 @@ public class MachoNodeTransport : MachoTransport
         // add load status to the session
         this.Session.LoadMetric = 0;
         this.Socket.SetReceiveCallback (this.HandlePacket);
-        this.SendPostAuthenticationPackets ();
     }
 
     private void HandlePacket (PyDataType data)

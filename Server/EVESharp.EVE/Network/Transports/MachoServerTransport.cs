@@ -8,12 +8,10 @@ namespace EVESharp.EVE.Network.Transports;
 
 public class MachoServerTransport : EVEServerSocket
 {
-    public IMachoNet  MachoNet   { get; }
-    public HttpClient HttpClient { get; }
+    public IMachoNet MachoNet { get; }
 
-    public MachoServerTransport (int port, HttpClient httpClient, IMachoNet machoNet, ILogger logger) : base (port, logger)
+    public MachoServerTransport (int port, IMachoNet machoNet, ILogger logger) : base (port, logger)
     {
-        this.HttpClient = httpClient;
         this.MachoNet   = machoNet;
     }
 
@@ -23,17 +21,13 @@ public class MachoServerTransport : EVEServerSocket
         this.BeginAccept (this.AcceptCallback);
     }
 
-    private void AcceptCallback (IAsyncResult ar)
+    protected void AcceptCallback (IAsyncResult ar)
     {
         EVEServerSocket serverSocket = ar.AsyncState as EVEServerSocket;
         EVEClientSocket clientSocket = serverSocket.EndAccept (ar);
 
         // got a new transport, register it
-        this.MachoNet.TransportManager.NewTransport (
-            new MachoUnauthenticatedTransport (
-                this.MachoNet, this.HttpClient, clientSocket, this.Log.ForContext <MachoUnauthenticatedTransport> (clientSocket.GetRemoteAddress ())
-            )
-        );
+        this.MachoNet.TransportManager.NewTransport (this.MachoNet, clientSocket);
 
         // begin accepting again
         this.BeginAccept (this.AcceptCallback);

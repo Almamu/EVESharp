@@ -1,4 +1,6 @@
 ﻿using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Messages;
+using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
@@ -11,7 +13,7 @@ using Serilog;
 
 namespace EVESharp.Node.Server.Shared.Messages;
 
-public abstract class MessageProcessor : MessageProcessor <MachoMessage>
+public abstract class MessageQueue : MessageQueue <MachoMessage>
 {
     protected IMachoNet                MachoNet                 { get; }
     protected IItems                   Items                    { get; }
@@ -25,12 +27,11 @@ public abstract class MessageProcessor : MessageProcessor <MachoMessage>
     protected ISessionManager          SessionManager           { get; }
     protected IRemoteServiceManager     RemoteServiceManager     { get; }
 
-    protected MessageProcessor
+    protected MessageQueue
     (
         IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
-        PacketCallHelper packetCallHelper, IItems items, ISolarSystems solarSystems, INotificationSender notifications, ISessionManager sessionManager,
-        int numberOfThreads
-    ) : base (logger, numberOfThreads)
+        PacketCallHelper packetCallHelper, IItems items, ISolarSystems solarSystems, INotificationSender notifications, ISessionManager sessionManager
+    )
     {
         MachoNet             = machoNet;
         ServiceManager       = serviceManager;
@@ -46,8 +47,5 @@ public abstract class MessageProcessor : MessageProcessor <MachoMessage>
         LocalNotificationHandler = new LocalNotificationHandler (
             MachoNet, logger, ServiceManager, BoundServiceManager, this.Items, this.SolarSystems, Notifications, SessionManager
         );
-
-        // update the message processor for the macho net instance
-        MachoNet.MessageProcessor = this;
     }
 }

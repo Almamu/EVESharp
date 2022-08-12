@@ -8,7 +8,6 @@ public class MachoProxyTransport : MachoTransport
     public MachoProxyTransport (MachoTransport source) : base (source)
     {
         this.Socket.SetReceiveCallback (this.HandleProxyPacket);
-        this.SendPostAuthenticationPackets ();
     }
 
     private void HandleProxyPacket (PyDataType data)

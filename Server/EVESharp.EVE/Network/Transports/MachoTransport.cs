@@ -21,10 +21,6 @@ public class MachoTransport
     /// The MachoNet protocol version in use by this transport
     /// </summary>
     public IMachoNet MachoNet { get; }
-    /// <summary>
-    /// Queue of packets to be sent through the transport after the authentication happens
-    /// </summary>
-    protected Queue <PyDataType> PostAuthenticationQueue { get; } = new Queue <PyDataType> ();
 
     public MachoTransport (IMachoNet machoNet, EVEClientSocket socket, ILogger logger)
     {
@@ -40,24 +36,6 @@ public class MachoTransport
         this.Log      = source.Log;
         this.Socket   = source.Socket;
         this.MachoNet = source.MachoNet;
-    }
-
-    /// <summary>
-    /// Adds data to be sent after authentication happens
-    /// </summary>
-    /// <param name="data"></param>
-    public void QueuePostAuthenticationPacket (PyDataType data)
-    {
-        this.PostAuthenticationQueue.Enqueue (data);
-    }
-
-    /// <summary>
-    /// Flushes the post authentication packets queue and sends everything
-    /// </summary>
-    protected void SendPostAuthenticationPackets ()
-    {
-        foreach (PyDataType packet in this.PostAuthenticationQueue)
-            this.Socket.Send (packet);
     }
 
     public void AbortConnection ()

@@ -127,6 +127,6 @@ public static class WalletDB
     /// <returns></returns>
     public static Rowset MktGetKeyMap (this IDatabaseConnection Database)
     {
-        return Database.Rowset ("MktKeyMap");
+        return Database.Rowset ("MktGetKeyMap");
     }
 }

@@ -17,9 +17,9 @@ using Serilog;
 
 namespace EVESharp.Node.Server.Proxy.Messages;
 
-public class MessageProcessor : Shared.Messages.MessageProcessor
+public class MessageQueue : Shared.Messages.MessageQueue
 {
-    public MessageProcessor
+    public MessageQueue
     (
         IMachoNet            machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, ISessionManager sessionManager,
         IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items,
@@ -27,10 +27,10 @@ public class MessageProcessor : Shared.Messages.MessageProcessor
     ) :
         base (
             machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
-            notificationSender, sessionManager, 100
+            notificationSender, sessionManager
         ) { }
 
-    protected override void HandleMessage (MachoMessage machoMessage)
+    public override void HandleMessage (MachoMessage machoMessage)
     {
         if ((machoMessage.Packet.Destination is PyAddressNode node && node.NodeID == MachoNet.NodeID) ||
             machoMessage.Packet.Destination is PyAddressAny)

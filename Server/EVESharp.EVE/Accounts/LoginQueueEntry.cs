@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using EVESharp.EVE.Messages;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets;

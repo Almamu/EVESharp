@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Configuration;
+using EVESharp.Common.Network;
 
 namespace EVESharp.EVE.Network.Transports;
 
@@ -57,8 +58,9 @@ public interface ITransportManager
     /// <summary>
     /// Registers a new, waiting to be authenticated transport
     /// </summary>
-    /// <param name="transport"></param>
-    void NewTransport (MachoUnauthenticatedTransport transport);
+    /// <param name="machoNet"></param>
+    /// <param name="socket"></param>
+    void NewTransport (IMachoNet machoNet, EVEClientSocket socket);
     /// <summary>
     /// Registers the given transport as a client's transport
     /// </summary>

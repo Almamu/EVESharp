@@ -34,6 +34,9 @@ using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Messages;
+using EVESharp.EVE.Messages.Processor;
+using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Messages;
@@ -53,8 +56,8 @@ using EVESharp.Node.Market;
 using EVESharp.Node.Notifications;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
+using EVESharp.Node.Server.Shared.Messages;
 using EVESharp.Node.Server.Shared.Transports;
-using EVESharp.Node.Server.Single.Messages;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Account;
 using EVESharp.Node.Services.Alliances;
@@ -84,6 +87,7 @@ using SimpleInjector;
 using Constants = EVESharp.Node.Configuration.Constants;
 using Container = SimpleInjector.Container;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;
+using MessageQueue = EVESharp.Node.Server.Single.Messages.MessageQueue;
 using SessionManager = EVESharp.Node.Sessions.SessionManager;
 
 namespace EVESharp.Node;
@@ -283,7 +287,8 @@ internal class Program
         container.Register <factory> (Lifestyle.Singleton);
         container.Register <petitioner> (Lifestyle.Singleton);
         container.Register <allianceRegistry> (Lifestyle.Singleton);
-        container.Register <MessageProcessor <LoginQueueEntry>, LoginQueue> (Lifestyle.Singleton);
+        container.Register <IMessageQueue <LoginQueueEntry>, LoginQueue> (Lifestyle.Singleton);
+        container.Register <IQueueProcessor <LoginQueueEntry>, ThreadedProcessor <LoginQueueEntry>> (Lifestyle.Singleton);
         container.Register <IClusterManager, ClusterManager> (Lifestyle.Singleton);
         container.Register <ITransportManager, TransportManager> (Lifestyle.Singleton);
         container.Register <EffectsManager> (Lifestyle.Singleton);
@@ -328,20 +333,22 @@ internal class Program
                 {
                     case MachoNetMode.Single:
                         dependencies.Register <IMachoNet, MachoNet> (Lifestyle.Singleton);
-                        dependencies.Register <MessageProcessor <MachoMessage>, MessageProcessor> (Lifestyle.Singleton);
+                        dependencies.Register <IMessageQueue <MachoMessage>, MessageQueue> (Lifestyle.Singleton);
                         break;
 
                     case MachoNetMode.Proxy:
                         dependencies.Register <IMachoNet, Server.Proxy.MachoNet> (Lifestyle.Singleton);
-                        dependencies.Register <MessageProcessor <MachoMessage>, Server.Proxy.Messages.MessageProcessor> (Lifestyle.Singleton);
+                        dependencies.Register <IMessageQueue <MachoMessage>, Server.Proxy.Messages.MessageQueue> (Lifestyle.Singleton);
                         break;
 
                     case MachoNetMode.Server:
                         dependencies.Register <IMachoNet, Server.Node.MachoNet> (Lifestyle.Singleton);
-                        dependencies.Register <MessageProcessor <MachoMessage>, Server.Node.Messages.MessageProcessor> (Lifestyle.Singleton);
+                        dependencies.Register <IMessageQueue <MachoMessage>, Server.Node.Messages.MessageQueue> (Lifestyle.Singleton);
                         break;
                 }
 
+                dependencies.Register <IQueueProcessor <MachoMessage>, MachoMessageProcessor>(Lifestyle.Singleton);
+                
                 log.Information ("Initializing EVESharp Node");
                 log.Fatal ("Initializing EVESharp Node");
                 log.Error ("Initializing EVESharp Node");
