@@ -24,6 +24,7 @@
 
 using EVESharp.EVE.Configuration;
 using EVESharp.EVE.Services;
+using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
@@ -32,10 +33,10 @@ namespace EVESharp.Node.Services.Authentication;
 
 public class authentication : Service
 {
-    private readonly EVE.Configuration.Authentication mConfiguration;
-    public override  AccessLevel                      AccessLevel => AccessLevel.None;
+    private readonly Configuration.Authentication mConfiguration;
+    public override  AccessLevel                  AccessLevel => AccessLevel.None;
 
-    public authentication (EVE.Configuration.Authentication configuration)
+    public authentication (Configuration.Authentication configuration)
     {
         this.mConfiguration = configuration;
     }
@@ -45,7 +46,7 @@ public class authentication : Service
         if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
             return null;
 
-        if (this.mConfiguration.MessageType == AuthenticationMessageType.HTMLMessage)
+        if (this.mConfiguration.MessageType == AuthenticationMessageType.Message)
             return KeyVal.FromDictionary (new PyDictionary {["message"] = this.mConfiguration.Message});
 
         return null;

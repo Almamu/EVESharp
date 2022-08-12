@@ -1,6 +1,5 @@
 using System;
-using System.IO;
-using IniParser.Model;
+using EVESharp.Common.Configuration.Attributes;
 
 namespace EVESharp.Common.Configuration;
 
@@ -8,37 +7,26 @@ public enum MachoNetMode
 {
     Single = 0,
     Server = 1,
-    Proxy  = 2
+    Proxy = 2
 }
 
+[ConfigSection("machonet")]
 public class MachoNet
 {
-    public ushort       Port { get; set; }
-    public MachoNetMode Mode { get; set; }
-
-    public void Load (KeyDataCollection section)
+    private MachoNetMode mMode = MachoNetMode.Single;
+    
+    [ConfigValue ("port", true)]
+    public ushort Port { get; set; } = 26000;
+    [EnumConfigValue ("mode", typeof (MachoNetMode), true)]
+    public MachoNetMode Mode
     {
-        string mode = (section ["mode"] ?? "single").ToLower ();
-
-        this.Mode = mode switch
+        get => this.mMode;
+        set
         {
-            "proxy"  => MachoNetMode.Proxy,
-            "single" => MachoNetMode.Single,
-            "server" => MachoNetMode.Server,
-            _        => throw new InvalidDataException ("Only 'proxy', 'server' or 'single' modes available")
-        };
-
-        if (section.ContainsKey ("port") == false)
-        {
-            // determine the port based on some random data so the nodes do not collide
-            if (this.Mode == MachoNetMode.Server)
+            if (value == MachoNetMode.Server)
                 this.Port = (ushort) new Random ().Next (26001, 27000);
-            else
-                this.Port = 26000;
-        }
-        else
-        {
-            this.Port = ushort.Parse (section ["port"]);
+            
+            this.mMode = value;
         }
     }
 }

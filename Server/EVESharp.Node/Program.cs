@@ -182,7 +182,7 @@ internal class Program
         return loggerConfiguration.CreateLogger ();
     }
 
-    private static Container SetupDIContainer (ILogger baseLogger)
+    private static Container SetupDIContainer (General configuration, ILogger baseLogger)
     {
         Container container = new Container ();
 
@@ -190,6 +190,20 @@ internal class Program
         container.Options.DependencyInjectionBehavior =
             new SerilogContextualLoggerInjectionBehavior (container.Options, baseLogger);
 
+        
+        // register configuration instances
+        container.RegisterInstance (configuration);
+        container.RegisterInstance (configuration.Database);
+        container.RegisterInstance (configuration.MachoNet);
+        container.RegisterInstance (configuration.Authentication);
+        container.RegisterInstance (configuration.LogLite);
+        container.RegisterInstance (configuration.FileLog);
+        container.RegisterInstance (configuration.Logging);
+        container.RegisterInstance (configuration.Character);
+        
+        // register logging system
+        container.RegisterInstance (baseLogger);
+        
         // register all the dependencies we have available
         container.RegisterInstance (new HttpClient ());
         container.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
@@ -292,63 +306,44 @@ internal class Program
         container.Register <IClusterManager, ClusterManager> (Lifestyle.Singleton);
         container.Register <ITransportManager, TransportManager> (Lifestyle.Singleton);
         container.Register <EffectsManager> (Lifestyle.Singleton);
+        
+        // depending on the server mode initialize a different macho instance
+        switch (configuration.MachoNet.Mode)
+        {
+            case MachoNetMode.Single:
+                container.Register <IMachoNet, MachoNet> (Lifestyle.Singleton);
+                container.Register <IMessageQueue <MachoMessage>, MessageQueue> (Lifestyle.Singleton);
+                break;
+
+            case MachoNetMode.Proxy:
+                container.Register <IMachoNet, Server.Proxy.MachoNet> (Lifestyle.Singleton);
+                container.Register <IMessageQueue <MachoMessage>, Server.Proxy.Messages.MessageQueue> (Lifestyle.Singleton);
+                break;
+
+            case MachoNetMode.Server:
+                container.Register <IMachoNet, Server.Node.MachoNet> (Lifestyle.Singleton);
+                container.Register <IMessageQueue <MachoMessage>, Server.Node.Messages.MessageQueue> (Lifestyle.Singleton);
+                break;
+        }
+
+        container.Register <IQueueProcessor <MachoMessage>, MachoMessageProcessor>(Lifestyle.Singleton);
 
         return container;
-    }
-
-    private static General LoadConfiguration ()
-    {
-        // TODO: REPLACE WITH JSON CONFIGURATION FROM .NET INSTEAD?
-        return General.LoadFromFile ("configuration.conf");
     }
 
     private static void Main (string [] argv)
     {
         // load configuration first
-        General configuration = LoadConfiguration ();
+        General configuration = Loader.Load <General> ("configuration.conf");
         // initialize the logging system
         Logger log = SetupLogger (configuration);
         // finally initialize the dependency injection
-        Container dependencies = SetupDIContainer (log);
+        Container dependencies = SetupDIContainer (configuration, log);
 
         using (log)
         {
             try
             {
-                // register configuration instances
-                dependencies.RegisterInstance (configuration);
-                dependencies.RegisterInstance (configuration.Database);
-                dependencies.RegisterInstance (configuration.MachoNet);
-                dependencies.RegisterInstance (configuration.Authentication);
-                dependencies.RegisterInstance (configuration.LogLite);
-                dependencies.RegisterInstance (configuration.FileLog);
-                dependencies.RegisterInstance (configuration.Logging);
-                dependencies.RegisterInstance (configuration.Character);
-
-                // register logging system
-                dependencies.RegisterInstance (log);
-
-                // depending on the server mode initialize a different macho instance
-                switch (configuration.MachoNet.Mode)
-                {
-                    case MachoNetMode.Single:
-                        dependencies.Register <IMachoNet, MachoNet> (Lifestyle.Singleton);
-                        dependencies.Register <IMessageQueue <MachoMessage>, MessageQueue> (Lifestyle.Singleton);
-                        break;
-
-                    case MachoNetMode.Proxy:
-                        dependencies.Register <IMachoNet, Server.Proxy.MachoNet> (Lifestyle.Singleton);
-                        dependencies.Register <IMessageQueue <MachoMessage>, Server.Proxy.Messages.MessageQueue> (Lifestyle.Singleton);
-                        break;
-
-                    case MachoNetMode.Server:
-                        dependencies.Register <IMachoNet, Server.Node.MachoNet> (Lifestyle.Singleton);
-                        dependencies.Register <IMessageQueue <MachoMessage>, Server.Node.Messages.MessageQueue> (Lifestyle.Singleton);
-                        break;
-                }
-
-                dependencies.Register <IQueueProcessor <MachoMessage>, MachoMessageProcessor>(Lifestyle.Singleton);
-                
                 log.Information ("Initializing EVESharp Node");
                 log.Fatal ("Initializing EVESharp Node");
                 log.Error ("Initializing EVESharp Node");

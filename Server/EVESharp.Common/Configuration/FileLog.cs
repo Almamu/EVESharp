@@ -1,18 +1,22 @@
-using IniParser.Model;
+using EVESharp.Common.Configuration.Attributes;
 
 namespace EVESharp.Common.Configuration;
 
+[ConfigSection("logfile", true)]
 public class FileLog
 {
-    public string Directory { get; private set; }
-    public string LogFile   { get; private set; }
-
-    public bool Enabled { get; private set; }
-
-    public void Load (KeyDataCollection section)
+    private string mLogFile;
+    [ConfigValue("directory")]
+    public string Directory { get; set; }
+    [ConfigValue ("logfile")]
+    public string LogFile
     {
-        Enabled   = true;
-        Directory = section ["directory"];
-        LogFile   = section ["logfile"];
+        get => this.mLogFile;
+        set
+        {
+            this.mLogFile = value;
+            this.Enabled  = true;
+        }
     }
+    public bool Enabled { get; set; } = false;
 }

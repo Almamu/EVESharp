@@ -44,15 +44,14 @@ using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using Serilog;
-using Character = EVESharp.Node.Configuration.Character;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Services.Characters;
 
 public class character : Service
 {
-    private readonly Character   mConfiguration;
-    public override  AccessLevel AccessLevel => AccessLevel.LocationPreferred;
+    private readonly Configuration.Character mConfiguration;
+    public override  AccessLevel             AccessLevel => AccessLevel.LocationPreferred;
 
     private CharacterDB         DB             { get; }
     private CorporationDB       CorporationDB  { get; }
@@ -70,7 +69,7 @@ public class character : Service
     public character
     (
         ICacheStorage       cacheStorage,       CharacterDB db,      ChatDB      chatDB, CorporationDB corporationDB,
-        IItems              items,              ILogger     logger,  Character   configuration,
+        IItems              items,              ILogger     logger,  Configuration.Character   configuration,
         INotificationSender notificationSender, IWallets    wallets, IAncestries ancestries, IBloodlines bloodlines,
         ISessionManager     sessionManager
     )
@@ -245,7 +244,7 @@ public class character : Service
         data.SafeGetValue ("camPos3",       out camPos3);
     }
 
-    private EVE.Data.Inventory.Items.Types.Character CreateCharacter
+    private Character CreateCharacter
     (
         CallInformation call, string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime
     )
@@ -289,7 +288,7 @@ public class character : Service
         // create the wallet for the player
         this.Wallets.CreateWallet (itemID, WalletKeys.MAIN, this.mConfiguration.Balance);
 
-        return this.Items.LoadItem (itemID) as EVE.Data.Inventory.Items.Types.Character;
+        return this.Items.LoadItem (itemID) as Character;
     }
 
     [MustNotBeCharacter]
@@ -328,7 +327,7 @@ public class character : Service
             throw new BannedBloodline (ancestry, bloodline);
         }
 
-        EVE.Data.Inventory.Items.Types.Character character =
+        Character character =
             this.CreateCharacter (call, characterName, ancestry, genderID, appearance, currentTime);
 
         Station station = this.Items.GetStaticStation (character.StationID);
@@ -452,7 +451,7 @@ public class character : Service
     )
     {
         // ensure the character belongs to the current account
-        EVE.Data.Inventory.Items.Types.Character character = this.Items.LoadItem <EVE.Data.Inventory.Items.Types.Character> (characterID);
+        Character character = this.Items.LoadItem <Character> (characterID);
 
         if (character.AccountID != call.Session.UserID)
         {
@@ -547,7 +546,7 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType GetHomeStation (CallInformation call)
     {
-        EVE.Data.Inventory.Items.Types.Character character = this.Items.GetItem <EVE.Data.Inventory.Items.Types.Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         if (character.ActiveCloneID is null)
             throw new CustomError ("You do not have any medical clone...");
@@ -560,7 +559,7 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType GetCharacterDescription (CallInformation call, PyInteger characterID)
     {
-        EVE.Data.Inventory.Items.Types.Character character = this.Items.GetItem <EVE.Data.Inventory.Items.Types.Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         return character.Description;
     }
@@ -568,7 +567,7 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType SetCharacterDescription (CallInformation call, PyString newBio)
     {
-        EVE.Data.Inventory.Items.Types.Character character = this.Items.GetItem <EVE.Data.Inventory.Items.Types.Character> (call.Session.CharacterID);
+        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         character.Description = newBio;
         character.Persist ();

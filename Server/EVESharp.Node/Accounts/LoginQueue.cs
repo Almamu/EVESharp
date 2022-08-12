@@ -24,8 +24,8 @@
 
 using EVESharp.Database;
 using EVESharp.EVE.Accounts;
-using EVESharp.EVE.Configuration;
 using EVESharp.EVE.Messages.Queue;
+using EVESharp.Node.Configuration;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 

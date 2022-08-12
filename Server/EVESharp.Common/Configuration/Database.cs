@@ -1,21 +1,18 @@
-using IniParser.Model;
+using EVESharp.Common.Configuration.Attributes;
 
 namespace EVESharp.Common.Configuration;
 
+[ConfigSection("database")]
 public class Database
 {
-    public string Username { get; private set; }
-    public string Password { get; private set; }
-    public string Hostname { get; private set; }
-    public string Name     { get; private set; }
-    public uint   Port     { get; private set; }
-
-    public void Load (KeyDataCollection section)
-    {
-        Username = section ["username"];
-        Password = section ["password"];
-        Hostname = section ["hostname"];
-        Name     = section ["name"];
-        Port     = uint.Parse (section ["port"] ?? "3306");
-    }
+    [ConfigValue("username")]
+    public string Username { get; set; }
+    [ConfigValue("password")]
+    public string Password { get; set; }
+    [ConfigValue("hostname")]
+    public string Hostname { get; set; }
+    [ConfigValue("name")]
+    public string Name { get; set; }
+    [ConfigValue("port", true)]
+    public uint Port { get; set; } = 3306;
 }

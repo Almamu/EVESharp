@@ -1,16 +1,10 @@
-using IniParser.Model;
+using EVESharp.Common.Configuration.Attributes;
 
 namespace EVESharp.Node.Configuration;
 
+[ConfigSection("cluster", true)]
 public class Cluster
 {
-    public string OrchestatorURL { get; private set; }
-
-    public void Load (KeyDataCollection section)
-    {
-        if (section.ContainsKey ("url") == false)
-            OrchestatorURL = "";
-        else
-            OrchestatorURL = section ["url"];
-    }
+    [ConfigValue("url")]
+    public string OrchestatorURL { get; set; }
 }
