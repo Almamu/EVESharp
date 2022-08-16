@@ -12,11 +12,11 @@ public enum AuthenticationMessageType
 public class Authentication
 {
     [EnumConfigValue ("loginMessageType", typeof (AuthenticationMessageType), true)]
-    public AuthenticationMessageType MessageType { get; set; } = AuthenticationMessageType.NoMessage;
+    public virtual AuthenticationMessageType MessageType { get; set; } = AuthenticationMessageType.NoMessage;
     [ConfigValue("loginMessage", true)]
-    public string Message { get; set; }
+    public virtual string Message { get; set; }
     [ConfigValue("autoaccount", true)]
-    public bool Autoaccount { get; set; } = false;
+    public virtual bool Autoaccount { get; set; } = false;
     [RoleListConfigValue("role")]
-    public long Role { get; set; }
+    public virtual long Role { get; set; }
 }

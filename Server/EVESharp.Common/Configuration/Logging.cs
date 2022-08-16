@@ -7,5 +7,5 @@ namespace EVESharp.Common.Configuration;
 public class Logging
 {
     [ConfigValue("force")]
-    public List<string> EnableChannels { get; set; }
+    public virtual List<string> EnableChannels { get; set; }
 }

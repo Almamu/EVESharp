@@ -6,5 +6,5 @@ namespace EVESharp.Node.Configuration;
 public class Cluster
 {
     [ConfigValue("url")]
-    public string OrchestatorURL { get; set; }
+    public virtual string OrchestatorURL { get; set; }
 }

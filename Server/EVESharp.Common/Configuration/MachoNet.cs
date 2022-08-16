@@ -16,9 +16,9 @@ public class MachoNet
     private MachoNetMode mMode = MachoNetMode.Single;
     
     [ConfigValue ("port", true)]
-    public ushort Port { get; set; } = 26000;
+    public virtual ushort Port { get; set; } = 26000;
     [EnumConfigValue ("mode", typeof (MachoNetMode), true)]
-    public MachoNetMode Mode
+    public virtual MachoNetMode Mode
     {
         get => this.mMode;
         set

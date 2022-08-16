@@ -6,13 +6,13 @@ namespace EVESharp.Common.Configuration;
 public class Database
 {
     [ConfigValue("username")]
-    public string Username { get; set; }
+    public virtual string Username { get; set; }
     [ConfigValue("password")]
-    public string Password { get; set; }
+    public virtual string Password { get; set; }
     [ConfigValue("hostname")]
-    public string Hostname { get; set; }
+    public virtual string Hostname { get; set; }
     [ConfigValue("name")]
-    public string Name { get; set; }
+    public virtual string Name { get; set; }
     [ConfigValue("port", true)]
-    public uint Port { get; set; } = 3306;
+    public virtual uint Port { get; set; } = 3306;
 }

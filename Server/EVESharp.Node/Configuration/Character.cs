@@ -6,5 +6,5 @@ namespace EVESharp.Node.Configuration;
 public class Character
 {
     [ConfigValue("balance")]
-    public double Balance { get; set; } = 50000.0;
+    public virtual double Balance { get; set; } = 50000.0;
 }

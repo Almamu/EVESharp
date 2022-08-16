@@ -7,7 +7,7 @@ public class LogLite
 {
     private string mHostname;
     [ConfigValue ("hostname")]
-    public string Hostname
+    public virtual string Hostname
     {
         get => this.mHostname;
         set
@@ -17,6 +17,6 @@ public class LogLite
         }
     }
     [ConfigValue("port")]
-    public string Port { get; set; }
-    public bool Enabled { get; set; } = false;
+    public virtual string Port { get; set; }
+    public virtual bool Enabled { get; set; } = false;
 }

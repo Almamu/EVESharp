@@ -54,12 +54,12 @@ public class TransportManager : ITransportManager
         HttpClient = httpClient;
     }
 
-    public MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
+    public virtual MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
     {
         return this.ServerTransport = new MachoServerTransport (configuration.Port, machoNet, Log.ForContext <MachoServerTransport> ("Listener"));
     }
 
-    public void NewTransport (IMachoNet machoNet, EVEClientSocket socket)
+    public virtual void NewTransport (IMachoNet machoNet, EVEClientSocket socket)
     {
         UnauthenticatedTransports.Add (
             new MachoUnauthenticatedTransport (

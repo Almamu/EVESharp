@@ -5,12 +5,12 @@ namespace EVESharp.Node.Configuration;
 
 public class General
 {
-    public Authentication                Authentication { get; set; }
-    public Common.Configuration.Database Database       { get; set; }
-    public MachoNet                      MachoNet       { get; set; }
-    public LogLite                       LogLite        { get; set; }
-    public FileLog                       FileLog        { get; set; }
-    public Logging                       Logging        { get; set; }
-    public Character                     Character      { get; set; }
-    public Cluster                       Cluster        { get; set; }
+    public virtual Authentication                Authentication { get; set; }
+    public virtual Common.Configuration.Database Database       { get; set; }
+    public virtual MachoNet                      MachoNet       { get; set; }
+    public virtual LogLite                       LogLite        { get; set; }
+    public virtual FileLog                       FileLog        { get; set; }
+    public virtual Logging                       Logging        { get; set; }
+    public virtual Character                     Character      { get; set; }
+    public virtual Cluster                       Cluster        { get; set; }
 }

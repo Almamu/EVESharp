@@ -7,9 +7,9 @@ public class FileLog
 {
     private string mLogFile;
     [ConfigValue("directory")]
-    public string Directory { get; set; }
+    public virtual string Directory { get; set; }
     [ConfigValue ("logfile")]
-    public string LogFile
+    public virtual string LogFile
     {
         get => this.mLogFile;
         set
@@ -18,5 +18,5 @@ public class FileLog
             this.Enabled  = true;
         }
     }
-    public bool Enabled { get; set; } = false;
+    public virtual bool Enabled { get; set; } = false;
 }
