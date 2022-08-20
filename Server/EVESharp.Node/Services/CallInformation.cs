@@ -12,5 +12,5 @@ public class CallInformation : ServiceCall
     public PyDictionary <PyString, PyDataType> ResultOutOfBounds   { get; init; }
     public BoundServiceManager                 BoundServiceManager { get; init; }
     public ServiceManager                      ServiceManager      { get; init; }
-    public MachoTransport                      Transport           { get; init; }
+    public IMachoTransport                     Transport           { get; init; }
 }

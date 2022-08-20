@@ -70,5 +70,6 @@ public class ClientLoginTests
         );
         
         machoNet.Initialize ();
+        (transportManager.ServerTransport as TestMachoServerTransport).SimulateNewConnection ();
     }
 }

@@ -17,14 +17,16 @@ public class ThreadedProcessor<T> : IQueueProcessor<T> where T : IMessage
     /// Number of threads to spawn to process the queue
     /// </summary>
     public int NumberOfThreads { get; } = 100;
+    private ILogger Log { get; }
     /// <summary>
     /// List of running threads
     /// </summary>
     private readonly List <Thread> mThreads = new List <Thread> ();
 
-    public ThreadedProcessor (IMessageQueue<T> queue)
+    public ThreadedProcessor (IMessageQueue<T> queue, ILogger logger)
     {
-        this.Queue           = queue;
+        this.Queue = queue;
+        this.Log   = logger;
     }
 
     /// <summary>

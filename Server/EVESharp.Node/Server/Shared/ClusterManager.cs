@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Logging;
+using EVESharp.Common.Network.Sockets;
 using EVESharp.EVE;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
@@ -141,7 +142,7 @@ public class ClusterManager : IClusterManager
     /// Opens a connection to the given proxy
     /// </summary>
     /// <param name="nodeID">The nodeID of the proxy to connect to</param>
-    public async Task <MachoTransport> OpenNodeConnection (long nodeID)
+    public async Task <IMachoTransport> OpenNodeConnection (long nodeID)
     {
         // check if there's a connection already and return that one instead
         if (TransportManager.NodeTransports.TryGetValue (nodeID, out MachoNodeTransport nodeTransport))
@@ -164,12 +165,13 @@ public class ClusterManager : IClusterManager
 
         MachoNet.Log.Information ($"Found {role} with NodeID {nodeID} on address {ip}, opening connection...");
 
-        // finally open a connection and register it in the transport list
-        MachoUnauthenticatedTransport transport =
-            new MachoUnauthenticatedTransport (MachoNet, HttpClient, Log.ForContext <MachoUnauthenticatedTransport> (result ["ip"].ToString ()));
+        EVESocket socket = new EVESocket ();
 
-        // open a connection
-        transport.Connect (ip, port);
+        // open the socket and connect to the server
+        socket.Connect (ip, port);
+        
+        // finally open a connection and register it in the transport list
+        IMachoTransport transport = this.TransportManager.NewTransport (this.MachoNet, socket);
 
         // send an identification req to start the authentication flow
         transport.Socket.Send (

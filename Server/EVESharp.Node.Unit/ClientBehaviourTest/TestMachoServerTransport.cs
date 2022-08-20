@@ -19,11 +19,6 @@ public class TestMachoServerTransport : MachoServerTransport
     /// </summary>
     public void SimulateNewConnection ()
     {
-        this.AcceptCallback ((IAsyncResult) this);
-    }
-
-    public new TestEveClientSocket EndAccept (IAsyncResult ar)
-    {
-        return new TestEveClientSocket (Log.ForContext <TestEveClientSocket> ());
+        this.OnConnectionAccepted (new TestEveClientSocket ());
     }
 }

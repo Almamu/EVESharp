@@ -33,7 +33,7 @@ public interface IClusterManager
     /// Opens a connection to the given proxy
     /// </summary>
     /// <param name="nodeID">The nodeID of the proxy to connect to</param>
-    Task <MachoTransport> OpenNodeConnection (long nodeID);
+    Task <IMachoTransport> OpenNodeConnection (long nodeID);
 
     void EstablishConnectionWithProxies ();
 

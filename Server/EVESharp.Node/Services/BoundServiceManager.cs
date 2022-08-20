@@ -141,7 +141,7 @@ public class BoundServiceManager : IServiceManager <int>
         }
     }
 
-    public void OnTransportRemoved (object sender, MachoTransport transport)
+    public void OnTransportRemoved (IMachoTransport transport)
     {
         if (transport is not MachoClientTransport clientTransport)
             return;

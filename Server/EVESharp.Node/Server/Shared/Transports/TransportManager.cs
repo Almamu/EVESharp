@@ -4,6 +4,7 @@ using System.Net.Http;
 using EVESharp.Common.Configuration;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
+using EVESharp.Common.Network.Sockets;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.Node.Configuration;
@@ -20,7 +21,7 @@ public class TransportManager : ITransportManager
     /// <summary>
     /// The unvalidated transports
     /// </summary>
-    public List <MachoTransport> UnauthenticatedTransports { get; } = new List <MachoTransport> ();
+    public List <IMachoTransport> UnauthenticatedTransports { get; } = new List <IMachoTransport> ();
     /// <summary>
     /// The registered and validated client transports
     /// </summary>
@@ -36,17 +37,17 @@ public class TransportManager : ITransportManager
     /// <summary>
     /// Full list of active transports for this node
     /// </summary>
-    public List <MachoTransport> TransportList { get; } = new List <MachoTransport> ();
+    public List <IMachoTransport> TransportList { get; } = new List <IMachoTransport> ();
     protected ILogger    Log        { get; }
     protected HttpClient HttpClient { get; }
 
     /// <summary>
     /// Event fired when a transport is removed
     /// </summary>
-    public EventHandler <MachoTransport> OnTransportRemoved { get;     set; }
-    public EventHandler <MachoClientTransport> OnClientResolved { get; set; }
-    public EventHandler <MachoNodeTransport>   OnNodeResolved   { get; set; }
-    public EventHandler <MachoProxyTransport>  OnProxyResolved  { get; set; }
+    public event Action <IMachoTransport> OnTransportRemoved;
+    public event Action <MachoClientTransport> OnClientResolved;
+    public event Action <MachoNodeTransport>   OnNodeResolved;
+    public event Action <MachoProxyTransport>  OnProxyResolved;
 
     public TransportManager (HttpClient httpClient, ILogger logger)
     {
@@ -56,18 +57,28 @@ public class TransportManager : ITransportManager
 
     public virtual MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
     {
-        return this.ServerTransport = new MachoServerTransport (configuration.Port, machoNet, Log.ForContext <MachoServerTransport> ("Listener"));
+        return this.ServerTransport = new MachoServerTransport (configuration.Port, machoNet, Log.ForContext <MachoServerTransport> ());
     }
 
-    public virtual void NewTransport (IMachoNet machoNet, EVEClientSocket socket)
+    public virtual IMachoTransport NewTransport (IMachoNet machoNet, IEVESocket socket)
     {
-        UnauthenticatedTransports.Add (
-            new MachoUnauthenticatedTransport (
-                machoNet, this.HttpClient, socket, Log.ForContext <MachoUnauthenticatedTransport> (socket.GetRemoteAddress ())
-            )
+        MachoUnauthenticatedTransport transport = new MachoUnauthenticatedTransport (
+            machoNet, this.HttpClient, socket, Log.ForContext <MachoUnauthenticatedTransport> (socket.RemoteAddress)
         );
+
+        this.PrepareTransport (transport);
+        
+        UnauthenticatedTransports.Add (transport);
+
+        return transport;
     }
 
+    private void PrepareTransport (IMachoTransport transport)
+    {
+        // set some events on the transport
+        transport.OnTerminated += this.OnTransportTerminated;
+    }
+    
     /// <summary>
     /// Registers the given transport as a client's transport
     /// </summary>
@@ -77,16 +88,21 @@ public class TransportManager : ITransportManager
         // first remove the transport from the unauthenticated list
         UnauthenticatedTransports.Remove (transport);
 
+        // clear transport's callbacks
+        transport.Dispose ();
+        
         // create the new client transport and store it somewhere
         MachoClientTransport newTransport = new MachoClientTransport (transport);
 
-        if (ClientTransports.TryGetValue (newTransport.Session.UserID, out MachoClientTransport original))
-            original.AbortConnection ();
+        if (ClientTransports.Remove (newTransport.Session.UserID, out MachoClientTransport original))
+            original.Close ();
 
+        this.PrepareTransport (newTransport);
+        
         ClientTransports.Add (newTransport.Session.UserID, newTransport);
         TransportList.Add (newTransport);
 
-        OnClientResolved?.Invoke (this, newTransport);
+        OnClientResolved?.Invoke (newTransport);
     }
 
     public void ResolveNodeTransport (MachoUnauthenticatedTransport transport)
@@ -95,16 +111,21 @@ public class TransportManager : ITransportManager
         // first remove the transport from the unauthenticated list
         UnauthenticatedTransports.Remove (transport);
 
+        // clear transport's callbacks
+        transport.Dispose ();
+
         // create the new client transport and store it somewhere
         MachoNodeTransport newTransport = new MachoNodeTransport (transport);
 
-        if (NodeTransports.TryGetValue (newTransport.Session.NodeID, out MachoNodeTransport original))
-            original.AbortConnection ();
+        if (NodeTransports.Remove (newTransport.Session.NodeID, out MachoNodeTransport original))
+            original.Close ();
 
+        this.PrepareTransport (newTransport);
+        
         NodeTransports.Add (newTransport.Session.NodeID, newTransport);
         TransportList.Add (newTransport);
-
-        OnNodeResolved?.Invoke (this, newTransport);
+        
+        OnNodeResolved?.Invoke (newTransport);
     }
 
     public void ResolveProxyTransport (MachoUnauthenticatedTransport transport)
@@ -113,19 +134,24 @@ public class TransportManager : ITransportManager
         // first remove the transport from the unauthenticated list
         UnauthenticatedTransports.Remove (transport);
 
+        // clear transport's callbacks
+        transport.Dispose ();
+
         // create the new client transport and store it somewhere
         MachoProxyTransport newTransport = new MachoProxyTransport (transport);
 
-        if (ProxyTransports.TryGetValue (newTransport.Session.NodeID, out MachoProxyTransport original))
-            original.AbortConnection ();
+        if (ProxyTransports.Remove (newTransport.Session.NodeID, out MachoProxyTransport original))
+            original.Close ();
 
+        this.PrepareTransport (newTransport);
+        
         ProxyTransports.Add (newTransport.Session.NodeID, newTransport);
         TransportList.Add (newTransport);
 
-        OnProxyResolved?.Invoke (this, newTransport);
+        OnProxyResolved?.Invoke (newTransport);
     }
 
-    public void OnTransportTerminated (MachoTransport transport)
+    private void OnTransportTerminated (IMachoTransport transport)
     {
         if (transport is not MachoUnauthenticatedTransport)
             TransportList.Remove (transport);
@@ -149,6 +175,9 @@ public class TransportManager : ITransportManager
                 break;
         }
 
-        OnTransportRemoved?.Invoke (this, transport);
+        // close the transport and free any resources left
+        transport.Close ();
+        
+        OnTransportRemoved?.Invoke (transport);
     }
 }

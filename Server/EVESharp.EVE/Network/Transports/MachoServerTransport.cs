@@ -2,34 +2,32 @@ using System;
 using System.Net.Http;
 using EVESharp.Common.Logging;
 using EVESharp.Common.Network;
+using EVESharp.Common.Network.Sockets;
 using Serilog;
 
 namespace EVESharp.EVE.Network.Transports;
 
-public class MachoServerTransport : EVEServerSocket
+public class MachoServerTransport : EVEListener
 {
-    public IMachoNet MachoNet { get; }
+    public  IMachoNet MachoNet { get; }
+    private ILogger   Log      { get; }
 
-    public MachoServerTransport (int port, IMachoNet machoNet, ILogger logger) : base (port, logger)
+    public MachoServerTransport (int port, IMachoNet machoNet, ILogger log) : base (port)
     {
-        this.MachoNet   = machoNet;
+        this.Log           =  log;
+        this.MachoNet      =  machoNet;
+        ConnectionAccepted += this.ConnectionAcceptedHandler;
+        base.OnException   += this.ExceptionHandler;
     }
 
-    public new void Listen ()
+    private void ConnectionAcceptedHandler (IEVESocket socket)
     {
-        base.Listen ();
-        this.BeginAccept (this.AcceptCallback);
+        this.MachoNet.TransportManager.NewTransport (this.MachoNet, socket);
     }
 
-    protected void AcceptCallback (IAsyncResult ar)
+    private void ExceptionHandler (Exception ex)
     {
-        EVEServerSocket serverSocket = ar.AsyncState as EVEServerSocket;
-        EVEClientSocket clientSocket = serverSocket.EndAccept (ar);
-
-        // got a new transport, register it
-        this.MachoNet.TransportManager.NewTransport (this.MachoNet, clientSocket);
-
-        // begin accepting again
-        this.BeginAccept (this.AcceptCallback);
+        Log.Error ("Exception on server listener: {ex.Message}", ex.Message);
+        Log.Error (ex.StackTrace);
     }
 }

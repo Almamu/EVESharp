@@ -60,13 +60,16 @@ public class MachoNet : IMachoNet
         
         // start the login queue processing
         this.LoginProcessor.Start ();
+        
+        // setup events for transport manager
+        this.TransportManager.OnTransportRemoved += this.OnTransportTerminated;
 
         // start the server socket
         this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
         // nothing else to do for now
     }
 
-    public void QueueOutputPacket (MachoTransport origin, PyPacket packet)
+    public void QueueOutputPacket (IMachoTransport origin, PyPacket packet)
     {
         // origin not being null means the packet came from a specific connection
         // and is a direct answer to it, so we can short-circuit through it
@@ -106,7 +109,7 @@ public class MachoNet : IMachoNet
         }
     }
 
-    public void QueueInputPacket (MachoTransport origin, PyPacket packet)
+    public void QueueInputPacket (IMachoTransport origin, PyPacket packet)
     {
         // add the packet to the processor
         this.MessageProcessor?.Queue.Enqueue (
@@ -118,7 +121,7 @@ public class MachoNet : IMachoNet
         );
     }
 
-    public void OnTransportTerminated (MachoTransport transport)
+    private void OnTransportTerminated (IMachoTransport transport)
     {
         // build the packet to be sent to everyone
         PyPacket clusterPacket = new PyPacket (PyPacket.PacketType.NOTIFICATION)
@@ -152,8 +155,6 @@ public class MachoNet : IMachoNet
         ((IMachoNet) this).QueueOutputPacket (clusterPacket);
         // queue the packet as input too so the proxy handles the disconnection too
         ((IMachoNet) this).QueueInputPacket (localPacket);
-        // remove the transport from the list
-        TransportManager.OnTransportTerminated (transport);
     }
 
     private void SendPacketToClient (int clientID, PyPacket packet)
@@ -202,7 +203,7 @@ public class MachoNet : IMachoNet
         foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable <PyInteger> ())
         {
             // loop all transports, search for the idtype given and send it
-            foreach (MachoTransport transport in TransportManager.TransportList)
+            foreach (IMachoTransport transport in TransportManager.TransportList)
             {
                 switch (comparison)
                 {
@@ -257,7 +258,7 @@ public class MachoNet : IMachoNet
             if (id.Count != criteria.Length)
                 continue;
 
-            foreach (MachoTransport transport in TransportManager.TransportList)
+            foreach (IMachoTransport transport in TransportManager.TransportList)
             {
                 bool found = true;
 

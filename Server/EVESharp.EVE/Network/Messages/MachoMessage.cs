@@ -13,5 +13,5 @@ public class MachoMessage : IMessage
     /// <summary>
     /// The transport that originated the data
     /// </summary>
-    public MachoTransport Transport { get; init; }
+    public IMachoTransport Transport { get; init; }
 }

@@ -60,9 +60,11 @@ public class MachoNet : IMachoNet
 
         // start the server socket
         this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
+        // add some callbacks
+        // this.TransportManager.ServerTransport.
     }
 
-    public void QueueOutputPacket (MachoTransport origin, PyPacket packet)
+    public void QueueOutputPacket (IMachoTransport origin, PyPacket packet)
     {
         // if origin is not null that means we're answering to "something"
         if (origin is not null)
@@ -96,7 +98,7 @@ public class MachoNet : IMachoNet
         }
     }
 
-    public void QueueInputPacket (MachoTransport origin, PyPacket packet)
+    public void QueueInputPacket (IMachoTransport origin, PyPacket packet)
     {
         // add the packet to the processor
         this.MessageProcessor?.Queue.Enqueue (
@@ -106,11 +108,5 @@ public class MachoNet : IMachoNet
                 Transport = origin
             }
         );
-    }
-
-    public void OnTransportTerminated (MachoTransport transport)
-    {
-        // remove the transport from the list
-        TransportManager.OnTransportTerminated (transport);
     }
 }

@@ -61,7 +61,7 @@ public interface IMachoNet
     /// </summary>
     /// <param name="origin">Where the packet originated (if any)</param>
     /// <param name="packet">The packet to queue</param>
-    public void QueueOutputPacket (MachoTransport origin, PyPacket packet);
+    public void QueueOutputPacket (IMachoTransport origin, PyPacket packet);
 
     /// <summary>
     /// Queues a packet to be sent out
@@ -77,7 +77,7 @@ public interface IMachoNet
     /// </summary>
     /// <param name="origin">Where the packet originated</param>
     /// <param name="packet">The packet to queue</param>
-    public void QueueInputPacket (MachoTransport origin, PyPacket packet);
+    public void QueueInputPacket (IMachoTransport origin, PyPacket packet);
 
     /// <summary>
     /// Queues a packet to be processed and dispatched properly
@@ -87,10 +87,4 @@ public interface IMachoNet
     {
         this.QueueInputPacket (null, packet);
     }
-
-    /// <summary>
-    /// Notifies MachoNet that a transport was closed
-    /// </summary>
-    /// <param name="transport"></param>
-    public void OnTransportTerminated (MachoTransport transport);
 }

@@ -42,8 +42,6 @@ public class Timer<T> : IDisposable
             // stop the timer
             if (this.ShouldStop)
                 this.mTimer.Enabled = false;
-            // log the timer running
-            this.Log.Debug ("Firing callback for timer with state {State}", this.State);
             // run the callback
             this.Callback (this.State);
             // dispose of the timer

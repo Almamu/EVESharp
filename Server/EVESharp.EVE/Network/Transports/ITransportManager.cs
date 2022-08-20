@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using EVESharp.Common.Configuration;
 using EVESharp.Common.Network;
+using EVESharp.Common.Network.Sockets;
 
 namespace EVESharp.EVE.Network.Transports;
 
@@ -14,7 +15,7 @@ public interface ITransportManager
     /// <summary>
     /// The unvalidated transports
     /// </summary>
-    List <MachoTransport> UnauthenticatedTransports { get; }
+    List <IMachoTransport> UnauthenticatedTransports { get; }
     /// <summary>
     /// The registered and validated client transports
     /// </summary>
@@ -30,23 +31,23 @@ public interface ITransportManager
     /// <summary>
     /// Full list of active transports for this node
     /// </summary>
-    List <MachoTransport> TransportList { get; }
+    List <IMachoTransport> TransportList { get; }
     /// <summary>
     /// Event fired when a transport is removed
     /// </summary>
-    EventHandler <MachoTransport> OnTransportRemoved { get;     set; }
+    event Action <IMachoTransport> OnTransportRemoved;
     /// <summary>
     /// Event fired when a transport is resolved to a client
     /// </summary>
-    EventHandler <MachoClientTransport> OnClientResolved { get; set; }
+    event Action <MachoClientTransport> OnClientResolved;
     /// <summary>
     /// Event fired when a transport is resolved to a node
     /// </summary>
-    EventHandler <MachoNodeTransport>   OnNodeResolved   { get; set; }
+    event Action <MachoNodeTransport> OnNodeResolved;
     /// <summary>
     /// Event fired when a transport is resolved to a proxy
     /// </summary>
-    EventHandler <MachoProxyTransport>  OnProxyResolved  { get; set; }
+    event Action <MachoProxyTransport> OnProxyResolved;
 
     /// <summary>
     /// Creates a new server transport to be used
@@ -60,7 +61,7 @@ public interface ITransportManager
     /// </summary>
     /// <param name="machoNet"></param>
     /// <param name="socket"></param>
-    void NewTransport (IMachoNet machoNet, EVEClientSocket socket);
+    IMachoTransport NewTransport (IMachoNet machoNet, IEVESocket socket);
     /// <summary>
     /// Registers the given transport as a client's transport
     /// </summary>
@@ -76,5 +77,4 @@ public interface ITransportManager
     /// </summary>
     /// <param name="transport"></param>
     void ResolveProxyTransport (MachoUnauthenticatedTransport transport);
-    void OnTransportTerminated (MachoTransport                transport);
 }

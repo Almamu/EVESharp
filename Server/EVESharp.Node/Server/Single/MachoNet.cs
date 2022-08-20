@@ -71,7 +71,7 @@ public class MachoNet : IMachoNet
         this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();
     }
 
-    public void QueueOutputPacket (MachoTransport origin, PyPacket packet)
+    public void QueueOutputPacket (IMachoTransport origin, PyPacket packet)
     {
         // origin not being null means the packet came from a specific connection
         // and is a direct answer to it, so we can short-circuit through it
@@ -105,7 +105,7 @@ public class MachoNet : IMachoNet
         }
     }
 
-    public void QueueInputPacket (MachoTransport origin, PyPacket packet)
+    public void QueueInputPacket (IMachoTransport origin, PyPacket packet)
     {
         // add the packet to the processor
         this.MessageProcessor?.Queue.Enqueue (
@@ -115,12 +115,6 @@ public class MachoNet : IMachoNet
                 Transport = origin
             }
         );
-    }
-
-    public void OnTransportTerminated (MachoTransport transport)
-    {
-        // remove the transport from the list
-        TransportManager.OnTransportTerminated (transport);
     }
 
     private void SendPacketToClient (int clientID, PyPacket packet)
@@ -160,7 +154,7 @@ public class MachoNet : IMachoNet
         foreach (PyInteger id in dest.IDsOfInterest.GetEnumerable <PyInteger> ())
         {
             // loop all transports, search for the idtype given and send it
-            foreach (MachoTransport transport in TransportManager.TransportList)
+            foreach (IMachoTransport transport in TransportManager.TransportList)
             {
                 switch (comparison)
                 {
@@ -215,7 +209,7 @@ public class MachoNet : IMachoNet
             if (id.Count != criteria.Length)
                 continue;
 
-            foreach (MachoTransport transport in TransportManager.TransportList)
+            foreach (IMachoTransport transport in TransportManager.TransportList)
             {
                 bool found = true;
 

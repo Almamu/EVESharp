@@ -1,25 +1,41 @@
 using System;
+using EVESharp.Common.Network.Sockets;
+using EVESharp.EVE.Sessions;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
+using Serilog;
 
 namespace EVESharp.EVE.Network.Transports;
 
-public class MachoClientTransport : MachoTransport
+public class MachoClientTransport : IMachoTransport
 {
-    public MachoClientTransport (MachoTransport source) : base (source)
+    public Session                        Session          { get; }
+    public ILogger                        Log              { get; }
+    public IEVESocket                     Socket           { get; }
+    public IMachoNet                      MachoNet         { get; }
+    public ITransportManager              TransportManager { get; }
+    public event Action <IMachoTransport> OnTerminated;
+
+    public MachoClientTransport (IMachoTransport source)
     {
+        this.Socket           = source.Socket;
+        this.Log              = source.Log;
+        this.Session          = source.Session;
+        this.MachoNet         = source.MachoNet;
+        this.TransportManager = source.TransportManager;
+        
         // finally assign the correct packet handler
-        this.Socket.SetReceiveCallback (this.ReceiveNormalPacket);
-        this.Socket.SetExceptionHandler (this.HandleException);
-        this.Socket.SetOnConnectionLostHandler (this.HandleConnectionLost);
+        this.Socket.OnDataReceived   += this.ReceiveNormalPacket;
+        this.Socket.OnException      += this.HandleException;
+        this.Socket.OnConnectionLost += this.HandleConnectionLost;
     }
 
     private void HandleConnectionLost ()
     {
-        this.Log.Fatal ("Client {0} lost connection to the server", this.Session.UserID);
+        this.Log.Error ("Client {0} lost connection to the server", this.Session.UserID);
 
         // clean up ourselves
-        this.MachoNet.OnTransportTerminated (this);
+        this.OnTerminated (this);
     }
 
     private void HandleException (Exception ex)
@@ -55,5 +71,21 @@ public class MachoClientTransport : MachoTransport
 
         // queue the input packet into machoNet so it handles it
         this.MachoNet.QueueInputPacket (this, pyPacket);
+    }
+
+    public void Close ()
+    {
+        this.Dispose ();
+    }
+    
+    public void Dispose ()
+    {
+        // finally close the socket
+        this.Socket.Close ();
+        
+        // cleanup callbacks
+        this.Socket.OnDataReceived   -= this.ReceiveNormalPacket;
+        this.Socket.OnException      -= this.HandleException;
+        this.Socket.OnConnectionLost -= this.HandleConnectionLost;
     }
 }
