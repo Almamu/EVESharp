@@ -30,7 +30,7 @@ public interface IMachoTransport : IDisposable
     /// <summary>
     /// Event used when the transport is terminated
     /// </summary>
-    public event Action <IMachoTransport> OnTerminated;
+    public event Action <IMachoTransport> Terminated;
     /// <summary>
     /// Closes the underlying socket and frees it's resources
     /// </summary>

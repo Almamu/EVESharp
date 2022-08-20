@@ -17,7 +17,7 @@ public class MachoServerTransport : EVEListener
         this.Log           =  log;
         this.MachoNet      =  machoNet;
         ConnectionAccepted += this.ConnectionAcceptedHandler;
-        base.OnException   += this.ExceptionHandler;
+        base.Exception   += this.ExceptionHandler;
     }
 
     private void ConnectionAcceptedHandler (IEVESocket socket)

@@ -15,9 +15,9 @@ public class EVESocket : IEVESocket
     private bool                 IsClosed     { get; set; }
     private bool                 IsDisposed   { get; set; }
 
-    public event Action <PyDataType> OnDataReceived;
-    public event Action              OnConnectionLost;
-    public event Action <Exception>  OnException;
+    public event Action <PyDataType> DataReceived;
+    public event Action              ConnectionLost;
+    public event Action <Exception>  Exception;
     public string                    RemoteAddress => (this.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString ();
 
     public EVESocket ()
@@ -71,7 +71,7 @@ public class EVESocket : IEVESocket
     private void ProcessInputData ()
     {
         // no data received callback means the data cannot be processed yet
-        if (this.OnDataReceived is null)
+        if (this.DataReceived is null)
             return;
         
         while (this.Packetizer.PacketCount > 0)
@@ -80,7 +80,7 @@ public class EVESocket : IEVESocket
             {
                 PyDataType packet = Unmarshal.ReadFromByteArray (this.Packetizer.PopItem ());
 
-                OnDataReceived (packet);
+                this.DataReceived (packet);
             }
             catch (Exception e)
             {
@@ -128,7 +128,7 @@ public class EVESocket : IEVESocket
         }
         catch (Exception e)
         {
-            this.OnException?.Invoke (e);
+            this.Exception?.Invoke (e);
         }
     }
 
@@ -163,14 +163,14 @@ public class EVESocket : IEVESocket
                 case SocketError.ProtocolOption:
                 case SocketError.HostNotFound:
                     handled = true;
-                    this.OnConnectionLost?.Invoke ();
+                    this.ConnectionLost?.Invoke ();
                     break;
             }
         }
 
         // call the custom exception handler only if the exception cannot be handled by the socket itself
         if (handled == false)
-            this.OnException?.Invoke (ex);
+            this.Exception?.Invoke (ex);
     }
 
     public void Send (PyDataType data)
@@ -204,9 +204,9 @@ public class EVESocket : IEVESocket
         this.Socket.Close ();
         
         // clear all the callbacks
-        this.OnDataReceived   = null;
-        this.OnException      = null;
-        this.OnConnectionLost = null;
+        this.DataReceived   = null;
+        this.Exception      = null;
+        this.ConnectionLost = null;
     }
     
     public void Dispose ()

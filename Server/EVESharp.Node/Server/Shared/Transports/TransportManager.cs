@@ -44,10 +44,10 @@ public class TransportManager : ITransportManager
     /// <summary>
     /// Event fired when a transport is removed
     /// </summary>
-    public event Action <IMachoTransport> OnTransportRemoved;
-    public event Action <MachoClientTransport> OnClientResolved;
-    public event Action <MachoNodeTransport>   OnNodeResolved;
-    public event Action <MachoProxyTransport>  OnProxyResolved;
+    public event Action <IMachoTransport> TransportRemoved;
+    public event Action <MachoClientTransport> ClientResolved;
+    public event Action <MachoNodeTransport>   NodeResolved;
+    public event Action <MachoProxyTransport>  ProxyResolved;
 
     public TransportManager (HttpClient httpClient, ILogger logger)
     {
@@ -76,7 +76,7 @@ public class TransportManager : ITransportManager
     private void PrepareTransport (IMachoTransport transport)
     {
         // set some events on the transport
-        transport.OnTerminated += this.OnTransportTerminated;
+        transport.Terminated += this.OnTransportTerminated;
     }
     
     /// <summary>
@@ -102,7 +102,7 @@ public class TransportManager : ITransportManager
         ClientTransports.Add (newTransport.Session.UserID, newTransport);
         TransportList.Add (newTransport);
 
-        OnClientResolved?.Invoke (newTransport);
+        this.ClientResolved?.Invoke (newTransport);
     }
 
     public void ResolveNodeTransport (MachoUnauthenticatedTransport transport)
@@ -125,7 +125,7 @@ public class TransportManager : ITransportManager
         NodeTransports.Add (newTransport.Session.NodeID, newTransport);
         TransportList.Add (newTransport);
         
-        OnNodeResolved?.Invoke (newTransport);
+        this.NodeResolved?.Invoke (newTransport);
     }
 
     public void ResolveProxyTransport (MachoUnauthenticatedTransport transport)
@@ -148,7 +148,7 @@ public class TransportManager : ITransportManager
         ProxyTransports.Add (newTransport.Session.NodeID, newTransport);
         TransportList.Add (newTransport);
 
-        OnProxyResolved?.Invoke (newTransport);
+        this.ProxyResolved?.Invoke (newTransport);
     }
 
     private void OnTransportTerminated (IMachoTransport transport)
@@ -178,6 +178,6 @@ public class TransportManager : ITransportManager
         // close the transport and free any resources left
         transport.Close ();
         
-        OnTransportRemoved?.Invoke (transport);
+        this.TransportRemoved?.Invoke (transport);
     }
 }

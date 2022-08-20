@@ -12,7 +12,7 @@ public interface IEVEListener : IDisposable
     /// <summary>
     /// Event fired when the connection generates any kind of exceptions
     /// </summary>
-    public event Action <Exception> OnException;
+    public event Action <Exception> Exception;
     
     /// <summary>
     /// Sets the listener to accept mode

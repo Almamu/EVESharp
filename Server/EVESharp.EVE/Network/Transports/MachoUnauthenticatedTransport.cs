@@ -24,7 +24,7 @@ public class MachoUnauthenticatedTransport : IMachoTransport
     public IEVESocket                     Socket           { get; }
     public IMachoNet                      MachoNet         { get; }
     public ITransportManager              TransportManager { get; }
-    public event Action <IMachoTransport> OnTerminated;
+    public event Action <IMachoTransport> Terminated;
     private HttpClient                    HttpClient { get; }
 
     public MachoUnauthenticatedTransport (IMachoNet machoNet, HttpClient httpClient, ILogger channel)
@@ -37,9 +37,9 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         this.HttpClient              =  httpClient;
         
         // setup events
-        this.Socket.OnDataReceived   += this.ReceiveLowLevelVersionExchange;
-        this.Socket.OnException      += this.HandleException;
-        this.Socket.OnConnectionLost += this.HandleConnectionLost;
+        this.Socket.DataReceived   += this.ReceiveLowLevelVersionExchange;
+        this.Socket.Exception      += this.HandleException;
+        this.Socket.ConnectionLost += this.HandleConnectionLost;
     }
 
     public MachoUnauthenticatedTransport (IMachoNet machoNet, HttpClient httpClient, IEVESocket socket, ILogger logger)
@@ -52,9 +52,9 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         this.HttpClient              =  httpClient;
         
         // setup events
-        this.Socket.OnDataReceived   += this.ReceiveLowLevelVersionExchange;
-        this.Socket.OnException      += this.HandleException;
-        this.Socket.OnConnectionLost += this.HandleConnectionLost;
+        this.Socket.DataReceived   += this.ReceiveLowLevelVersionExchange;
+        this.Socket.Exception      += this.HandleException;
+        this.Socket.ConnectionLost += this.HandleConnectionLost;
         
         // send low level version exchange to start authorization chain
         this.SendLowLevelVersionExchange ();
@@ -65,7 +65,7 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         Log.Error ("Unauthenticated transport lost connection to the server");
 
         // clean up ourselves
-        this.OnTerminated (this);
+        this.Terminated (this);
     }
 
     public void Connect (string ip, ushort port)
@@ -197,8 +197,8 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         this.Log.Debug ("Handling low level version exchange");
 
         // assign the new packet handler to wait for commands again
-        this.Socket.OnDataReceived -= this.ReceiveLowLevelVersionExchange;
-        this.Socket.OnDataReceived += this.ReceiveCommandCallback;
+        this.Socket.DataReceived -= this.ReceiveLowLevelVersionExchange;
+        this.Socket.DataReceived += this.ReceiveCommandCallback;
     }
 
     private void HandleException (Exception ex)
@@ -249,15 +249,15 @@ public class MachoUnauthenticatedTransport : IMachoTransport
             // send low level version exchange required
             this.SendLowLevelVersionExchange ();
             // wait for a new low level version exchange again
-            this.Socket.OnDataReceived -= this.ReceiveCommandCallback;
-            this.Socket.OnDataReceived += this.ReceiveLowLevelVersionExchange;
+            this.Socket.DataReceived -= this.ReceiveCommandCallback;
+            this.Socket.DataReceived += this.ReceiveLowLevelVersionExchange;
         }
         else if (command.Command == "VK")
         {
             this.Log.Debug ("Received VipKey command");
             // next is the placebo challenge
-            this.Socket.OnDataReceived -= this.ReceiveCommandCallback;
-            this.Socket.OnDataReceived += this.ReceiveCryptoRequestCallback;
+            this.Socket.DataReceived -= this.ReceiveCommandCallback;
+            this.Socket.DataReceived += this.ReceiveCryptoRequestCallback;
         }
         else
         {
@@ -279,8 +279,8 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         // answer the client with a correct crypto challenge
         this.Socket.Send (new PyString ("OK CC"));
         // next is the first login attempt
-        this.Socket.OnDataReceived -= this.ReceiveCryptoRequestCallback;
-        this.Socket.OnDataReceived += this.ReceiveAuthenticationRequestCallback;
+        this.Socket.DataReceived -= this.ReceiveCryptoRequestCallback;
+        this.Socket.DataReceived += this.ReceiveAuthenticationRequestCallback;
     }
 
     private void ReceiveAuthenticationRequestCallback (PyDataType packet)
@@ -337,7 +337,7 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         };
 
         // clear the data received event
-        this.Socket.OnDataReceived -= this.ReceiveLoginResultResponse;
+        this.Socket.DataReceived -= this.ReceiveLoginResultResponse;
         // send the response first
         this.Socket.Send (ack);
         // move the connection to the authenticated user list
@@ -377,8 +377,8 @@ public class MachoUnauthenticatedTransport : IMachoTransport
                 // send the login response
                 this.Socket.Send (rsp);
                 // set second to last packet handler
-                this.Socket.OnDataReceived -= this.ReceiveAuthenticationRequestCallback;
-                this.Socket.OnDataReceived += this.ReceiveLoginResultResponse;
+                this.Socket.DataReceived -= this.ReceiveAuthenticationRequestCallback;
+                this.Socket.DataReceived += this.ReceiveLoginResultResponse;
             }
             else
             {
@@ -413,12 +413,12 @@ public class MachoUnauthenticatedTransport : IMachoTransport
     /// </summary>
     public void Dispose ()
     {
-        this.Socket.OnDataReceived   -= this.ReceiveLowLevelVersionExchange;
-        this.Socket.OnDataReceived   -= this.ReceiveCommandCallback;
-        this.Socket.OnDataReceived   -= this.ReceiveLoginResultResponse;
-        this.Socket.OnDataReceived   -= this.ReceiveAuthenticationRequestCallback;
-        this.Socket.OnDataReceived   -= this.ReceiveCryptoRequestCallback;
-        this.Socket.OnException      -= this.HandleException;
-        this.Socket.OnConnectionLost -= this.HandleConnectionLost;
+        this.Socket.DataReceived   -= this.ReceiveLowLevelVersionExchange;
+        this.Socket.DataReceived   -= this.ReceiveCommandCallback;
+        this.Socket.DataReceived   -= this.ReceiveLoginResultResponse;
+        this.Socket.DataReceived   -= this.ReceiveAuthenticationRequestCallback;
+        this.Socket.DataReceived   -= this.ReceiveCryptoRequestCallback;
+        this.Socket.Exception      -= this.HandleException;
+        this.Socket.ConnectionLost -= this.HandleConnectionLost;
     }
 }

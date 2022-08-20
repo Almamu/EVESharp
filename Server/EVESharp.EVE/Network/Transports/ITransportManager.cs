@@ -35,19 +35,19 @@ public interface ITransportManager
     /// <summary>
     /// Event fired when a transport is removed
     /// </summary>
-    event Action <IMachoTransport> OnTransportRemoved;
+    event Action <IMachoTransport> TransportRemoved;
     /// <summary>
     /// Event fired when a transport is resolved to a client
     /// </summary>
-    event Action <MachoClientTransport> OnClientResolved;
+    event Action <MachoClientTransport> ClientResolved;
     /// <summary>
     /// Event fired when a transport is resolved to a node
     /// </summary>
-    event Action <MachoNodeTransport> OnNodeResolved;
+    event Action <MachoNodeTransport> NodeResolved;
     /// <summary>
     /// Event fired when a transport is resolved to a proxy
     /// </summary>
-    event Action <MachoProxyTransport> OnProxyResolved;
+    event Action <MachoProxyTransport> ProxyResolved;
 
     /// <summary>
     /// Creates a new server transport to be used

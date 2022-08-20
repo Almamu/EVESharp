@@ -18,8 +18,8 @@ public class SessionManager : EVE.Sessions.SessionManager
         MachoNet         = machoNet;
 
         // register events
-        TransportManager.OnTransportRemoved += this.OnTransportClosed;
-        TransportManager.OnClientResolved   += this.OnClientResolved;
+        TransportManager.TransportRemoved += this.OnTransportClosed;
+        TransportManager.ClientResolved   += this.OnClientResolved;
     }
 
     public override void InitializeSession (Session session)

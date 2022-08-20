@@ -14,7 +14,7 @@ public class MachoClientTransport : IMachoTransport
     public IEVESocket                     Socket           { get; }
     public IMachoNet                      MachoNet         { get; }
     public ITransportManager              TransportManager { get; }
-    public event Action <IMachoTransport> OnTerminated;
+    public event Action <IMachoTransport> Terminated;
 
     public MachoClientTransport (IMachoTransport source)
     {
@@ -25,9 +25,9 @@ public class MachoClientTransport : IMachoTransport
         this.TransportManager = source.TransportManager;
         
         // finally assign the correct packet handler
-        this.Socket.OnDataReceived   += this.ReceiveNormalPacket;
-        this.Socket.OnException      += this.HandleException;
-        this.Socket.OnConnectionLost += this.HandleConnectionLost;
+        this.Socket.DataReceived   += this.ReceiveNormalPacket;
+        this.Socket.Exception      += this.HandleException;
+        this.Socket.ConnectionLost += this.HandleConnectionLost;
     }
 
     private void HandleConnectionLost ()
@@ -35,7 +35,7 @@ public class MachoClientTransport : IMachoTransport
         this.Log.Error ("Client {0} lost connection to the server", this.Session.UserID);
 
         // clean up ourselves
-        this.OnTerminated (this);
+        this.Terminated (this);
     }
 
     private void HandleException (Exception ex)
@@ -84,8 +84,8 @@ public class MachoClientTransport : IMachoTransport
         this.Socket.Close ();
         
         // cleanup callbacks
-        this.Socket.OnDataReceived   -= this.ReceiveNormalPacket;
-        this.Socket.OnException      -= this.HandleException;
-        this.Socket.OnConnectionLost -= this.HandleConnectionLost;
+        this.Socket.DataReceived   -= this.ReceiveNormalPacket;
+        this.Socket.Exception      -= this.HandleException;
+        this.Socket.ConnectionLost -= this.HandleConnectionLost;
     }
 }

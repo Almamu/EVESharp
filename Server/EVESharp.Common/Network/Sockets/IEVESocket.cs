@@ -8,17 +8,17 @@ public interface IEVESocket : IDisposable
     /// <summary>
     /// Event fired when new data is available on the socket
     /// </summary>
-    public event Action <PyDataType> OnDataReceived;
+    public event Action <PyDataType> DataReceived;
 
     /// <summary>
     /// Event fired when the connection is lost (network problems, connection closed, anything...)
     /// </summary>
-    public event Action OnConnectionLost;
+    public event Action ConnectionLost;
 
     /// <summary>
     /// Event fired when the connection generates any kind of exceptions
     /// </summary>
-    public event Action <Exception> OnException;
+    public event Action <Exception> Exception;
 
     /// <summary>
     /// Address of the other side of the socket

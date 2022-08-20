@@ -62,7 +62,7 @@ public class MachoNet : IMachoNet
         this.LoginProcessor.Start ();
         
         // setup events for transport manager
-        this.TransportManager.OnTransportRemoved += this.OnTransportTerminated;
+        this.TransportManager.TransportRemoved += this.OnTransportTerminated;
 
         // start the server socket
         this.TransportManager.OpenServerTransport (this, Configuration.MachoNet).Listen ();

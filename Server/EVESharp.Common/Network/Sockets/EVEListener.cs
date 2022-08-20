@@ -7,7 +7,7 @@ namespace EVESharp.Common.Network.Sockets;
 public class EVEListener : IEVEListener
 {
     public event Action <IEVESocket> ConnectionAccepted;
-    public event Action <Exception>  OnException;
+    public event Action <Exception>  Exception;
     private Socket                   Socket { get; }
     private int                      Port   { get; }
 
@@ -54,7 +54,7 @@ public class EVEListener : IEVEListener
         }
         catch (Exception e)
         {
-            this.OnException (e);
+            this.Exception (e);
         }
     }
 

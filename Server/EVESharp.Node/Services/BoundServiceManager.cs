@@ -29,7 +29,7 @@ public class BoundServiceManager : IServiceManager <int>
         MachoNet = machoNet;
         Log      = logger;
         // register on transport closed so proxies and single-instance servers cleanup properly
-        MachoNet.TransportManager.OnTransportRemoved += this.OnTransportRemoved;
+        MachoNet.TransportManager.TransportRemoved += this.OnTransportRemoved;
     }
 
     /// <summary>

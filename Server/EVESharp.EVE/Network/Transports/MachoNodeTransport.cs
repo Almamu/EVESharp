@@ -13,7 +13,7 @@ public class MachoNodeTransport : IMachoTransport
     public IEVESocket                     Socket           { get; }
     public IMachoNet                      MachoNet         { get; }
     public ITransportManager              TransportManager { get; }
-    public event Action <IMachoTransport> OnTerminated;
+    public event Action <IMachoTransport> Terminated;
     
     public MachoNodeTransport (IMachoTransport source)
     {
@@ -24,9 +24,9 @@ public class MachoNodeTransport : IMachoTransport
         this.TransportManager = source.TransportManager;
         // add load status to the session
         this.Session.LoadMetric      =  0;
-        this.Socket.OnDataReceived   += this.HandlePacket;
-        this.Socket.OnException      += this.HandleException;
-        this.Socket.OnConnectionLost += this.HandleConnectionLost;
+        this.Socket.DataReceived   += this.HandlePacket;
+        this.Socket.Exception      += this.HandleException;
+        this.Socket.ConnectionLost += this.HandleConnectionLost;
     }
 
     private void HandlePacket (PyDataType data)
@@ -39,7 +39,7 @@ public class MachoNodeTransport : IMachoTransport
         Log.Fatal ("Lost connection to node {0}, is it down?", this.Session.NodeID);
 
         // clean up ourselves
-        this.OnTerminated (this);
+        this.Terminated (this);
     }
 
     private void HandleException (Exception ex)
@@ -61,8 +61,8 @@ public class MachoNodeTransport : IMachoTransport
     public void Dispose ()
     {
         this.Socket.Close ();
-        this.Socket.OnDataReceived   -= this.HandlePacket;
-        this.Socket.OnException      -= this.HandleException;
-        this.Socket.OnConnectionLost -= this.HandleConnectionLost;
+        this.Socket.DataReceived   -= this.HandlePacket;
+        this.Socket.Exception      -= this.HandleException;
+        this.Socket.ConnectionLost -= this.HandleConnectionLost;
     }
 }
