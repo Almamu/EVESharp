@@ -67,7 +67,7 @@ public class marketProxy : Service
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
 
-        clusterManager.OnClusterTimer += this.PerformTimedEvents;
+        clusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
 
     private PyDataType GetNewTransactions

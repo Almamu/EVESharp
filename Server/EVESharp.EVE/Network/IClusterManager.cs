@@ -10,7 +10,7 @@ public interface IClusterManager
     /// <summary>
     /// The event used when a timed event has to happen cluster-wide
     /// </summary>
-    EventHandler OnClusterTimer { get; set; }
+    event EventHandler ClusterTimerTick;
 
     /// <summary>
     /// Register the given IMachoNet instance with the orchestrator and updates it's information

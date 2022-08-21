@@ -82,7 +82,7 @@ public class corpRegistry : MultiClientBoundService
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
 
-        ClusterManager.OnClusterTimer += this.PerformTimedEvents;
+        ClusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
 
     protected corpRegistry

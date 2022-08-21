@@ -47,7 +47,7 @@ public class insuranceSvc : ClientBoundService
         Database     = database;
         SolarSystems = solarSystems;
 
-        clusterManager.OnClusterTimer += PerformTimedEvents;
+        clusterManager.ClusterTimerTick += PerformTimedEvents;
     }
 
     protected insuranceSvc

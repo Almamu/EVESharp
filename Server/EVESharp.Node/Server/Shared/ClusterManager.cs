@@ -29,7 +29,7 @@ public class ClusterManager : IClusterManager
     /// <summary>
     /// The event used when a timed event has to happen cluster-wide
     /// </summary>
-    public EventHandler OnClusterTimer { get; set; }
+    public event EventHandler ClusterTimerTick;
 
     public ClusterManager (IMachoNet machoNet, ITransportManager transportManager, HttpClient httpClient, ITimers timers, ILogger logger)
     {
@@ -230,7 +230,7 @@ public class ClusterManager : IClusterManager
     {
         Log.Debug ("Running periodic cluster timed events");
 
-        this.OnClusterTimer?.Invoke (this, null);
+        this.ClusterTimerTick?.Invoke (this, null);
     }
 
     private void OnClusterHeartbeatTimer (object? source)

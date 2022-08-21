@@ -52,7 +52,7 @@ public class allianceRegistry : MultiClientBoundService
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
 
-        ClusterManager.OnClusterTimer += PerformTimedEvents;
+        ClusterManager.ClusterTimerTick += PerformTimedEvents;
     }
 
     private allianceRegistry

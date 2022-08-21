@@ -37,8 +37,6 @@ using Item = EVESharp.EVE.Data.Inventory.Items.Types.Information.Item;
 
 namespace EVESharp.EVE.Data.Inventory.Items;
 
-public delegate void ItemEventHandler (ItemEntity sender);
-
 public abstract class ItemEntity : IDisposable
 {
     public static readonly DBRowDescriptor EntityItemDescriptor = new DBRowDescriptor
@@ -62,15 +60,15 @@ public abstract class ItemEntity : IDisposable
     /// <summary>
     /// Event called by the item when it's destroyed
     /// </summary>
-    public ItemEventHandler OnItemDestroyed;
+    public event Action<ItemEntity> Destroyed;
     /// <summary>
     /// Event called by the item when it's disposed of
     /// </summary>
-    public ItemEventHandler OnItemDisposed;
+    public event Action<ItemEntity> Disposed;
     /// <summary>
     /// Event called by the item when it's persisted to the database
     /// </summary>
-    public ItemEventHandler OnItemPersisted;
+    public event Action<ItemEntity> Persisted;
 
     /// <summary>
     /// Indicates if the object is new in the database or not
@@ -221,17 +219,17 @@ public abstract class ItemEntity : IDisposable
         this.Persist ();
 
         // fire the dispose event
-        this.OnItemDisposed?.Invoke (this);
+        this.Disposed?.Invoke (this);
     }
 
     public virtual void Persist ()
     {
-        this.OnItemPersisted?.Invoke (this);
+        this.Persisted?.Invoke (this);
     }
 
     public virtual void Destroy ()
     {
-        this.OnItemDestroyed?.Invoke (this);
+        this.Destroyed?.Invoke (this);
     }
 
     public PyPackedRow GetEntityRow ()

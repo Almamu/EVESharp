@@ -625,9 +625,9 @@ public class Items : IItems
 
     private ItemEntity SubscribeToEvents (ItemEntity origin)
     {
-        origin.OnItemDestroyed += this.OnItemDestroyed;
-        origin.OnItemDisposed  += this.OnItemDisposed;
-        origin.OnItemPersisted += this.OnItemPersisted;
+        origin.Destroyed += this.OnItemDestroyed;
+        origin.Disposed  += this.OnItemDisposed;
+        origin.Persisted += this.OnItemPersisted;
 
         if (origin is ItemInventory inventory)
             this.SubscribeToInventoryEvents (inventory);

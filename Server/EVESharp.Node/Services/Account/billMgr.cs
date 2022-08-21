@@ -40,7 +40,7 @@ public class billMgr : Service
         this.Items    = items;
         Notifications = notificationSender;
 
-        clusterManager.OnClusterTimer += this.PerformTimedEvents;
+        clusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
 
     public PyDataType GetBillTypes (CallInformation call)
