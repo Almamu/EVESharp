@@ -234,8 +234,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbCommand command = this.Prepare (ref connection, query, values);
-
-            using (connection)
+            
             using (command)
             {
                 command.ExecuteNonQuery ();
@@ -315,8 +314,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -343,8 +341,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -370,8 +367,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 if (reader.Read () == false)
@@ -400,8 +396,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -427,8 +422,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -453,8 +447,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -482,8 +475,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -511,8 +503,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -540,8 +531,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -568,8 +558,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -596,8 +585,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 if (reader.Read () == false)
@@ -627,8 +615,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 if (reader.Read () == false)
@@ -658,8 +645,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 if (reader.Read () == false)
@@ -689,8 +675,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             DbDataReader  reader     = this.Select (ref connection, query, values);
-
-            using (connection)
+            
             using (reader)
             {
                 // run the prepared statement
@@ -802,7 +787,6 @@ public class DatabaseConnection : IDatabaseConnection
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
-            using (connection)
             using (command)
             {
                 command.ExecuteNonQuery ();
@@ -828,7 +812,6 @@ public class DatabaseConnection : IDatabaseConnection
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
 
-            using (connection)
             using (command)
             {
                 command.ExecuteNonQuery ();
@@ -856,8 +839,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             {
                 using (DbDataReader reader = command.ExecuteReader ())
@@ -886,8 +868,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             {
                 using (DbDataReader reader = command.ExecuteReader ())
@@ -917,8 +898,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             {
                 using (DbDataReader reader = command.ExecuteReader ())
@@ -947,8 +927,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -978,8 +957,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1008,7 +986,6 @@ public class DatabaseConnection : IDatabaseConnection
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName);
 
-            using (connection)
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1039,8 +1016,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1070,8 +1046,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1100,8 +1075,7 @@ public class DatabaseConnection : IDatabaseConnection
         {
             // initialize a command and a connection for this procedure call
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1122,8 +1096,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1153,8 +1126,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
-
-            using (connection)
+            
             using (command)
             using (DbDataReader reader = command.ExecuteReader ())
             {
@@ -1183,8 +1155,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
-
-            using (connection)
+            
             using (command)
             {
                 return (T) command.ExecuteScalar ();
@@ -1212,8 +1183,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
-
-            using (connection)
+            
             using (command)
             {
                 DbDataReader reader = command.ExecuteReader ();
@@ -1254,8 +1224,7 @@ public class DatabaseConnection : IDatabaseConnection
         try
         {
             MySqlCommand    command    = this.PrepareProcedureCall (ref connection, functionName, values);
-
-            using (connection)
+            
             using (command)
             {
                 DbDataReader reader = command.ExecuteReader ();

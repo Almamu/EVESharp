@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
@@ -80,7 +81,16 @@ public interface IDatabaseConnection
 
     public int Prepare (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Prepare (ref con, query, values).ExecuteNonQuery ();
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Prepare (ref con, query, values).ExecuteNonQuery ();
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -93,7 +103,16 @@ public interface IDatabaseConnection
 
     public CRowset PrepareCRowset (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareCRowset (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareCRowset (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -107,7 +126,16 @@ public interface IDatabaseConnection
 
     public IndexRowset PrepareIndexRowset (int indexField, string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareIndexRowset (ref con, indexField, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareIndexRowset (ref con, indexField, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -120,7 +148,16 @@ public interface IDatabaseConnection
 
     public PyPackedRow PreparePackedRow (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PreparePackedRow (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PreparePackedRow (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -133,7 +170,16 @@ public interface IDatabaseConnection
 
     public PyList <PyPackedRow> PreparePackedRowList (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PreparePackedRowList (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PreparePackedRowList (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -146,7 +192,16 @@ public interface IDatabaseConnection
 
     public Rowset PrepareRowset (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareRowset (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareRowset (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -160,7 +215,16 @@ public interface IDatabaseConnection
 
     public PyList <PyInteger> PrepareList (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareList (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareList (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -174,7 +238,16 @@ public interface IDatabaseConnection
 
     public PyDictionary <PyString, PyDataType> PrepareDictionary (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareDictionary (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareDictionary (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -188,7 +261,16 @@ public interface IDatabaseConnection
 
     public Row PrepareRow (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareRow (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareRow (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -202,7 +284,16 @@ public interface IDatabaseConnection
 
     public PyDataType PrepareKeyVal (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareKeyVal (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareKeyVal (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -217,7 +308,16 @@ public interface IDatabaseConnection
 
     public PyDataType PrepareDictRowList (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareDictRowList (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareDictRowList (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -232,7 +332,16 @@ public interface IDatabaseConnection
 
     public PyDataType PrepareIntPackedRowListDictionary (string query, int keyColumnIndex, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareIntPackedRowListDictionary (ref con, query, keyColumnIndex, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareIntPackedRowListDictionary (ref con, query, keyColumnIndex, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -248,7 +357,16 @@ public interface IDatabaseConnection
 
     public PyDictionary PrepareIntRowDictionary (string query, int keyColumnIndex, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareIntRowDictionary (ref con, query, keyColumnIndex, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareIntRowDictionary (ref con, query, keyColumnIndex, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -263,7 +381,16 @@ public interface IDatabaseConnection
 
     public PyDictionary <PyInteger, PyList <PyInteger>> PrepareIntIntListDictionary (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareIntIntListDictionary (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareIntIntListDictionary (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -275,14 +402,32 @@ public interface IDatabaseConnection
 
     public PyDictionary <PyInteger, PyInteger> PrepareIntIntDictionary (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareIntIntDictionary (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareIntIntDictionary (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     public ulong PrepareLID (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
     public ulong PrepareLID (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PrepareLID (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PrepareLID (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
     #endregion
     
@@ -290,14 +435,32 @@ public interface IDatabaseConnection
 
     public void Query (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; this.Query (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            this.Query (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
         
     public DbDataReader Select (ref IDbConnection connection, string query, Dictionary <string, object> values = null);
 
     public DbDataReader Select (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Select (ref con, query, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Select (ref con, query, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     #region Datbase procedures
@@ -310,7 +473,16 @@ public interface IDatabaseConnection
 
     public void Procedure (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; this.Procedure (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            this.Procedure (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -323,7 +495,16 @@ public interface IDatabaseConnection
 
     public ulong ProcedureLID (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.ProcedureLID (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.ProcedureLID (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -336,7 +517,16 @@ public interface IDatabaseConnection
 
     public CRowset CRowset (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.CRowset (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.CRowset (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -350,7 +540,16 @@ public interface IDatabaseConnection
 
     public Rowset Rowset (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection _ = null; return this.Rowset (ref _, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Rowset (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -364,7 +563,16 @@ public interface IDatabaseConnection
 
     public IndexRowset IndexRowset (int indexField, string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.IndexRowset (ref con, indexField, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.IndexRowset (ref con, indexField, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -377,7 +585,16 @@ public interface IDatabaseConnection
 
     public Row Row (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Row (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Row (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -390,7 +607,16 @@ public interface IDatabaseConnection
 
     public PyList <PyPackedRow> PackedRowList (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.PackedRowList (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.PackedRowList (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -403,7 +629,16 @@ public interface IDatabaseConnection
 
     public PyDictionary <PyInteger, PyInteger> IntIntDictionary (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.IntIntDictionary (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.IntIntDictionary (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     /// <summary>
@@ -418,7 +653,16 @@ public interface IDatabaseConnection
     public PyDictionary <PyInteger, PyList <PyInteger>> IntIntListDictionary (ref IDbConnection connection, string procedureName, Dictionary<string, object> values = null);
     public PyDictionary <PyInteger, PyList <PyInteger>> IntIntListDictionary (string procedureName, Dictionary<string, object> values = null)
     {
-        IDbConnection con = null; return this.IntIntListDictionary (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.IntIntListDictionary (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -433,7 +677,16 @@ public interface IDatabaseConnection
     public PyDictionary IntRowDictionary (ref IDbConnection connection, int keyColumnIndex, string procedureName, Dictionary <string, object> values = null);
     public PyDictionary IntRowDictionary (int keyColumnIndex, string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.IntRowDictionary (ref con, keyColumnIndex, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.IntRowDictionary (ref con, keyColumnIndex, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -447,14 +700,32 @@ public interface IDatabaseConnection
     public PyDataType DictRowList (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null);
     public PyDataType DictRowList (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.DictRowList (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.DictRowList (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
     public PyDictionary <PyString, PyDataType> Dictionary (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null);
     public PyDictionary <PyString, PyDataType> Dictionary (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Dictionary (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Dictionary (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -468,7 +739,16 @@ public interface IDatabaseConnection
     public PyList <T> List <T> (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null) where T : PyDataType;
     public PyList <T> List <T> (string procedureName, Dictionary <string, object> values = null) where T : PyDataType
     {
-        IDbConnection con = null; return this.List <T> (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.List <T> (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
     
@@ -483,7 +763,16 @@ public interface IDatabaseConnection
     public T Scalar <T> (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null);
     public T Scalar <T> (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Scalar <T> (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Scalar <T> (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -499,7 +788,16 @@ public interface IDatabaseConnection
     public (T1, T2) Scalar <T1, T2> (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null);
     public (T1, T2) Scalar <T1, T2> (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Scalar <T1, T2> (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Scalar <T1, T2> (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
 
 
@@ -516,7 +814,16 @@ public interface IDatabaseConnection
     public (T1, T2, T3) Scalar <T1, T2, T3> (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null);
     public (T1, T2, T3) Scalar <T1, T2, T3> (string procedureName, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null; return this.Scalar <T1, T2, T3> (ref con, procedureName, values);
+        IDbConnection con = null;
+
+        try
+        {
+            return this.Scalar <T1, T2, T3> (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
     }
     #endregion
     
