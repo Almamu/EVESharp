@@ -22,4 +22,14 @@ public class ClientCommand
 
         return new ClientCommand(tuple[1] as PyString);
     }
+
+    public static implicit operator PyDataType (ClientCommand command)
+    {
+        return new PyTuple (3)
+        {
+            [0] = null,
+            [1] = command.Command,
+            [2] = null
+        };
+    }
 }

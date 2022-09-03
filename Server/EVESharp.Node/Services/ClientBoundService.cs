@@ -86,7 +86,7 @@ public abstract class ClientBoundService : BoundService
         }
 
         // signal that the object was bound, this will be used by the proxy to notify this node on important stuff
-        call.ResultOutOfBounds ["OID+"] = new PyList <PyInteger> {BoundServiceInformation};
+        call.ResultOutOfBounds ["OID+"] = new PyList <PyTuple> {BoundServiceInformation};
 
         return result;
     }

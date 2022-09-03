@@ -1,3 +1,4 @@
+using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -46,6 +47,33 @@ public class AuthenticationRsp
             [1] = extra,
             [2] = rsp.context,
             [3] = info
+        };
+    }
+
+    public static implicit operator AuthenticationRsp (PyDataType data)
+    {
+        if (data is not PyTuple tuple || tuple.Count != 4)
+            throw new InvalidDataException ("AuthenticationRsp container must be a tuple with 4 elements");
+        if (tuple [1] is not PyTuple extra || extra.Count != 2)
+            throw new InvalidDataException ("AuthenticationRsp verification must be a tuple of 2 elements");
+        if (tuple [3] is not PyDictionary dict)
+            throw new InvalidDataException ("AuthenticationRsp information must be a dictionary");
+
+        return new AuthenticationRsp ()
+        {
+            serverChallenge = tuple [0] as PyString,
+            func_marshaled_code = extra [0] as PyBuffer,
+            verification = extra [1] as PyBool,
+            context = tuple [2] as PyDictionary,
+            macho_version = dict ["macho_version"] as PyInteger,
+            boot_version = dict ["boot_version"] as PyDecimal,
+            boot_build = dict ["boot_build"] as PyInteger,
+            boot_codename = dict ["boot_codename"] as PyString,
+            boot_region = dict ["boot_region"] as PyString,
+            cluster_usercount = dict ["cluster_usercount"] as PyInteger,
+            proxy_nodeid = dict ["proxy_nodeid"] as PyInteger,
+            user_logonqueueposition = dict ["user_logonqueueposition"] as PyInteger,
+            challenge_responsehash = dict ["challenge_responsehash"] as PyString
         };
     }
 }

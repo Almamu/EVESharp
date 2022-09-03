@@ -385,7 +385,6 @@ public class character : Service
 
         // get the wallet for the player and give the money specified in the configuration
         using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
-
         {
             wallet.CreateJournalRecord (MarketReference.Inheritance, null, null, this.mConfiguration.Balance);
         }

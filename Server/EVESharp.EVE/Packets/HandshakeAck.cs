@@ -1,3 +1,4 @@
+using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
 
@@ -38,5 +39,33 @@ public class HandshakeAck
         };
             
         return result;
+    }
+
+    public static implicit operator HandshakeAck (PyDataType data)
+    {
+        if (data is not PyDictionary dict)
+            throw new InvalidDataException ("HandshakeAck must be a dictionary");
+        if (dict.TryGetValue ("session_init", out PyDictionary session) == false)
+            throw new InvalidDataException ("HandshakeAck must have session initialization data");
+        if (dict.TryGetValue ("user_clientid", out PyInteger userClientID) == false)
+            throw new InvalidDataException ("HandshakeAck must have user client id");
+        if (dict.TryGetValue ("client_hashes", out PyList clientHashes) == false)
+            throw new InvalidDataException ("HandshakeAck must have client hashes");
+        if (dict.TryGetValue ("live_updates", out PyList liveUpdatesUncasted) == false)
+            throw new InvalidDataException ("HandshakeAck must have live updates");
+
+        return new HandshakeAck ()
+        {
+            ClientHashes   = clientHashes,
+            LiveUpdates    = liveUpdatesUncasted.GetEnumerable <PyObjectData> (),
+            UserClientID   = userClientID,
+            JIT            = session ["jit"] as PyString,
+            UserID         = session ["userid"] as PyInteger,
+            MaxSessionTime = session ["maxSessionTime"] as PyInteger,
+            UserType       = session ["userType"] as PyInteger,
+            Role           = session ["role"] as PyInteger,
+            Address        = session ["address"] as PyString,
+            InDetention    = session ["inDetention"] as PyBool
+        };
     }
 }

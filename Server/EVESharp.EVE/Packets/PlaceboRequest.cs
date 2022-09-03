@@ -27,4 +27,13 @@ public class PlaceboRequest
             data[1] as PyDictionary
         );
     }
+
+    public static implicit operator PyDataType (PlaceboRequest request)
+    {
+        return new PyTuple (2)
+        {
+            [0] = request.Command,
+            [1] = request.Arguments
+        };
+    }
 }

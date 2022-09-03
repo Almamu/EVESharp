@@ -1,7 +1,7 @@
 ﻿using EVESharp.PythonTypes.Types.Primitives;
 using NUnit.Framework;
 
-namespace EVESharp.PythonTypes.Unit.Primitives;
+namespace EVESharp.PythonTypes.Unit.Types.Primitives;
 
 public class PyDecimalTests
 {

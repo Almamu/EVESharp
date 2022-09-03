@@ -1,10 +1,7 @@
-﻿using EVESharp.PythonTypes.Marshal;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+﻿using EVESharp.PythonTypes.Types.Collections;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
 
-namespace EVESharp.PythonTypes.Unit.Primitives;
+namespace EVESharp.PythonTypes.Unit.Types.Primitives;
 
 public class PyTupleTests
 {

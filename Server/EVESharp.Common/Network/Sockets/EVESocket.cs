@@ -18,7 +18,7 @@ public class EVESocket : IEVESocket
     public event Action <PyDataType> DataReceived;
     public event Action              ConnectionLost;
     public event Action <Exception>  Exception;
-    public string                    RemoteAddress => (this.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString ();
+    public virtual string            RemoteAddress => (this.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString ();
 
     public EVESocket ()
     {
@@ -80,13 +80,19 @@ public class EVESocket : IEVESocket
             {
                 PyDataType packet = Unmarshal.ReadFromByteArray (this.Packetizer.PopItem ());
 
-                this.DataReceived (packet);
+                this.OnDataReceived (packet);
             }
             catch (Exception e)
             {
                 this.HandleException (e);
             }
         }
+    }
+
+    protected void OnDataReceived (PyDataType data)
+    {
+        if (this.DataReceived is not null)
+            this.DataReceived (data);
     }
 
     private void ReceiveCallback (IAsyncResult ar)
@@ -173,7 +179,7 @@ public class EVESocket : IEVESocket
             this.Exception?.Invoke (ex);
     }
 
-    public void Send (PyDataType data)
+    public virtual void Send (PyDataType data)
     {
         // convert the data to bytes
         byte [] encodedPacket = Marshal.ToByteArray (data);

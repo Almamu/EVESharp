@@ -5,7 +5,7 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.PythonTypes.Types.Collections;
 
-public class PyTuple : PyDataType, IEnumerable <PyDataType>
+public class PyTuple : PyDataType, IPyEnumerable<PyDataType>
 {
     private readonly PyDataType [] mList;
 
@@ -13,6 +13,11 @@ public class PyTuple : PyDataType, IEnumerable <PyDataType>
     {
         get => this.mList [index];
         set => this.mList [index] = value;
+    }
+    
+    IPyEnumerator <PyDataType> IPyEnumerable <PyDataType>.GetEnumerator ()
+    {
+        return new PyEnumerator <PyDataType> (this.GetEnumerator ());
     }
 
     public int Count => this.mList.Length;
@@ -32,11 +37,6 @@ public class PyTuple : PyDataType, IEnumerable <PyDataType>
         return ((IEnumerable <PyDataType>) this.mList).GetEnumerator ();
     }
 
-    IEnumerator IEnumerable.GetEnumerator ()
-    {
-        return this.GetEnumerator ();
-    }
-
     public override int GetHashCode ()
     {
         // a somewhat similar implementation based on python's
@@ -52,6 +52,11 @@ public class PyTuple : PyDataType, IEnumerable <PyDataType>
         }
 
         return currentHash + 97531;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator ()
+    {
+        return this.GetEnumerator ();
     }
 
     public bool TryGetValue <T> (int key, out T value) where T : PyDataType

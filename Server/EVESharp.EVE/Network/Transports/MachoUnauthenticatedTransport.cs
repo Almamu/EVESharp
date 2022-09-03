@@ -244,13 +244,13 @@ public class MachoUnauthenticatedTransport : IMachoTransport
         if (command.Command == "QC")
         {
             this.Log.Debug ("Received QueueCheck command");
+            // wait for a new low level version exchange again
+            this.Socket.DataReceived -= this.ReceiveCommandCallback;
+            this.Socket.DataReceived += this.ReceiveLowLevelVersionExchange;
             // send player position on the queue
             this.Socket.Send (new PyInteger (this.MachoNet.LoginProcessor.Queue.Count));
             // send low level version exchange required
             this.SendLowLevelVersionExchange ();
-            // wait for a new low level version exchange again
-            this.Socket.DataReceived -= this.ReceiveCommandCallback;
-            this.Socket.DataReceived += this.ReceiveLowLevelVersionExchange;
         }
         else if (command.Command == "VK")
         {
@@ -276,11 +276,11 @@ public class MachoUnauthenticatedTransport : IMachoTransport
             this.Log.Warning ("Received PlaceboRequest with extra arguments, this is not supported");
 
         this.Log.Debug ("Received correct Crypto request");
-        // answer the client with a correct crypto challenge
-        this.Socket.Send (new PyString ("OK CC"));
         // next is the first login attempt
         this.Socket.DataReceived -= this.ReceiveCryptoRequestCallback;
         this.Socket.DataReceived += this.ReceiveAuthenticationRequestCallback;
+        // answer the client with a correct crypto challenge
+        this.Socket.Send (new PyString ("OK CC"));
     }
 
     private void ReceiveAuthenticationRequestCallback (PyDataType packet)
@@ -374,11 +374,11 @@ public class MachoUnauthenticatedTransport : IMachoTransport
                 this.Session.UserType = AccountType.USER;
                 this.Session.UserID   = accountID;
                 this.Session.Role     = role;
-                // send the login response
-                this.Socket.Send (rsp);
                 // set second to last packet handler
                 this.Socket.DataReceived -= this.ReceiveAuthenticationRequestCallback;
                 this.Socket.DataReceived += this.ReceiveLoginResultResponse;
+                // send the login response
+                this.Socket.Send (rsp);
             }
             else
             {

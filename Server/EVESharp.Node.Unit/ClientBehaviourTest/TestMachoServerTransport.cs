@@ -17,8 +17,12 @@ public class TestMachoServerTransport : MachoServerTransport
     /// <summary>
     /// Simulates a new connection to the server to initiate the proper mechanisms
     /// </summary>
-    public void SimulateNewConnection ()
+    public TestEveClientSocket SimulateNewConnection ()
     {
-        this.OnConnectionAccepted (new TestEveClientSocket ());
+        TestEveClientSocket socket = new TestEveClientSocket ();
+        
+        this.OnConnectionAccepted (socket);
+
+        return socket;
     }
 }

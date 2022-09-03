@@ -18,6 +18,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Database", "EVESha
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Orchestrator", "EVESharp.Orchestrator\EVESharp.Orchestrator.csproj", "{62B6D2F7-38F3-450D-A53D-D978B6C3BAA4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.TestExtensions", "EVESharp.TestExtensions\EVESharp.TestExtensions.csproj", "{7F55DA9C-DAB0-40D5-AAA9-5ABBB39B68C5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.EVE.Unit", "EVESharp.EVE.Unit\EVESharp.EVE.Unit.csproj", "{F60E2D87-04D2-4A96-8764-7071FC46F5B5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +64,13 @@ Global
 		{62B6D2F7-38F3-450D-A53D-D978B6C3BAA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62B6D2F7-38F3-450D-A53D-D978B6C3BAA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62B6D2F7-38F3-450D-A53D-D978B6C3BAA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F55DA9C-DAB0-40D5-AAA9-5ABBB39B68C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F55DA9C-DAB0-40D5-AAA9-5ABBB39B68C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F55DA9C-DAB0-40D5-AAA9-5ABBB39B68C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F55DA9C-DAB0-40D5-AAA9-5ABBB39B68C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

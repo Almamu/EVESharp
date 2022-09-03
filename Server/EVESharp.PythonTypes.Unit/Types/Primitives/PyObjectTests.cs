@@ -1,9 +1,8 @@
 ﻿using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Primitives;
-using NuGet.Frameworks;
 using NUnit.Framework;
 
-namespace EVESharp.PythonTypes.Unit.Primitives;
+namespace EVESharp.PythonTypes.Unit.Types.Primitives;
 
 public class PyObjectTests
 {

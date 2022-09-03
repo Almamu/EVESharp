@@ -36,7 +36,8 @@ public static class HarmonyExtensions
                         case "__runOriginal":
                         case "__state":
                             break;
-                        default: types.Add (parameter.ParameterType);
+                        default:
+                            types.Add (parameter.ParameterType);
                             break;
                     }
                 }

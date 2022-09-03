@@ -9,7 +9,7 @@ using MySql.Data.MySqlClient;
 
 namespace EVESharp.PythonTypes.Types.Collections;
 
-public class PyList <T> : PyList, IPyListEnumerable <T> where T : PyDataType
+public class PyList <T> : PyList, IPyEnumerable <T> where T : PyDataType
 {
     public new T this [int index]
     {
@@ -30,9 +30,9 @@ public class PyList <T> : PyList, IPyListEnumerable <T> where T : PyDataType
         return this.GetEnumerator ();
     }
 
-    public new IPyListEnumerator <T> GetEnumerator ()
+    public new IPyEnumerator <T> GetEnumerator ()
     {
-        return new PyListEnumerator <T> (this.mList.GetEnumerator ());
+        return new PyEnumerator <T> (this.mList.GetEnumerator ());
     }
 
     public void Add (T value)
@@ -64,7 +64,7 @@ public class PyList <T> : PyList, IPyListEnumerable <T> where T : PyDataType
     }
 }
 
-public class PyList : PyDataType, IPyListEnumerable <PyDataType>
+public class PyList : PyDataType, IPyEnumerable <PyDataType>
 {
     protected readonly List <PyDataType> mList;
 
@@ -101,9 +101,9 @@ public class PyList : PyDataType, IPyListEnumerable <PyDataType>
         return this.GetEnumerator ();
     }
 
-    public IPyListEnumerator <PyDataType> GetEnumerator ()
+    public IPyEnumerator <PyDataType> GetEnumerator ()
     {
-        return new PyListEnumerator <PyDataType> (this.mList.GetEnumerator ());
+        return new PyEnumerator <PyDataType> (this.mList.GetEnumerator ());
     }
 
     IEnumerator IEnumerable.GetEnumerator ()

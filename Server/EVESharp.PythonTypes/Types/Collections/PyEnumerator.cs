@@ -4,11 +4,11 @@ using EVESharp.PythonTypes.Types.Primitives;
 
 namespace EVESharp.PythonTypes.Types.Collections;
 
-public class PyListEnumerator <T> : IPyListEnumerator <T> where T : PyDataType
+public class PyEnumerator <T> : IPyEnumerator <T> where T : PyDataType
 {
     protected readonly IEnumerator <PyDataType> mEnumerator;
 
-    public PyListEnumerator (IEnumerator <PyDataType> enumerator)
+    public PyEnumerator (IEnumerator <PyDataType> enumerator)
     {
         this.mEnumerator = enumerator;
     }
