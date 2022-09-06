@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using EVESharp.Common.Configuration;
 using EVESharp.EVE.Network;
@@ -11,11 +12,23 @@ namespace EVESharp.Node.Unit.ClientBehaviourTest;
 /// </summary>
 public class TransportManager : Server.Shared.Transports.TransportManager
 {
-    public new MachoServerTransport ServerTransport { get; private set; }
     public TransportManager (HttpClient httpClient, ILogger logger) : base (httpClient, logger) { }
+    public event Action <TestEveClientSocket> OnNewTransportOpen;
 
     public override MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
     {
         return this.ServerTransport = new TestMachoServerTransport (configuration.Port, machoNet, Log.ForContext <TestMachoServerTransport> ());
+    }
+
+    public override IMachoTransport OpenNewTransport (IMachoNet machoNet, string ip, ushort port)
+    {
+        // tests only do this for node <-> proxy transports
+        TestEveClientSocket socket = new TestEveClientSocket ();
+        
+        IMachoTransport transport = base.NewTransport (machoNet, socket);
+        
+        this.OnNewTransportOpen?.Invoke (socket);
+        
+        return transport;
     }
 }

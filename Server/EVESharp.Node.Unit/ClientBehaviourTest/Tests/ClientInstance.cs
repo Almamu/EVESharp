@@ -1,150 +1,116 @@
-using System;
-using System.Net.Http;
-using EVESharp.Common.Configuration;
-using EVESharp.Common.Network.Sockets;
-using EVESharp.EVE;
-using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Data.Account;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;
-using EVESharp.EVE.Network.Messages;
-using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Unit.Packets;
-using EVESharp.Node.Accounts;
-using EVESharp.Node.Configuration;
-using EVESharp.Node.Server.Shared.Helpers;
-using EVESharp.Node.Server.Single.Messages;
-using EVESharp.Node.Sessions;
-using EVESharp.Node.Unit.Utils;
 using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Network;
 using EVESharp.PythonTypes.Types.Primitives;
-using HarmonyLib;
-using Moq;
 using NUnit.Framework;
-using Serilog;
-using Serilog.Core;
 using TestExtensions;
-using MachoNet = EVESharp.Node.Server.Single.MachoNet;
 
 namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
 
-[TestFixture]
-public class ClientLoginTests
+public class ClientInstance
 {
-    private readonly Harmony                              mHarmony              = new Harmony ("ClientLoginTests");
-    private readonly Mock <IDatabaseConnection>           mDatabase             = new Mock <IDatabaseConnection> ();
-    private readonly Mock <Authentication>                mAuthenticationMock   = new Mock <Authentication> ();
-    private readonly Mock <General>                       mGeneralMock          = new Mock <General> ();
-    private readonly Mock <Common.Configuration.MachoNet> mMachoNetMock         = new Mock <Common.Configuration.MachoNet> ();
-    private readonly Mock <Cluster>                       mClusterMock          = new Mock <Cluster> ();
-    private readonly Mock <IRemoteServiceManager>         mRemoteServiceManager = new Mock <IRemoteServiceManager> ();
-    private readonly Mock <INotificationSender>           mNotificationSender   = new Mock <INotificationSender> ();
-    private readonly Mock <IItems>                        mItems                = new Mock <IItems> ();
-    private readonly Mock <ISolarSystems>                 mSolarSystems         = new Mock <ISolarSystems> ();
+    /// <summary>
+    /// The socket acting as a client
+    /// </summary>
+    private readonly TestEveClientSocket mSocket;
 
-    private IMachoNet                              mMachoNet;
-    private SynchronousProcessor <LoginQueueEntry> mLoginProcessor;
-    private SessionManager                         mSessionManager;
-    private TestEveClientSocket                    mSocket;
-    private bool                                   mQueueCheckDone = false;
-    private bool                                   mTestDone       = false;
+    /// <summary>
+    /// The macho net handling this socket
+    /// </summary>
+    private readonly IMachoNet mMachoNet;
 
-    [SetUp]
-    public void SetUp ()
+    /// <summary>
+    /// Indicates if the QC command was already issued or not
+    /// </summary>
+    private bool SentQueueCheck { get;             set; } = false;
+    /// <summary>
+    /// Indicates if the VK command was already issued or not
+    /// </summary>
+    private bool SentVipKey                 { get; set; } = false;
+    /// <summary>
+    /// Indicates if the AuthenticationReq was already issued or not
+    /// </summary>
+    private bool SentAuthenticationReq      { get; set; } = false;
+    /// <summary>
+    /// Indicates if the plain AuthenticationReq was already issued or not
+    /// </summary>
+    private bool SentPlainAuthenticationReq { get; set; } = false;
+    /// <summary>
+    /// Indicates if the login result response was already issued or not
+    /// </summary>
+    private bool SentLoginResultResponse    { get; set; } = false;
+    /// <summary>
+    /// Indicates if the first low level version exchange was received
+    /// </summary>
+    private bool ReceivedFirstLowLevelVersionExchange { get; set; }
+    /// <summary>
+    /// Indicates if the second low level version exchange was received
+    /// </summary>
+    private bool ReceivedSecondLowLevelVersionExchange { get; set; }
+    /// <summary>
+    /// Indicates if the QueueCheck response was received
+    /// </summary>
+    private bool ReceivedQueueCheckResponse { get; set; }
+    /// <summary>
+    /// Indicates if the OK CC packet was received
+    /// </summary>
+    private bool ReceivedOKCC { get; set; }
+    /// <summary>
+    /// Indicates if the plain password request was received
+    /// </summary>
+    private bool ReceivedPlainPasswordRequest { get; set; }
+    /// <summary>
+    /// Indicates if the login result was received
+    /// </summary>
+    private bool ReceivedLoginResult { get; set; }
+    /// <summary>
+    /// Indicates if the HandshakAck was received
+    /// </summary>
+    private bool ReceivedHandshakeAck { get; set; }
+    /// <summary>
+    /// Indicates if the session initial state was received
+    /// </summary>
+    private bool ReceivedSessionInitialState { get; set; }
+    /// <summary>
+    /// Indicates if the login process was completed properly
+    /// </summary>
+    private bool LoginProcessDone { get; set; }
+
+    public ClientInstance (TestEveClientSocket socket, IMachoNet machoNet)
     {
-        this.mHarmony.Setup (typeof (HarmonyPatches));
-        
-        // setup authentication configuration
-        this.mAuthenticationMock.SetupGet (x => x.Autoaccount).Returns (false);
-        this.mAuthenticationMock.SetupGet (x => x.MessageType).Returns (AuthenticationMessageType.NoMessage);
-        this.mAuthenticationMock.SetupGet (x => x.Role).Returns ((long) Roles.ROLE_PLAYER);
-        
-        // setup machonet configuration
-        this.mMachoNetMock.SetupGet (x => x.Mode).Returns (MachoNetMode.Single);
-        this.mMachoNetMock.SetupGet (x => x.Port).Returns (26000);
-        
-        // setup cluster configuration
-        this.mClusterMock.SetupGet (x => x.OrchestatorURL).Returns ("INVALID URL!");
-        
-        // setup general configuration
-        this.mGeneralMock.SetupGet (x => x.Authentication).Returns (this.mAuthenticationMock.Object);
-        this.mGeneralMock.SetupGet (x => x.MachoNet).Returns (this.mMachoNetMock.Object);
-        this.mGeneralMock.SetupGet (x => x.Cluster).Returns (this.mClusterMock.Object);
-
-        this.mLoginProcessor = new SynchronousProcessor <LoginQueueEntry> (
-            new LoginQueue (this.mDatabase.Object, this.mAuthenticationMock.Object, Logger.None)
-        );
-    }
-
-    [TearDown]
-    public void TearDown ()
-    {
-        this.mHarmony.UnpatchAll ();
-    }
-
-    [Test]
-    public void SingleMachoNetStartupTest ()
-    {
-        // transport manager
-        TransportManager transportManager = new TransportManager (new HttpClient (), Logger.None);
-        // macho net
-        this.mMachoNet = new MachoNet (
-            this.mDatabase.Object, transportManager, this.mLoginProcessor, this.mGeneralMock.Object, Logger.None
-        );
-        // session manager
-        this.mSessionManager = new SessionManager (transportManager, this.mMachoNet);
-        // message processor
-        SynchronousProcessor <MachoMessage> processor = new SynchronousProcessor <MachoMessage> (
-            new MessageQueue (
-                this.mMachoNet,
-                Logger.None,
-                null,
-                null,
-                Mock.Of <IRemoteServiceManager> (),
-                new PacketCallHelper (this.mMachoNet),
-                this.mNotificationSender.Object,
-                this.mItems.Object,
-                this.mSolarSystems.Object,
-                this.mSessionManager
-            )
-        );
-
-        this.mMachoNet.Initialize ();
-        this.mMachoNet.MessageProcessor = processor;
-        this.mSocket = (transportManager.ServerTransport as TestMachoServerTransport).SimulateNewConnection ();
-
+        this.mMachoNet        =  machoNet;
+        this.mSocket          =  socket;
         this.mSocket.DataSent += this.ExpectLowLevelVersionExchange;
-        // process the login queue now
-        this.mLoginProcessor.ProcessNextMessage ();
-        Assert.True (this.mTestDone);
     }
-
+    
     private void ExpectLowLevelVersionExchange (PyDataType data)
     {
         LowLevelVersionExchangeTests.AssertLowLevelVersionExchange (data, 0);
         // send the LowLevelVersionExchange back to start the authentication process so it continues the chain
         this.mSocket.SimulateDataReceived (data);
         // if no queue check was done, send one
-        if (this.mQueueCheckDone == false)
+        if (this.ReceivedQueueCheckResponse == false)
         {
+            this.ReceivedFirstLowLevelVersionExchange = true;
+                
             this.mSocket.DataSent -= this.ExpectLowLevelVersionExchange;
             this.mSocket.DataSent += this.ExpectQueueCheckResponse;
-            this.mQueueCheckDone  =  true;
             this.mSocket.SimulateDataReceived (new ClientCommand ("QC"));
+            this.SentQueueCheck = true;
         }
         else
         {
+            this.ReceivedSecondLowLevelVersionExchange = true;
             // update the packet handler
             this.mSocket.DataSent -= this.ExpectLowLevelVersionExchange;
             this.mSocket.DataSent += this.ExpectOKCC;
             // send vipkey command and placebo request
             this.mSocket.SimulateDataReceived (new ClientCommand ("VK"));
             this.mSocket.SimulateDataReceived (new PlaceboRequest ("placebo", new PyDictionary()));
+            this.SentVipKey = true;
         }
     }
 
@@ -154,12 +120,15 @@ public class ClientLoginTests
         this.mSocket.DataSent += this.ExpectLowLevelVersionExchange;
         // we should be the only one in the queue
         PyAssert.Integer (data, 0);
+        this.ReceivedQueueCheckResponse = true;
     }
 
     private void ExpectOKCC (PyDataType data)
     {
         this.mSocket.DataSent -= this.ExpectOKCC;
         this.mSocket.DataSent += this.ExpectPlainPasswordRequest;
+
+        this.ReceivedOKCC = true;
         
         PyAssert.String (data, "OK CC");
         
@@ -178,12 +147,15 @@ public class ClientLoginTests
         };
 
         this.mSocket.SimulateDataReceived (req);
+        this.SentAuthenticationReq = true;
     }
 
     private void ExpectPlainPasswordRequest (PyDataType data)
     {
         this.mSocket.DataSent -= this.ExpectPlainPasswordRequest;
         this.mSocket.DataSent += this.ExpectLoginResult;
+
+        this.ReceivedPlainPasswordRequest = true;
         
         PyAssert.Integer (data, 1);
         
@@ -202,12 +174,16 @@ public class ClientLoginTests
         };
 
         this.mSocket.SimulateDataReceived (req);
+
+        this.SentPlainAuthenticationReq = true;
     }
 
     private void ExpectLoginResult (PyDataType data)
     {
         this.mSocket.DataSent -= this.ExpectLoginResult;
         this.mSocket.DataSent += this.ExpectHandshakeAcknowledge;
+
+        this.ReceivedLoginResult = true;
         
         AuthenticationRsp rsp = data;
 
@@ -217,6 +193,8 @@ public class ClientLoginTests
         
         // send login result, this one is not really parsed by the server, so no extra stuff to set
         this.mSocket.SimulateDataReceived (new PyTuple (3));
+
+        this.SentLoginResultResponse = true;
     }
 
     private void ExpectHandshakeAcknowledge (PyDataType data)
@@ -224,6 +202,8 @@ public class ClientLoginTests
         this.mSocket.DataSent -= this.ExpectHandshakeAcknowledge;
         this.mSocket.DataSent += this.ExpectSessionInitialState;
         HandshakeAck ack = data;
+
+        this.ReceivedHandshakeAck = true;
         
         // ensure some data is right
         PyAssert.List (ack.LiveUpdates,  0);
@@ -246,10 +226,33 @@ public class ClientLoginTests
     private void ExpectSessionInitialState (PyDataType data)
     {
         PyPacket packet = data;
+
+        this.ReceivedSessionInitialState = true;
         
         Assert.AreEqual (PyPacket.PacketType.SESSIONINITIALSTATENOTIFICATION, packet.Type);
         Assert.AreEqual ("macho.SessionInitialStateNotification",             packet.TypeString);
 
-        this.mTestDone = true;
+        this.LoginProcessDone = true;
+    }
+
+    /// <summary>
+    /// Performs verifications for this instance
+    /// </summary>
+    public void Verify ()
+    {
+        Assert.True (this.SentQueueCheck);
+        Assert.True (this.SentVipKey);
+        Assert.True (this.SentAuthenticationReq);
+        Assert.True (this.SentPlainAuthenticationReq);
+        Assert.True (this.SentLoginResultResponse);
+        Assert.True (this.ReceivedFirstLowLevelVersionExchange);
+        Assert.True (this.ReceivedSecondLowLevelVersionExchange);
+        Assert.True (this.ReceivedQueueCheckResponse);
+        Assert.True (this.ReceivedOKCC);
+        Assert.True (this.ReceivedPlainPasswordRequest);
+        Assert.True (this.ReceivedLoginResult);
+        Assert.True (this.ReceivedHandshakeAck);
+        Assert.True (this.ReceivedSessionInitialState);
+        Assert.True (this.LoginProcessDone);
     }
 }

@@ -20,27 +20,27 @@ public static class Market
             if (ownerID == session.CharacterID)
                 return true;
 
-            if (ownerID == session.CorporationID)
-            {
-                // check for permissions
-                // check if the character has any accounting roles and set the correct accountKey based on the data
-                if (CorporationRole.AccountCanTake1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN)
-                    return true;
-                if (CorporationRole.AccountCanTake2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND)
-                    return true;
-                if (CorporationRole.AccountCanTake3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD)
-                    return true;
-                if (CorporationRole.AccountCanTake4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH)
-                    return true;
-                if (CorporationRole.AccountCanTake5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH)
-                    return true;
-                if (CorporationRole.AccountCanTake6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH)
-                    return true;
-                if (CorporationRole.AccountCanTake7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH)
-                    return true;
-                if (CorporationRole.Accountant.Is (session.CorporationRole))
-                    return true;
-            }
+            if (ownerID != session.CorporationID)
+                return false;
+
+            // check for permissions
+            // check if the character has any accounting roles and set the correct accountKey based on the data
+            if (CorporationRole.AccountCanTake1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN)
+                return true;
+            if (CorporationRole.AccountCanTake2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND)
+                return true;
+            if (CorporationRole.AccountCanTake3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD)
+                return true;
+            if (CorporationRole.AccountCanTake4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH)
+                return true;
+            if (CorporationRole.AccountCanTake5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH)
+                return true;
+            if (CorporationRole.AccountCanTake6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH)
+                return true;
+            if (CorporationRole.AccountCanTake7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH)
+                return true;
+            if (CorporationRole.Accountant.Is (session.CorporationRole))
+                return true;
 
             return false;
         }
@@ -57,31 +57,29 @@ public static class Market
             if (ownerID == session.CharacterID)
                 return true;
 
-            if (ownerID == session.CorporationID)
-            {
-                // check for permissions
-                // check if the character has any accounting roles and set the correct accountKey based on the data
-                if (CorporationRole.AccountCanQuery1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN)
-                    return true;
-                if (CorporationRole.AccountCanQuery2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND)
-                    return true;
-                if (CorporationRole.AccountCanQuery3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD)
-                    return true;
-                if (CorporationRole.AccountCanQuery4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH)
-                    return true;
-                if (CorporationRole.AccountCanQuery5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH)
-                    return true;
-                if (CorporationRole.AccountCanQuery6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH)
-                    return true;
-                if (CorporationRole.AccountCanQuery7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH)
-                    return true;
+            if (ownerID != session.CorporationID)
+                return false;
 
-                // last chance, accountant role
-                if (CorporationRole.Accountant.Is (session.CorporationRole))
-                    return true;
-                if (CorporationRole.JuniorAccountant.Is (session.CorporationRole))
-                    return true;
-            }
+            // check for permissions
+            // check if the character has any accounting roles and set the correct accountKey based on the data
+            if (CorporationRole.AccountCanQuery1.Is (session.CorporationRole) && accountKey == WalletKeys.MAIN)
+                return true;
+            if (CorporationRole.AccountCanQuery2.Is (session.CorporationRole) && accountKey == WalletKeys.SECOND)
+                return true;
+            if (CorporationRole.AccountCanQuery3.Is (session.CorporationRole) && accountKey == WalletKeys.THIRD)
+                return true;
+            if (CorporationRole.AccountCanQuery4.Is (session.CorporationRole) && accountKey == WalletKeys.FOURTH)
+                return true;
+            if (CorporationRole.AccountCanQuery5.Is (session.CorporationRole) && accountKey == WalletKeys.FIFTH)
+                return true;
+            if (CorporationRole.AccountCanQuery6.Is (session.CorporationRole) && accountKey == WalletKeys.SIXTH)
+                return true;
+            if (CorporationRole.AccountCanQuery7.Is (session.CorporationRole) && accountKey == WalletKeys.SEVENTH)
+                return true;
+            if (CorporationRole.Accountant.Is (session.CorporationRole))
+                return true;
+            if (CorporationRole.JuniorAccountant.Is (session.CorporationRole))
+                return true;
 
             return false;
         }

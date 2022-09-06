@@ -15,7 +15,7 @@ public interface IClusterManager
     /// <summary>
     /// Register the given IMachoNet instance with the orchestrator and updates it's information
     /// </summary>
-    void RegisterNode ();
+    Task RegisterNode ();
 
     /// <summary>
     /// Sends a heartbeat to the orchestrator agent to signal our node being up and running healthily
@@ -35,7 +35,7 @@ public interface IClusterManager
     /// <param name="nodeID">The nodeID of the proxy to connect to</param>
     Task <IMachoTransport> OpenNodeConnection (long nodeID);
 
-    void EstablishConnectionWithProxies ();
+    Task EstablishConnectionWithProxies ();
 
     /// <summary>
     /// Contacts the orchestrator and gets the node with less load

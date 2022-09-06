@@ -22,7 +22,7 @@ public class EVEListener : IEVEListener
         this.Socket.SendBufferSize    = 64 * 1024;
     }
 
-    public void Listen ()
+    public virtual void Listen ()
     {
         this.Socket.Bind (new IPEndPoint (IPAddress.IPv6Any, Port));
         this.Socket.Listen (20);

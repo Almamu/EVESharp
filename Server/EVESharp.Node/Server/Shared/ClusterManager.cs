@@ -58,7 +58,7 @@ public class ClusterManager : IClusterManager
     /// <summary>
     /// Register the given IMachoNet instance with the orchestrator and updates it's information
     /// </summary>
-    public async void RegisterNode ()
+    public async Task RegisterNode ()
     {
         // register ourselves with the orchestrator and get our node id AND address
         HttpContent content = new FormUrlEncodedContent (
@@ -165,13 +165,8 @@ public class ClusterManager : IClusterManager
 
         MachoNet.Log.Information ($"Found {role} with NodeID {nodeID} on address {ip}, opening connection...");
 
-        EVESocket socket = new EVESocket ();
-
-        // open the socket and connect to the server
-        socket.Connect (ip, port);
-        
-        // finally open a connection and register it in the transport list
-        IMachoTransport transport = this.TransportManager.NewTransport (this.MachoNet, socket);
+        // open the connection and register it in the transports list
+        IMachoTransport transport = this.TransportManager.OpenNewTransport (this.MachoNet, ip, port);
 
         // send an identification req to start the authentication flow
         transport.Socket.Send (
@@ -191,7 +186,7 @@ public class ClusterManager : IClusterManager
         return transport;
     }
 
-    public async void EstablishConnectionWithProxies ()
+    public async Task EstablishConnectionWithProxies ()
     {
         HttpResponseMessage response = await HttpClient.GetAsync ($"{MachoNet.OrchestratorURL}/Nodes/proxies");
 

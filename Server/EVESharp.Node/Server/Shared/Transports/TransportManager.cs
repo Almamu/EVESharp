@@ -17,7 +17,7 @@ public class TransportManager : ITransportManager
     /// <summary>
     /// The current server transport in use
     /// </summary>
-    public MachoServerTransport ServerTransport { get; private set; }
+    public MachoServerTransport ServerTransport { get; protected set; }
     /// <summary>
     /// The unvalidated transports
     /// </summary>
@@ -71,6 +71,22 @@ public class TransportManager : ITransportManager
         UnauthenticatedTransports.Add (transport);
 
         return transport;
+    }
+
+    /// <summary>
+    /// Opens a new transport to the given IP and port
+    /// </summary>
+    /// <param name="machoNet"></param>
+    /// <param name="ip"></param>
+    /// <param name="port"></param>
+    /// <returns></returns>
+    public virtual IMachoTransport OpenNewTransport (IMachoNet machoNet, string ip, ushort port)
+    {
+        EVESocket socket = new EVESocket ();
+
+        socket.Connect (ip, port);
+
+        return this.NewTransport (machoNet, socket);
     }
 
     private void PrepareTransport (IMachoTransport transport)

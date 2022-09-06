@@ -63,6 +63,14 @@ public interface ITransportManager
     /// <param name="socket"></param>
     IMachoTransport NewTransport (IMachoNet machoNet, IEVESocket socket);
     /// <summary>
+    /// Opens a new transport to the given IP and port
+    /// </summary>
+    /// <param name="machoNet"></param>
+    /// <param name="ip"></param>
+    /// <param name="port"></param>
+    /// <returns></returns>
+    IMachoTransport OpenNewTransport (IMachoNet machoNet, string ip, ushort port);
+    /// <summary>
     /// Registers the given transport as a client's transport
     /// </summary>
     /// <param name="transport"></param>

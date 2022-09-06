@@ -9,7 +9,7 @@ public class TestMachoServerTransport : MachoServerTransport
 {
     public TestMachoServerTransport (int port, IMachoNet machoNet, ILogger logger) : base (port, machoNet, logger) { }
 
-    public new void Listen ()
+    public override void Listen ()
     {
         // do not really listen
     }
