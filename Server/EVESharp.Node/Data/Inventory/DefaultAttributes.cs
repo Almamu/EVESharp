@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Data.Inventory;

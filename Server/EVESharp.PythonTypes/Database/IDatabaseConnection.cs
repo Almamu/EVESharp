@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
 using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 
-namespace EVESharp.PythonTypes.Types.Database;
+namespace EVESharp.PythonTypes.Database;
 
 public interface IDatabaseConnection
 {
@@ -451,16 +451,10 @@ public interface IDatabaseConnection
 
     public DbDataReader Select (string query, Dictionary <string, object> values = null)
     {
-        IDbConnection con = null;
+        IDbConnection con    = null;
+        DbDataReader  reader = this.Select (ref con, query, values);
 
-        try
-        {
-            return this.Select (ref con, query, values);
-        }
-        finally
-        {
-            con?.Dispose ();
-        }
+        return new WrappedDbDataReader (reader, con);
     }
 
     #region Datbase procedures

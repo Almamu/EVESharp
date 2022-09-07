@@ -5,6 +5,7 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Database.Inventory;

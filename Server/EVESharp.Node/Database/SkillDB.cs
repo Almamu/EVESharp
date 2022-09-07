@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 

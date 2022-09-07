@@ -20,6 +20,7 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 

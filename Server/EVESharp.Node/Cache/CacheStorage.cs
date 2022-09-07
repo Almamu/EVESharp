@@ -30,6 +30,7 @@ using EVESharp.Common.Database;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Marshal;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;

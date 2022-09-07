@@ -10,6 +10,7 @@ using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Unit.Utils;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using HarmonyLib;
 using Moq;

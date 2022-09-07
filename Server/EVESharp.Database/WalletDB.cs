@@ -4,6 +4,7 @@ using System.Data;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using MySql.Data.MySqlClient;

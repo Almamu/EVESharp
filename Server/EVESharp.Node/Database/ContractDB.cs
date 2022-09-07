@@ -32,6 +32,7 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions.contractMgr;
 using EVESharp.Node.Services.Contracts;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

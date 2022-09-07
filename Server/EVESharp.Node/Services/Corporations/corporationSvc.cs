@@ -11,6 +11,7 @@ using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Database;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Collections;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;

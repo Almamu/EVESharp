@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using EVESharp.Common.Database;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Database;

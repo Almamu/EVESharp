@@ -1,40 +1,49 @@
-using EVESharp.Orchestrator.Models;
+using EVESharp.Common.Configuration;
+using EVESharp.Common.Database;
 using EVESharp.Orchestrator.Providers;
-using MySql.Data.MySqlClient;
+using EVESharp.Orchestrator.Repositories;
+using EVESharp.PythonTypes.Database;
+using Serilog;
+using ILogger = Serilog.ILogger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder (args);
 
-// Add services to the container.
+Log.Logger = new LoggerConfiguration ()
+                     .ReadFrom.Configuration (builder.Configuration)
+                     .Enrich.FromLogContext ()
+                     .CreateLogger ();
 
-Database db = new Database (builder.Configuration.GetConnectionString ("DefaultConnection"));
+builder.Host.UseSerilog ();
 
+IConfigurationSection databaseSettings = builder.Configuration.GetSection ("Database");
+
+if (databaseSettings is null)
+    throw new InvalidDataException ("Please specify database connection settings. Check your appsettings.json and ASP.NET documentation");
+    
+// create a database configuration instance for the DatabaseConnection class
+Database config = new Database ()
+{
+    Hostname = databaseSettings ["hostname"],
+    Name = databaseSettings ["database"],
+    Username = databaseSettings ["username"],
+    Password = databaseSettings ["password"],
+    Port = uint.Parse (databaseSettings ["port"])
+};
+
+// add controllers
 builder.Services.AddControllers ();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer ();
 builder.Services.AddSwaggerGen ();
-builder.Services.AddSingleton (db);
+builder.Services.AddSingleton <ILogger> (Log.Logger);
 builder.Services.AddSingleton <IStartupInfoProvider> (new StartupInfoProvider () {Time = DateTime.Now});
-builder.Services.AddSingleton <IStartupInfoProvider> (new StartupInfoProvider () {Time = DateTime.Now});
-
-// check for the settings and restart things if needed
-bool restartOnStartup = bool.Parse (builder.Configuration.GetSection ("Cluster") ["ResetOnStartup"]);
-
-if (restartOnStartup)
-    // set things to zero
-    using (MySqlConnection connection = db.Get ())
-    {
-        MySqlCommand items     = new MySqlCommand ("UPDATE invItems SET nodeID = 0;",     connection);
-        MySqlCommand nodes     = new MySqlCommand ("DELETE FROM cluster;",                connection);
-        MySqlCommand accounts  = new MySqlCommand ("UPDATE account SET proxyNodeID = 0;", connection);
-        MySqlCommand addresses = new MySqlCommand ("DELETE FROM cluAddresses",            connection);
-
-        nodes.ExecuteNonQuery ();
-        items.ExecuteNonQuery ();
-        accounts.ExecuteNonQuery ();
-        addresses.ExecuteNonQuery ();
-    }
+builder.Services.AddSingleton (config);
+builder.Services.AddSingleton <IDatabaseConnection, DatabaseConnection> ();
+builder.Services.AddSingleton <IClusterRepository, ClusterRepository> ();
 
 WebApplication app = builder.Build ();
+
+app.UseSerilogRequestLogging ();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment ())
@@ -44,9 +53,10 @@ if (app.Environment.IsDevelopment ())
 }
 
 app.UseHttpsRedirection ();
-
 app.UseAuthorization ();
-
 app.MapControllers ();
+
+// forces initialization of the cluster repository (cleanup of data if required)
+app.Services.GetService <IClusterRepository> ();
 
 app.Run ();

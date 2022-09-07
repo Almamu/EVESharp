@@ -78,6 +78,7 @@ using EVESharp.Node.Services.Stations;
 using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
 using EVESharp.Node.SimpleInject;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 using Serilog.Core;

@@ -2,6 +2,7 @@
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 

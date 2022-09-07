@@ -16,6 +16,7 @@ using EVESharp.Node.Server.Node.Messages;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Sessions;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using Moq;
 using RichardSzalay.MockHttp;

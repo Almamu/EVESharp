@@ -34,6 +34,7 @@ using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.Node.Data.Inventory.Exceptions;
 using EVESharp.Node.Database;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using Serilog;
 using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;

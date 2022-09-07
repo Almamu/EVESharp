@@ -25,6 +25,7 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Database;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 using EVESharp.PythonTypes.Types.Primitives;
 using ItemDB = EVESharp.Node.Database.ItemDB;

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using EVESharp.Common.Database;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
+using EVESharp.PythonTypes.Database;
 using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Database;
