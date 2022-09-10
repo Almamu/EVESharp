@@ -22,7 +22,7 @@ public abstract class ClientBoundService : BoundService
     /// Creates a bound service to the given objectID
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
-    /// <param name="client">The client that it belongs to</param>
+    /// <param name="session">The client that it belongs to</param>
     /// <param name="objectID">The object it's bound to</param>
     public ClientBoundService (BoundServiceManager manager, Session session, int objectID) : base (manager, objectID)
     {

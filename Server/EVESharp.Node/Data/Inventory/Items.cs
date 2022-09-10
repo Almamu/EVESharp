@@ -26,6 +26,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -119,7 +120,7 @@ public class Items : IItems
     public void Init ()
     {
         // load all the items in the database that do not belong to any user (so-called static items)
-        foreach (Item item in this.ItemDB.LoadStaticItems ())
+        foreach (Item item in Database.InvGetStaticItems (this.Types, this.Attributes))
             this.PerformItemLoad (item);
 
         this.Log.Information ($"Preloaded {this.mItemList.Count} static items");
@@ -182,7 +183,11 @@ public class Items : IItems
         lock (this)
         {
             if (this.TryGetItem (itemID, out ItemEntity item) == false)
-                return this.PerformItemLoad (this.ItemDB.LoadItem (itemID, this.MachoNet.NodeID));
+                return this.PerformItemLoad (
+                    Database.InvLoadItem (
+                        itemID, this.MachoNet.NodeID, this.Types, this.Attributes
+                    )
+                );
 
             return item;
         }
@@ -202,7 +207,11 @@ public class Items : IItems
             {
                 loadRequired = true;
 
-                return this.PerformItemLoad (this.ItemDB.LoadItem (itemID, this.MachoNet.NodeID));
+                return this.PerformItemLoad (
+                    Database.InvLoadItem (
+                        itemID, this.MachoNet.NodeID, this.Types, this.Attributes
+                    )
+                );
             }
 
             loadRequired = false;
@@ -393,7 +402,7 @@ public class Items : IItems
 
     private ItemEntity LoadBlueprint (Item item)
     {
-        return new Blueprint (this.ItemDB.LoadBlueprint (item));
+        return new Blueprint (Database.InvBpLoad (item));
     }
 
     private ItemEntity LoadOwner (Item item)
@@ -509,8 +518,8 @@ public class Items : IItems
         string customInfo = null
     )
     {
-        int itemID = (int) this.ItemDB.CreateItem (
-            itemName, typeID, ownerID, locationID, flag, contraband, singleton,
+        int itemID = (int) Database.InvCreateItem (
+            itemName, this.Types [typeID], ownerID, locationID, flag, contraband, singleton,
             quantity, x, y, z, customInfo
         );
 
@@ -687,7 +696,7 @@ public class Items : IItems
         // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT HAVE EXTRA DATA
         if (item.Information.New || item.Information.Dirty)
         {
-            this.ItemDB.PersistEntity (item);
+            Database.InvPersistItem (item);
 
             switch (item)
             {
@@ -696,7 +705,7 @@ public class Items : IItems
                     break;
 
                 case Blueprint blueprint:
-                    this.ItemDB.PersistBlueprint (blueprint.BlueprintInformation);
+                    Database.InvBpPersist (blueprint.BlueprintInformation);
                     break;
 
                 case Ship ship:
@@ -719,7 +728,7 @@ public class Items : IItems
                 inventoryItem.Persist ();
 
         // persist the attributes too
-        this.ItemDB.PersistAttributeList (item, item.Attributes);
+        this.Database.InvDgmPersistEntityAttributes (item);
     }
 
     private void OnItemDisposed (ItemEntity item)

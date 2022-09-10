@@ -37,7 +37,7 @@ public class Types : ITypes
 
     public Types (IDatabaseConnection Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressionManager)
     {
-        this.mTypes = Database.LoadItemTypes (attributes, defaultAttributes, groups, expressionManager);
+        this.mTypes = Database.InvLoadItemTypes (attributes, defaultAttributes, groups, expressionManager);
     }
 
     public bool ContainsKey (int typeID)

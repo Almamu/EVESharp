@@ -228,8 +228,8 @@ public class CharacterDB : DatabaseAccessor
     )
     {
         // create the item first
-        int itemID = (int) ItemDB.CreateItem (
-            name, from.ID, owner.ID, stationID, Flags.Connected, false,
+        int itemID = (int) Database.InvCreateItem (
+            name, from, owner.ID, stationID, Flags.Connected, false,
             true, 1, 0, 0, 0, ""
         );
 

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using EVESharp.Database.MySql;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
+using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Database;
 
 namespace EVESharp.Database.Inventory;
@@ -90,6 +92,84 @@ public static class AttributeDB
             }
 
             return result;
+        }
+    }
+
+    public static Dictionary <int, Attribute> InvDgmLoadAttributesForEntity (this IDatabaseConnection Database, int itemID, IAttributes attributes)
+    {
+        IDbConnection connection = null;
+
+        DbDataReader reader = Database.Select (
+            ref connection,
+            "SELECT attributeID, valueInt, valueFloat FROM invItemsAttributes WHERE itemID = @itemID",
+            new Dictionary <string, object> {{"@itemID", itemID}}
+        );
+
+        using (connection)
+        using (reader)
+        {
+            Dictionary <int, Attribute> result = new Dictionary <int, Attribute> ();
+
+            while (reader.Read ())
+            {
+                Attribute attribute = null;
+
+                if (reader.IsDBNull (1))
+                    attribute = new Attribute (
+                        attributes [reader.GetInt32 (0)],
+                        reader.GetDouble (2)
+                    );
+                else
+                    attribute = new Attribute (
+                        attributes [reader.GetInt32 (0)],
+                        reader.GetInt64 (1)
+                    );
+
+                result [attribute.ID] = attribute;
+            }
+
+            return result;
+        }
+    }
+
+    public static void InvDgmPersistEntityAttributes (this IDatabaseConnection Database, ItemEntity item)
+    {
+        IDbConnection connection = null;
+
+        MySqlCommand command = (MySqlCommand) Database.Prepare (
+            ref connection,
+            "REPLACE INTO invItemsAttributes(itemID, attributeID, valueInt, valueFloat) VALUE (@itemID, @attributeID, @valueInt, @valueFloat)"
+        );
+
+        using (connection)
+        using (command)
+        {
+            foreach (KeyValuePair <int, Attribute> pair in item.Attributes)
+            {
+                // only update dirty records
+                if (pair.Value.Dirty == false && pair.Value.New == false)
+                    continue;
+
+                command.Parameters.Clear ();
+
+                command.Parameters.AddWithValue ("@itemID",      item.ID);
+                command.Parameters.AddWithValue ("@attributeID", pair.Value.ID);
+
+                if (pair.Value.ValueType == Attribute.ItemAttributeValueType.Integer)
+                    command.Parameters.AddWithValue ("@valueInt", pair.Value.Integer);
+                else
+                    command.Parameters.AddWithValue ("@valueInt", null);
+
+                if (pair.Value.ValueType == Attribute.ItemAttributeValueType.Double)
+                    command.Parameters.AddWithValue ("@valueFloat", pair.Value.Float);
+                else
+                    command.Parameters.AddWithValue ("@valueFloat", null);
+
+                command.ExecuteNonQuery ();
+
+                pair.Value.New   = false;
+                pair.Value.Dirty = false;
+            }
         }
     }
 }

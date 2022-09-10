@@ -19,7 +19,7 @@ public class SkillDB : DatabaseAccessor
 
     public int CreateSkill (Type skill, Character character)
     {
-        return (int) ItemDB.CreateItem (
+        return (int) Database.InvCreateItem (
             null, skill, character, character, Flags.Skill,
             false, true, 1, null, null, null, null
         );

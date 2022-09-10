@@ -39,9 +39,11 @@ public class CorporationDB : DatabaseAccessor
     public const string GET_RECRUITMENT_AD_TYPES    = "CrpGetRecruitmentAdTypes";
 
     private ItemDB ItemDB { get; }
+    private ITypes Types  { get; }
 
-    public CorporationDB (ItemDB itemDB, IDatabaseConnection db) : base (db)
+    public CorporationDB (ItemDB itemDB, ITypes types, IDatabaseConnection db) : base (db)
     {
+        Types  = types;
         ItemDB = itemDB;
     }
 
@@ -777,8 +779,8 @@ public class CorporationDB : DatabaseAccessor
     )
     {
         // create the item first
-        int corporationID = (int) ItemDB.CreateItem (
-            name, (int) TypeID.Corporation, creatorID, stationID, Flags.None, false,
+        int corporationID = (int) Database.InvCreateItem (
+            name, Types [TypeID.Corporation], creatorID, stationID, Flags.None, false,
             true, 1, 0, 0, 0, ""
         );
 

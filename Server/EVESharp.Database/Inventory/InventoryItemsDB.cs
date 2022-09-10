@@ -79,7 +79,7 @@ public static class InventoryItemsDB
         }
     }
 
-    public static Dictionary <int, Type> LoadItemTypes (this IDatabaseConnection Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressions)
+    public static Dictionary <int, Type> InvLoadItemTypes (this IDatabaseConnection Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressions)
     {
         // item effects should be loaded before as they're needed for the types instantiation
         Dictionary <int, Dictionary <int, Effect>> effects = Database.InvLoadItemEffects (expressions);
