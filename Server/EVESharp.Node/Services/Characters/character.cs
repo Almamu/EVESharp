@@ -25,6 +25,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -52,7 +53,7 @@ public class character : Service
     private readonly Configuration.Character mConfiguration;
     public override  AccessLevel             AccessLevel => AccessLevel.LocationPreferred;
 
-    private CharacterDB         DB             { get; }
+    private OldCharacterDB      DB             { get; }
     private CorporationDB       CorporationDB  { get; }
     private ChatDB              ChatDB         { get; }
     private IItems              Items          { get; }
@@ -64,13 +65,14 @@ public class character : Service
     private IBloodlines         Bloodlines     { get; }
     private ISessionManager     SessionManager { get; }
     private ILogger             Log            { get; }
+    private IDatabaseConnection Database       { get; }
 
     public character
     (
-        ICacheStorage       cacheStorage,       CharacterDB db,      ChatDB      chatDB, CorporationDB corporationDB,
+        ICacheStorage       cacheStorage,       OldCharacterDB db,      ChatDB      chatDB, CorporationDB corporationDB,
         IItems              items,              ILogger     logger,  Configuration.Character   configuration,
         INotificationSender notificationSender, IWallets    wallets, IAncestries ancestries, IBloodlines bloodlines,
-        ISessionManager     sessionManager
+        ISessionManager     sessionManager, IDatabaseConnection database
     )
     {
         Log                 = logger;
@@ -85,6 +87,7 @@ public class character : Service
         Ancestries          = ancestries;
         Bloodlines          = bloodlines;
         SessionManager      = sessionManager;
+        Database            = database;
     }
 
     [MustNotBeCharacter]
@@ -506,7 +509,7 @@ public class character : Service
             updates.WarFactionID = character.WarFactionID;
 
         // update the logon status
-        DB.UpdateCharacterLogonDateTime (character.ID);
+        Database.ChrUpdateLogonTime (character.ID);
         // unload the character, let the session change handler handle everything
         // TODO: CHECK IF THE PLAYER IS GOING TO SPAWN IN THIS NODE AND IF IT IS NOT, UNLOAD IT FROM THE ITEM MANAGER
         PyList <PyInteger> onlineFriends = DB.GetOnlineFriendList (character);
@@ -605,13 +608,13 @@ public class character : Service
     [MustBeCharacter]
     public PyDataType GetNote (CallInformation call, PyInteger characterID)
     {
-        return DB.GetNote (characterID, call.Session.CharacterID);
+        return Database.ChrGetNote (characterID, call.Session.CharacterID);
     }
 
     [MustBeCharacter]
     public PyDataType SetNote (CallInformation call, PyInteger characterID, PyString note)
     {
-        DB.SetNote (characterID, call.Session.CharacterID, note);
+        Database.ChrSetNote (characterID, call.Session.CharacterID, note);
 
         return null;
     }

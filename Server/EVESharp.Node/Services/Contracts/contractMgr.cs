@@ -31,7 +31,7 @@ public class contractMgr : Service
     private ContractDB          DB                 { get; }
     private ItemDB              ItemDB             { get; }
     private MarketDB            MarketDB           { get; }
-    private CharacterDB         CharacterDB        { get; }
+    private OldCharacterDB         CharacterDB        { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
     private ISolarSystems       SolarSystems       { get; }
@@ -41,7 +41,7 @@ public class contractMgr : Service
 
     public contractMgr
     (
-        ContractDB db,      ItemDB              itemDB, MarketDB marketDB, CharacterDB characterDB, IItems items, INotificationSender notificationSender,
+        ContractDB db,      ItemDB              itemDB, MarketDB marketDB, OldCharacterDB characterDB, IItems items, INotificationSender notificationSender,
         IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
     )
     {

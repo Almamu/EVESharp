@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
@@ -30,23 +31,23 @@ public class LSC : Service
     private         ILogger     Log         { get; }
     public override AccessLevel AccessLevel => AccessLevel.Location;
 
-    private MessagesDB           MessagesDB           { get; }
-    private ChatDB               DB                   { get; }
-    private CharacterDB          CharacterDB          { get; }
-    private IItems               Items                { get; }
-    private INotificationSender  Notifications        { get; }
-    private MailManager          MailManager          { get; }
+    private ChatDB                DB                   { get; }
+    private OldCharacterDB        CharacterDB          { get; }
+    private IItems                Items                { get; }
+    private INotificationSender   Notifications        { get; }
+    private MailManager           MailManager          { get; }
     private IRemoteServiceManager RemoteServiceManager { get; }
-    private PacketCallHelper     PacketCallHelper     { get; }
+    private PacketCallHelper      PacketCallHelper     { get; }
+    private IDatabaseConnection   Database             { get; }
 
     public LSC
     (
-        ChatDB              db,                 MessagesDB  messagesDB,  CharacterDB          characterDB,          IItems           items, ILogger logger,
-        INotificationSender notificationSender, MailManager mailManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper
+        ChatDB              db,  OldCharacterDB          characterDB,          IItems           items, ILogger logger,
+        INotificationSender notificationSender, MailManager mailManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper,
+        IDatabaseConnection database
     )
     {
         DB                   = db;
-        MessagesDB           = messagesDB;
         CharacterDB          = characterDB;
         this.Items           = items;
         Notifications        = notificationSender;
@@ -54,6 +55,7 @@ public class LSC : Service
         Log                  = logger;
         RemoteServiceManager = remoteServiceManager;
         PacketCallHelper     = packetCallHelper;
+        Database             = database;
     }
 
     private void ParseTupleChannelIdentifier (PyTuple tuple, out int channelID, out string channelType, out int? entityID)
@@ -296,7 +298,7 @@ public class LSC : Service
 
     public PyDataType GetMyMessages (CallInformation call)
     {
-        return MessagesDB.GetMailHeaders (call.Session.CharacterID);
+        return Database.EveMailGetHeaders (call.Session.CharacterID);
     }
 
     public PyDataType GetRookieHelpChannel (CallInformation call)
@@ -548,7 +550,7 @@ public class LSC : Service
                     new PyDictionary
                     {
                         ["channel"] = this.DB.GetChannelName (call.ChannelID),
-                        ["char"]    = this.CharacterDB.GetCharacterName (call.ToCharacterID)
+                        ["char"]    = Database.ChrGetName (call.ToCharacterID)
                     }
                 )
             );
@@ -677,23 +679,19 @@ public class LSC : Service
         if (DB.IsPlayerAllowedToRead (channelID, call.Session.CharacterID) == false)
             return null;
 
-        return MessagesDB.GetMessageDetails (channelID, messageID);
+        return Database.EveMailGetMessages (channelID, messageID);
     }
 
     public PyDataType MarkMessagesRead (CallInformation call, PyList messageIDs)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
-        MessagesDB.MarkMessagesRead (callerCharacterID, messageIDs.GetEnumerable <PyInteger> ());
+        Database.EveMailMarkMessagesRead (call.Session.CharacterID, messageIDs.GetEnumerable<PyInteger> ());
 
         return null;
     }
 
     public PyDataType DeleteMessages (CallInformation call, PyInteger mailboxID, PyList messageIDs)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
-        MessagesDB.DeleteMessages (callerCharacterID, mailboxID, messageIDs.GetEnumerable <PyInteger> ());
+        Database.EveMailDeleteMessages (mailboxID, messageIDs.GetEnumerable<PyInteger> ());
 
         return null;
     }

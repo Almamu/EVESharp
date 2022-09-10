@@ -45,7 +45,7 @@ public class corpRegistry : MultiClientBoundService
 
     private CorporationDB              DB                  { get; }
     private ChatDB                     ChatDB              { get; }
-    private CharacterDB                CharacterDB         { get; }
+    private OldCharacterDB             CharacterDB         { get; }
     private IDatabaseConnection        Database            { get; }
     private IItems                     Items               { get; }
     private IWallets                   Wallets             { get; }
@@ -64,7 +64,7 @@ public class corpRegistry : MultiClientBoundService
 
     public corpRegistry
     (
-        CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, INotificationSender notificationSender,
+        CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets            wallets,            IItems items, IConstants constants, BoundServiceManager manager,
         IAncestries   ancestries,  ISessionManager     sessionManager,     IClusterManager clusterManager
     ) : base (manager)
@@ -87,7 +87,7 @@ public class corpRegistry : MultiClientBoundService
 
     protected corpRegistry
     (
-        CorporationDB   db,             IDatabaseConnection databaseConnection, ChatDB chatDB, CharacterDB characterDB, INotificationSender notificationSender,
+        CorporationDB   db,             IDatabaseConnection databaseConnection, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager     mailManager,    IWallets            wallets,            IConstants constants, IItems items, IAncestries ancestries,
         ISessionManager sessionManager, Corporation         corp,               int isMaster, corpRegistry parent
     ) : base (parent, corp.ID)
@@ -599,7 +599,7 @@ public class corpRegistry : MultiClientBoundService
                 );
 
                 CharacterDB.UpdateCharacterBlockRole (character.ID, 0);
-                CharacterDB.SetCharacterStasisTimer (character.ID, null);
+                Database.ChrSetStasisTimer (character.ID, null);
                 character.CorporationDateTime = DateTime.UtcNow.ToFileTimeUtc ();
                 // notify cluster about the corporation changes
                 Notifications.NotifyCorporation (change.OldCorporationID, change);
@@ -979,7 +979,7 @@ public class corpRegistry : MultiClientBoundService
         {
             CharacterDB.UpdateCharacterBlockRole (characterID, blockRoles == 1 ? 1 : null);
 
-            long? currentStasisTimer = CharacterDB.GetCharacterStasisTimer (characterID);
+            long? currentStasisTimer = Database.ChrGetStasisTimer (characterID);
 
             if (blockRoles == 1)
             {
@@ -1103,7 +1103,7 @@ public class corpRegistry : MultiClientBoundService
 
             // update the stasis timer
             if (currentStasisTimer == null)
-                CharacterDB.SetCharacterStasisTimer (characterID, blockRoles == 1 ? DateTime.UtcNow.ToFileTimeUtc () : null);
+                Database.ChrSetStasisTimer (characterID, blockRoles == 1 ? DateTime.UtcNow.ToFileTimeUtc () : null);
 
             // send the session change
             SessionManager.PerformSessionUpdate (Session.CHAR_ID, characterID, update);
@@ -1256,7 +1256,7 @@ public class corpRegistry : MultiClientBoundService
     public PyDataType CanLeaveCurrentCorporation (CallInformation call)
     {
         int   characterID = call.Session.CharacterID;
-        long? stasisTimer = CharacterDB.GetCharacterStasisTimer (characterID);
+        long? stasisTimer = Database.ChrGetStasisTimer (characterID);
 
         try
         {
@@ -1563,7 +1563,7 @@ public class corpRegistry : MultiClientBoundService
     {
         // TODO: CHECK THAT THE APPLICATION EXISTS TO PREVENT A CHARACTER FROM BEING FORCE TO JOIN A CORPORATION!!
 
-        string characterName = CharacterDB.GetCharacterName (characterID);
+        string characterName = Database.ChrGetName (characterID);
 
         int corporationID = call.Session.CorporationID;
 

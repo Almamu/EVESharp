@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.Database;
 using EVESharp.EVE.Notifications;
 using EVESharp.Node.Database;
 using EVESharp.Types;
@@ -8,12 +9,12 @@ namespace EVESharp.Node.Chat;
 
 public class MailManager
 {
-    private MessagesDB          DB            { get; }
+    private IDatabaseConnection Database      { get; }
     private INotificationSender Notifications { get; }
 
-    public MailManager (MessagesDB db, INotificationSender notificationSender)
+    public MailManager (IDatabaseConnection database, INotificationSender notificationSender)
     {
-        DB            = db;
+        Database      = database;
         Notifications = notificationSender;
     }
 
@@ -26,7 +27,7 @@ public class MailManager
     {
         foreach (PyInteger destinationID in destinationMailboxes)
         {
-            ulong messageID = DB.StoreMail (destinationID, fromID, subject, message, out string mailboxType);
+            ulong messageID = Database.EveMailStore (destinationID, fromID, subject, message, out string mailboxType);
 
             // send notification to the destination
             PyTuple notification = new PyTuple (5)

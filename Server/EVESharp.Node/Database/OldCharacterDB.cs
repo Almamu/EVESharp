@@ -15,12 +15,12 @@ using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Database;
 
-public class CharacterDB : DatabaseAccessor
+public class OldCharacterDB : DatabaseAccessor
 {
     private ItemDB ItemDB { get; }
     private ITypes Types  { get; }
 
-    public CharacterDB (IDatabaseConnection db, ItemDB itemDB, ITypes types) : base (db)
+    public OldCharacterDB (IDatabaseConnection db, ItemDB itemDB, ITypes types) : base (db)
     {
         this.Types = types;
         ItemDB     = itemDB;
@@ -93,37 +93,6 @@ public class CharacterDB : DatabaseAccessor
         {
             return reader.Rowset ();
         }
-    }
-
-    /// <summary>
-    /// Obtains public information for a given character
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public PyDataType GetPublicInfo (int characterID)
-    {
-        return Database.PrepareKeyVal (
-            "SELECT chrInformation.corporationID, raceID, bloodlineID, ancestryID, careerID," +
-            " schoolID, careerSpecialityID, createDateTime, gender " +
-            "FROM chrInformation " +
-            "LEFT JOIN chrAncestries USING (ancestryID) " +
-            "LEFT JOIN chrBloodlines USING (bloodlineID) " +
-            "WHERE characterID=@characterID",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
-    }
-
-    /// <summary>
-    /// Similar to <seealso cref="GetPublicInfo"/> obtains basic information of a character
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public Rowset GetPublicInfo3 (int characterID)
-    {
-        return Database.PrepareRowset (
-            "SELECT bounty, title, startDateTime, description, corporationID FROM chrInformation WHERE characterID=@characterID",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
     }
 
     /// <summary>
@@ -567,22 +536,6 @@ public class CharacterDB : DatabaseAccessor
     }
 
     /// <summary>
-    /// Updates the given <paramref name="characterID"/> login date to the current time
-    /// </summary>
-    /// <param name="characterID"></param>
-    public void UpdateCharacterLogonDateTime (int characterID)
-    {
-        Database.Prepare (
-            "UPDATE chrInformation SET logonDateTime = @date, online = 1 WHERE characterID = @characterID",
-            new Dictionary <string, object>
-            {
-                {"@characterID", characterID},
-                {"@date", DateTime.UtcNow.ToFileTimeUtc ()}
-            }
-        );
-    }
-
-    /// <summary>
     /// Saves various aspects of a character like online status, activeCloneID, attribute remap status, clone jump, skill queue, description...
     /// </summary>
     /// <param name="character"></param>
@@ -788,37 +741,6 @@ public class CharacterDB : DatabaseAccessor
     }
 
     /// <summary>
-    /// Gets the note written by <paramref name="ownerID"/> for the given <paramref name="itemID"/>
-    /// </summary>
-    /// <param name="itemID"></param>
-    /// <param name="ownerID"></param>
-    /// <returns></returns>
-    public string GetNote (int itemID, int ownerID)
-    {
-        IDbConnection connection = null;
-
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT note FROM chrNotes WHERE itemID = @itemID AND ownerID = @ownerID",
-            new Dictionary <string, object>
-            {
-                {"@itemID", itemID},
-                {"@ownerID", ownerID}
-            }
-        );
-
-        using (connection)
-        using (reader)
-        {
-            // if no record exists, return an empty string so the player can create it's own
-            if (reader.Read () == false)
-                return "";
-
-            return reader.GetString (0);
-        }
-    }
-
-    /// <summary>
     /// Updates the note written by <paramref name="ownerID"/> for the given <paramref name="itemID"/>
     /// </summary>
     /// <param name="itemID"></param>
@@ -846,31 +768,6 @@ public class CharacterDB : DatabaseAccessor
                     {"@note", note}
                 }
             );
-    }
-
-    /// <summary>
-    /// Obtains the character name of the given <paramref name="characterID"/>
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public string GetCharacterName (int characterID)
-    {
-        IDbConnection connection = null;
-
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT itemName FROM eveNames WHERE itemID = @characterID",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
-
-        using (connection)
-        using (reader)
-        {
-            if (reader.Read () == false)
-                return "";
-
-            return reader.GetString (0);
-        }
     }
 
     /// <summary>
@@ -953,48 +850,6 @@ public class CharacterDB : DatabaseAccessor
 
             return reader.GetInt64 (0);
         }
-    }
-
-    /// <summary>
-    /// Get's when the character's stasis timer started (if any)
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public long? GetCharacterStasisTimer (int characterID)
-    {
-        IDbConnection connection = null;
-
-        DbDataReader reader = Database.Select (
-            ref connection,
-            "SELECT corpStasisTime FROM chrInformation WHERE characterID = @characterID",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
-
-        using (connection)
-        using (reader)
-        {
-            if (reader.Read () == false || reader.IsDBNull (0))
-                return null;
-
-            return reader.GetInt64 (0);
-        }
-    }
-
-    /// <summary>
-    /// Sets when the character's stasis timer started (if any)
-    /// </summary>
-    /// <param name="characterID"></param>
-    /// <returns></returns>
-    public void SetCharacterStasisTimer (int characterID, long? start)
-    {
-        Database.Prepare (
-            "UPDATE chrInformation SET corpStasisTime = @timerStart WHERE characterID = @characterID",
-            new Dictionary <string, object>
-            {
-                {"@characterID", characterID},
-                {"@timerStart", start}
-            }
-        );
     }
 
     /// <summary>

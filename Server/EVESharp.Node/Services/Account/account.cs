@@ -18,12 +18,12 @@ namespace EVESharp.Node.Services.Account;
 public class account : Service
 {
     public override AccessLevel         AccessLevel  => AccessLevel.None;
-    private         CharacterDB         DB           { get; }
+    private         OldCharacterDB      DB           { get; }
     private         IWallets            Wallets      { get; }
     private         ICacheStorage       CacheStorage { get; }
     private         IDatabaseConnection Database     { get; }
 
-    public account (IDatabaseConnection databaseConnection, CharacterDB db, IWallets wallets, ICacheStorage cacheStorage)
+    public account (IDatabaseConnection databaseConnection, OldCharacterDB db, IWallets wallets, ICacheStorage cacheStorage)
     {
         Database     = databaseConnection;
         DB           = db;

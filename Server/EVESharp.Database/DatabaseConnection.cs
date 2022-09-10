@@ -793,6 +793,36 @@ public class DatabaseConnection : IDatabaseConnection
     }
 
     /// <summary>
+    /// Calls a procedure and returns a KeyVal representing the result.
+    /// </summary>
+    /// <param name="procedureName">The procedure to call</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The PyDataType object representing the result</returns>
+    public PyDataType KeyVal (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null)
+    {
+        try
+        {
+            // initialize a command and a connection for this procedure call
+            MySqlCommand    command    = this.PrepareProcedureCall (ref connection, procedureName, values);
+            
+            using (command)
+            using (DbDataReader reader = command.ExecuteReader ())
+            {
+                if (reader.Read () == false)
+                    return null;
+
+                return reader.KeyVal ();
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Error ($"MySQL error: {e.Message}");
+
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Calls the given procedure and returns it's data as a normal CRowset
     /// </summary>
     /// <param name="procedureName">The procedure name</param>

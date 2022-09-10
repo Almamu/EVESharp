@@ -2,19 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database;
 
-public class MessagesDB : DatabaseAccessor
+public static class MailDB
 {
-    public MessagesDB (IDatabaseConnection db) : base (db) { }
-
-    public Rowset GetMailHeaders (int characterID)
+    public static Rowset EveMailGetHeaders (this IDatabaseConnection Database, int characterID)
     {
         return Database.PrepareRowset (
             "SELECT channelID, messageID, senderID, subject, created, `read` FROM eveMail LEFT JOIN lscChannelPermissions USING(channelID) WHERE accessor = @characterID",
@@ -22,13 +19,10 @@ public class MessagesDB : DatabaseAccessor
         );
     }
 
-    public PyTuple GetMessageDetails (int channelID, int messageID)
+    public static PyTuple EveMailGetMessages (this IDatabaseConnection Database, int channelID, int messageID)
     {
         // TODO: SIMPLIFY TABLE STRUCTURE, ATTACHMENTS ARE NOT SUPPORTED
-        IDbConnection connection = null;
-
-        DbDataReader reader = Database.Select (
-            ref connection,
+        IDataReader reader = Database.Select (
             "SELECT channelID, messageID, senderID, subject, body, mimeTypeID, mimeType, `binary`, created FROM eveMail LEFT JOIN eveMailMimeType USING(mimeTypeID) WHERE messageID = @messageID AND channelID = @channelID",
             new Dictionary <string, object>
             {
@@ -37,7 +31,6 @@ public class MessagesDB : DatabaseAccessor
             }
         );
 
-        using (connection)
         using (reader)
         {
             if (reader.Read () == false)
@@ -91,12 +84,18 @@ public class MessagesDB : DatabaseAccessor
         }
     }
 
-    public void MarkMessagesRead (int characterID, PyList <PyInteger> messageIDs)
+    public static void EveMailMarkMessagesRead (this IDatabaseConnection Database, int mailboxID, PyList <PyInteger> messageIDs)
     {
-        Database.Query ($"UPDATE eveMail SET `read` = 1 WHERE messageID IN ({PyString.Join (',', messageIDs)})");
+        Database.Query (
+            $"UPDATE eveMail SET `read` = 1 WHERE messageID IN ({PyString.Join (',', messageIDs)}) AND channelID = @mailboxID",
+            new Dictionary <string, object> ()
+            {
+                {"@mailboxID", mailboxID}
+            }
+        );
     }
 
-    public void DeleteMessages (int characterID, int mailboxID, PyList <PyInteger> messageIDs)
+    public static void EveMailDeleteMessages (this IDatabaseConnection Database, int mailboxID, PyList <PyInteger> messageIDs)
     {
         // TODO: CHECK PERMISSIONS
         Database.Prepare (
@@ -105,7 +104,7 @@ public class MessagesDB : DatabaseAccessor
         );
     }
 
-    public ulong StoreMail (int channelID, int senderID, string subject, string message, out string mailboxType)
+    public static ulong EveMailStore (this IDatabaseConnection Database, int channelID, int senderID, string subject, string message, out string mailboxType)
     {
         ulong messageID = Database.PrepareLID (
             "INSERT INTO eveMail (channelID, senderID, subject, body, mimeTypeID, created, `read`)VALUES(@channelID, @senderID, @subject, @body, 2, @created, 0)",
@@ -121,30 +120,23 @@ public class MessagesDB : DatabaseAccessor
 
         mailboxType = "";
 
-        // check mailbox type
-        IDbConnection connection = null;
-
-        DbDataReader reader = Database.Select (
-            ref connection,
+        IDataReader reader = Database.Select (
             "SELECT groupID FROM invItems LEFT JOIN invTypes USING(typeID) WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", channelID}}
         );
 
-        using (connection)
         using (reader)
         {
             // bail out if no data was found with some default garbage value
             if (reader.Read ())
-                switch (reader.GetInt32 (0))
+            {
+                mailboxType = reader.GetInt32 (0) switch
                 {
-                    case (int) GroupID.Character:
-                        mailboxType = "charid";
-                        break;
-
-                    case (int) GroupID.Corporation:
-                        mailboxType = "corpid";
-                        break;
-                }
+                    (int) GroupID.Character   => "charid",
+                    (int) GroupID.Corporation => "corpid",
+                    _                         => mailboxType
+                };
+            }
             else
                 mailboxType = "charid";
         }

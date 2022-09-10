@@ -11,10 +11,10 @@ public class onlineStatus : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.Location;
     private         ChatDB      ChatDB      { get; }
-    private         CharacterDB CharacterDB { get; }
+    private         OldCharacterDB CharacterDB { get; }
     private         IItems      Items       { get; }
 
-    public onlineStatus (ChatDB chatDB, CharacterDB characterDB, IItems items)
+    public onlineStatus (ChatDB chatDB, OldCharacterDB characterDB, IItems items)
     {
         ChatDB      = chatDB;
         CharacterDB = characterDB;

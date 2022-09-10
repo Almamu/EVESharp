@@ -31,14 +31,14 @@ public class slash : Service
     private         ITypes              Types              => this.Items.Types;
     private         IItems              Items              { get; }
     private         ILogger             Log                { get; }
-    private         CharacterDB         CharacterDB        { get; }
+    private         OldCharacterDB         CharacterDB        { get; }
     private         INotificationSender Notifications      { get; }
     private         IWallets            Wallets            { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
 
     public slash
     (
-        ILogger             logger, IItems items, CharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
+        ILogger             logger, IItems items, OldCharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
         IDogmaNotifications dogmaNotifications
     )
     {

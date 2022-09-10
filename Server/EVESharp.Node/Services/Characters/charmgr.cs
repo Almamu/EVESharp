@@ -1,3 +1,4 @@
+using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
@@ -11,14 +12,16 @@ namespace EVESharp.Node.Services.Characters;
 
 public class charmgr : Service
 {
-    public override AccessLevel AccessLevel => AccessLevel.None;
-    private         CharacterDB DB          { get; }
-    private         MarketDB    MarketDB    { get; }
-    private         IItems      Items       { get; }
-    private         IWallets    Wallets     { get; }
+    public override AccessLevel         AccessLevel => AccessLevel.None;
+    private         OldCharacterDB      DB          { get; }
+    private         MarketDB            MarketDB    { get; }
+    private         IItems              Items       { get; }
+    private         IWallets            Wallets     { get; }
+    private         IDatabaseConnection Database    { get; }
 
-    public charmgr (CharacterDB db, MarketDB marketDB, IItems items, IWallets wallets)
+    public charmgr (IDatabaseConnection database, OldCharacterDB db, MarketDB marketDB, IItems items, IWallets wallets)
     {
+        Database     = database;
         DB           = db;
         MarketDB     = marketDB;
         this.Items   = items;
@@ -27,13 +30,13 @@ public class charmgr : Service
 
     public PyDataType GetPublicInfo (CallInformation call, PyInteger characterID)
     {
-        return DB.GetPublicInfo (characterID);
+        return Database.ChrGetPublicInfo (characterID);
     }
 
     [MustBeCharacter]
     public PyDataType GetPublicInfo3 (CallInformation call, PyInteger characterID)
     {
-        return DB.GetPublicInfo3 (characterID);
+        return Database.ChrGetPublicInfo3 (characterID);
     }
 
     [MustBeCharacter]

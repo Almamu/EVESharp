@@ -234,15 +234,13 @@ internal class Program
         container.Register <IDogmaNotifications, DogmaNotifications> (Lifestyle.Singleton);
 
         // register the database accessors dependencies
-        container.Register <CharacterDB> (Lifestyle.Singleton);
+        container.Register <OldCharacterDB> (Lifestyle.Singleton);
         container.Register <ChatDB> (Lifestyle.Singleton);
         container.Register <ConfigDB> (Lifestyle.Singleton);
         container.Register <ContractDB> (Lifestyle.Singleton);
         container.Register <CorporationDB> (Lifestyle.Singleton);
-        container.Register <GeneralDB> (Lifestyle.Singleton);
         container.Register <ItemDB> (Lifestyle.Singleton);
         container.Register <MarketDB> (Lifestyle.Singleton);
-        container.Register <MessagesDB> (Lifestyle.Singleton);
         container.Register <SkillDB> (Lifestyle.Singleton);
         container.Register <StandingDB> (Lifestyle.Singleton);
         container.Register <StationDB> (Lifestyle.Singleton);

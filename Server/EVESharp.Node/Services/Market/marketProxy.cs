@@ -35,7 +35,7 @@ public class marketProxy : Service
     public override         AccessLevel AccessLevel => AccessLevel.None;
 
     private MarketDB            DB                 { get; }
-    private CharacterDB         CharacterDB        { get; }
+    private OldCharacterDB      CharacterDB        { get; }
     private ICacheStorage       CacheStorage       { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
@@ -48,7 +48,7 @@ public class marketProxy : Service
 
     public marketProxy
     (
-        MarketDB db, CharacterDB characterDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
+        MarketDB db, OldCharacterDB characterDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
         IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
         ISolarSystems solarSystems
     )

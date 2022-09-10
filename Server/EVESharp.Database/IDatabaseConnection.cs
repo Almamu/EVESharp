@@ -531,7 +531,29 @@ public interface IDatabaseConnection
     }
 
     /// <summary>
-    /// Calls the given procedure and returns it's data as a normal CRowset
+    /// Calls a procedure and returns a KeyVal representing the result.
+    /// </summary>
+    /// <param name="procedureName">The procedure to call</param>
+    /// <param name="values">The key-value pair of values to use when running the query</param>
+    /// <returns>The PyDataType object representing the result</returns>
+    public PyDataType KeyVal (ref IDbConnection connection, string procedureName, Dictionary <string, object> values = null);
+
+    public PyDataType KeyVal (string procedureName, Dictionary <string, object> values = null)
+    {
+        IDbConnection con = null;
+
+        try
+        {
+            return this.KeyVal (ref con, procedureName, values);
+        }
+        finally
+        {
+            con?.Dispose ();
+        }
+    }
+
+    /// <summary>
+    /// Calls the given procedure and returns it's data as a normal PackedRowList
     /// </summary>
     /// <param name="procedureName">The procedure name</param>
     /// <param name="values">The key-value pair of values to use when running the query</param>
