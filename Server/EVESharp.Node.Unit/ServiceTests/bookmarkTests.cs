@@ -29,16 +29,16 @@ public class bookmarkTests
     private const string NAME = "NAME HERE!";
 
     private const int BOOKMARKID = 15;
-    
-    private       bookmark mBookmarkSvc;
-    private       ItemEntity            mItem = new Item (
+
+    private bookmark mBookmarkSvc;
+    private ItemEntity mItem = new Item (
         new EVE.Data.Inventory.Items.Types.Information.Item ()
         {
-            ID = ITEMID,
-            Type = Inventory.NewType (TYPEID),
-            X = X,
-            Y = Y,
-            Z = Z,
+            ID         = ITEMID,
+            Type       = Inventory.NewType (TYPEID),
+            X          = X,
+            Y          = Y,
+            Z          = Z,
             LocationID = LOCATIONID
         }
     );
@@ -83,21 +83,24 @@ public class bookmarkTests
     {
         this.mHarmony.Setup (this);
         
-        mItemsMock.Setup (x => x.GetItem (It.Is<int> (v => v == ITEMID))).Returns (
-            this.mItem
-        ).Verifiable();
+        this.mItemsMock
+            .Setup (x => x.GetItem (It.Is<int> (v => v == ITEMID)))
+            .Returns (this.mItem)
+            .Verifiable();
 
-        mRemoteServiceManagerMock.Setup (x => x.SendServiceCall (
-            It.Is<Session>(v => v == this.mSession),
-            It.Is<string>(v => v == "addressbook"),
-            It.Is<string>(v => v == "OnBookmarkAdd"),
-            It.IsAny<PyTuple>(),
-            It.IsAny<PyDictionary> (),
-            It.IsAny<Action <RemoteCall, PyDataType>>(),
-            It.IsAny<Action <RemoteCall>> (),
-            It.IsAny<object>(),
-            It.IsAny<int>()
-        )).Verifiable();
+        mRemoteServiceManagerMock
+            .Setup (x => x.SendServiceCall (
+                It.Is<Session>(v => v == this.mSession),
+                It.Is<string>(v => v == "addressbook"),
+                It.Is<string>(v => v == "OnBookmarkAdd"),
+                It.IsAny<PyTuple>(),
+                It.IsAny<PyDictionary> (),
+                It.IsAny<Action <RemoteCall, PyDataType>>(),
+                It.IsAny<Action <RemoteCall>> (),
+                It.IsAny<object>(),
+                It.IsAny<int>()
+            ))
+            .Verifiable();
 
         // create mocks
         this.mBookmarkSvc = new bookmark (mDatabaseMock.Object, mItemsMock.Object, mRemoteServiceManagerMock.Object);

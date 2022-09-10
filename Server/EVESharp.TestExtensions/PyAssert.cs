@@ -1,4 +1,5 @@
-﻿using EVESharp.Types;
+﻿using System.Runtime.CompilerServices;
+using EVESharp.Types;
 using EVESharp.Types.Collections;
 using NUnit.Framework;
 
@@ -649,6 +650,25 @@ public static class PyAssert
     }
 
     /// <summary>
+    /// Asserts the object is a PyDictionary and ensures there's at least the given keys and values found
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="values">Values to expect</param>
+    /// <returns></returns>
+    public static PyDictionary Dict (object data, Dictionary <PyDataType, PyDataType> values)
+    {
+        PyDictionary dict = Type <PyDictionary> (data);
+
+        foreach (KeyValuePair <PyDataType, PyDataType> pair in values)
+        {
+            Assert.IsTrue (dict.TryGetValue (pair.Key, out PyDataType value));
+            Assert.AreEqual (pair.Value, value);
+        }
+
+        return dict;
+    }
+
+    /// <summary>
     /// Ensures that the given key exists inside the dictionary and returns it's value
     /// </summary>
     /// <param name="dict"></param>
@@ -728,5 +748,31 @@ public static class PyAssert
     public static PyObject DictObject (PyDictionary dict, string key, bool isType2 = false)
     {
         return Object (DictKey <PyObject> (dict, key), isType2);
+    }
+    
+    /// <summary>
+    /// Asserts the object is a KeyVal
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    public static PyDictionary KeyVal (object data)
+    {
+        PyObjectData keyval = Type <PyObjectData> (data);
+        PyDictionary dict   = null;
+        
+        Assert.DoesNotThrow (() => dict = EVESharp.EVE.Types.KeyVal.ToDictionary (keyval));
+
+        return EVESharp.EVE.Types.KeyVal.ToDictionary (keyval);
+    }
+
+    /// <summary>
+    /// Asserts the object is a KeyVal and ensures there's at least the given keys and values found
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="values">Values to expect</param>
+    /// <returns></returns>
+    public static PyDictionary KeyVal (object data, Dictionary <PyDataType, PyDataType> values)
+    {
+        return Dict (KeyVal (data), values);
     }
 }

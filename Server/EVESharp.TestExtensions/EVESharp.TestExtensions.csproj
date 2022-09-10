@@ -12,6 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\EVESharp.EVE\EVESharp.EVE.csproj" />
       <ProjectReference Include="..\EVESharp.Types\EVESharp.Types.csproj" />
     </ItemGroup>
 
