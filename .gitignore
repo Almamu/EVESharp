@@ -12,3 +12,4 @@ logs/
 Database/apo15-mysql5-v1.sql
 Database/mapPrecalculatedSolarSystemJumps.sql
 Server/.idea
+Server/EVESharp.Orchestrator/appsettings.Development.json

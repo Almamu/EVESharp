@@ -2,5 +2,5 @@ namespace EVESharp.Orchestrator.Providers;
 
 public class StartupInfoProvider : IStartupInfoProvider
 {
-    public DateTime Time { get; init; }
+    public DateTime Time { get; } = new DateTime ();
 }

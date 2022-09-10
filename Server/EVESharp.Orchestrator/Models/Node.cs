@@ -8,5 +8,5 @@ public class Node
     public int    NodeID        { get; init; }
     public string Role          { get; init; }
     public long   LastHeartBeat { get; init; }
-    public double Load          { get; init; }
+    public double Load          { get; init; } = 0.0f;
 }
