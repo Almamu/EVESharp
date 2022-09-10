@@ -1,7 +1,6 @@
 ﻿using System;
 using EVESharp.Database;
 using EVESharp.EVE.Notifications;
-using EVESharp.Node.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

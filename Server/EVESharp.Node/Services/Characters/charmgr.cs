@@ -1,11 +1,11 @@
 using EVESharp.Database;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Database;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Characters;

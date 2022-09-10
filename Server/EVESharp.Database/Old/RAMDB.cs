@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
-using EVESharp.Database;
 using EVESharp.EVE.Types;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class RAMDB : DatabaseAccessor
 {
@@ -11,7 +10,7 @@ public class RAMDB : DatabaseAccessor
     public Rowset GetRegionDetails (int regionID)
     {
         // TODO: IS THIS REALLY FETCHED FROM THE STATIONS TABLE?
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT" +
             " stationID AS containerID," +
             " stationTypeID AS containerTypeID," +
@@ -30,7 +29,7 @@ public class RAMDB : DatabaseAccessor
 
     public Rowset GetPersonalDetails (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT" +
             " station.stationID AS containerID," +
             " station.stationTypeID AS containerTypeID," +
@@ -49,7 +48,7 @@ public class RAMDB : DatabaseAccessor
     public Rowset AssemblyLinesGet (int containerID)
     {
         // TODO: CHECK FOR PERMISSIONS FIRST!
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT assemblyLineID, assemblyLineTypeID, containerID, nextFreeTime, costInstall, costPerHour, restrictionMask, discountPerGoodStandingPoint, surchargePerBadStandingPoint, minimumStanding, minimumCharSecurity, minimumCorpSecurity, maximumCharSecurity, maximumCorpSecurity FROM ramAssemblyLines WHERE containerID = @containerID",
             new Dictionary <string, object> {{"@containerID", containerID}}
         );
@@ -57,7 +56,7 @@ public class RAMDB : DatabaseAccessor
 
     public Rowset GetJobs2 (int ownerID, bool completed, long fromDate, long toDate)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT" +
             " job.jobID," +
             " job.assemblyLineID," +

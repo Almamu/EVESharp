@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -14,7 +15,6 @@ using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
-using EVESharp.Node.Database;
 using EVESharp.Node.Dogma;
 using EVESharp.Types;
 using EVESharp.Types.Collections;

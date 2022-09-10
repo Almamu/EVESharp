@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Database;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class RepairDB : DatabaseAccessor
 {
@@ -15,7 +14,7 @@ public class RepairDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT invItems.singleton, invItems.nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, insuranceID, invItems.typeID, upgrades.itemID, invItems.locationID AS hasUpgrades FROM invItems LEFT JOIN invItems upgrades ON upgrades.locationID = invItems.itemID AND upgrades.flag >= {(int) Flags.RigSlot0} AND upgrades.flag <= {(int) Flags.RigSlot7} LEFT JOIN chrShipInsurances ON shipID = invItems.itemID LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE invItems.itemID = @itemID AND invItems.locationID = @locationID AND invItems.ownerID = @ownerID",
             new Dictionary <string, object>
@@ -50,13 +49,13 @@ public class RepairDB : DatabaseAccessor
     public void RepackageItem (int itemID, int stationID)
     {
         // remove any rigs inside the item (if any)
-        Database.Prepare (
+        this.Database.Prepare (
             $"DELETE FROM invItems WHERE locationID = @itemID AND flag >= {(int) Flags.RigSlot0} AND flag <= {(int) Flags.RigSlot7}",
             new Dictionary <string, object> {{"@itemID", itemID}}
         );
 
         // move the rest of the items inside the ship to the station the ship is at
-        Database.Prepare (
+        this.Database.Prepare (
             "UPDATE invItems SET locationID = @stationID, flag = @flag WHERE locationID = @itemID",
             new Dictionary <string, object>
             {
@@ -67,7 +66,7 @@ public class RepairDB : DatabaseAccessor
         );
 
         // change singleton
-        Database.Prepare (
+        this.Database.Prepare (
             "UPDATE invItems SET singleton = 0 WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", itemID}}
         );

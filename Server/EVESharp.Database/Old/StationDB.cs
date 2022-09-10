@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class StationDB : DatabaseAccessor
 {
@@ -16,7 +15,7 @@ public class StationDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", stationID}}
@@ -34,7 +33,7 @@ public class StationDB : DatabaseAccessor
 
     public void RentOffice (int corporationID, int stationID, int officeFolderID, long dueDate, double periodCost, int nextBillID)
     {
-        Database.Prepare (
+        this.Database.Prepare (
             "INSERT INTO crpOffices(corporationID, stationID, officeID, officeFolderID, startDate, rentPeriodInDays, periodCost, balanceDueDate, nextBillID)VALUES(@corporationID, @stationID, @officeFolderID, @officeFolderID, @startDate, @rentPeriodInDays, @periodCost, @dueDate, @nextBillID)",
             new Dictionary <string, object>
             {
@@ -52,7 +51,7 @@ public class StationDB : DatabaseAccessor
 
     public PyList <PyPackedRow> GetOfficesList (int stationID)
     {
-        return Database.PreparePackedRowList (
+        return this.Database.PreparePackedRowList (
             "SELECT corporationID, officeID AS itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
@@ -60,7 +59,7 @@ public class StationDB : DatabaseAccessor
 
     public PyDataType GetOfficesOwners (int stationID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT corporationID AS ownerID, itemName AS ownerName, eveNames.typeID FROM crpOffices LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
@@ -69,7 +68,7 @@ public class StationDB : DatabaseAccessor
     public PyDataType GetCorporations (int stationID)
     {
         // TODO: TAKE INTO ACCOUNT CORPORATION'S HEADQUARTERS TOO!
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT corporationID, itemName AS corporationName, corporation.stationID FROM crpOffices LEFT JOIN corporation USING (corporationID) LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE crpOffices.stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
@@ -79,7 +78,7 @@ public class StationDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",
             new Dictionary <string, object>

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Market;
@@ -12,7 +11,7 @@ using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class MarketDB : DatabaseAccessor
 {
@@ -20,7 +19,7 @@ public class MarketDB : DatabaseAccessor
 
     public MarketDB (ITypes types, IDatabaseConnection db) : base (db)
     {
-        Types = types;
+        this.Types = types;
     }
 
     public Rowset GetNewTransactions (int entityID, int? clientID, TransactionType sellBuy, int? typeID, int quantity, int minPrice, int? accountKey)
@@ -59,13 +58,13 @@ public class MarketDB : DatabaseAccessor
             parameters ["@accountKey"] =  (int) accountKey;
         }
 
-        return Database.PrepareRowset (query, parameters);
+        return this.Database.PrepareRowset (query, parameters);
     }
 
     public Rowset GetOrdersForOwner (int ownerID, bool isCorp = false)
     {
         if (isCorp == false)
-            return Database.PrepareRowset (
+            return this.Database.PrepareRowset (
                 "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID AS keyID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE charID = @ownerID AND isCorp = @isCorp",
                 new Dictionary <string, object>
                 {
@@ -74,7 +73,7 @@ public class MarketDB : DatabaseAccessor
                 }
             );
 
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT orderID, typeID, charID, regionID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID AS keyID, duration, isCorp, solarSystemID, escrow FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE corpID = @ownerID AND isCorp = @isCorp",
             new Dictionary <string, object>
             {
@@ -86,7 +85,7 @@ public class MarketDB : DatabaseAccessor
 
     public PyDictionary GetStationAsks (int stationID)
     {
-        return Database.PrepareIntRowDictionary (
+        return this.Database.PrepareIntRowDictionary (
             "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders WHERE stationID = @stationID GROUP BY typeID", 0,
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
@@ -94,7 +93,7 @@ public class MarketDB : DatabaseAccessor
 
     public PyDictionary GetSystemAsks (int solarSystemID)
     {
-        return Database.PrepareIntRowDictionary (
+        return this.Database.PrepareIntRowDictionary (
             "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE solarSystemID = @solarSystemID GROUP BY typeID",
             0,
             new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
@@ -103,7 +102,7 @@ public class MarketDB : DatabaseAccessor
 
     public PyDictionary GetRegionBest (int regionID)
     {
-        return Database.PrepareIntRowDictionary (
+        return this.Database.PrepareIntRowDictionary (
             "SELECT typeID, MAX(price) AS price, volRemaining, stationID FROM mktOrders LEFT JOIN staStations USING (stationID) WHERE regionID = @regionID GROUP BY typeID",
             0,
             new Dictionary <string, object> {{"@regionID", regionID}}
@@ -114,7 +113,7 @@ public class MarketDB : DatabaseAccessor
     {
         return new PyList (2)
         {
-            [0] = Database.PrepareCRowset (
+            [0] = this.Database.PrepareCRowset (
                 "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                 new Dictionary <string, object>
                 {
@@ -124,7 +123,7 @@ public class MarketDB : DatabaseAccessor
                     {"@currentSolarSystem", currentSolarSystem}
                 }
             ),
-            [1] = Database.PrepareCRowset (
+            [1] = this.Database.PrepareCRowset (
                 "SELECT price, volRemaining, typeID, `range`, orderID, volEntered, minVolume, bid, issued, duration, stationID, regionID, solarSystemID, jumps FROM mktOrders LEFT JOIN staStations USING (stationID) LEFT JOIN mapPrecalculatedSolarSystemJumps ON mapPrecalculatedSolarSystemJumps.fromSolarSystemID = solarSystemID WHERE mapPrecalculatedSolarSystemJumps.toSolarSystemID = @currentSolarSystem AND regionID = @regionID AND typeID = @typeID AND bid = @bid",
                 new Dictionary <string, object>
                 {
@@ -166,7 +165,7 @@ public class MarketDB : DatabaseAccessor
     {
         // this one is a messy boy, there is a util.FilterRowset which is just used here presumably
         // due to this being an exclusive case, better build it manually and call it a day
-        Rowset result = Database.PrepareRowset (
+        Rowset result = this.Database.PrepareRowset (
             "SELECT marketGroupID, parentGroupID, marketGroupName, description, graphicID, hasTypes, 0 AS types, 0 AS dataID FROM invMarketGroups ORDER BY parentGroupID"
         );
 
@@ -179,7 +178,7 @@ public class MarketDB : DatabaseAccessor
         IDbConnection connection = null;
         IDataReader   reader     = null;
 
-        reader = Database.Select (ref connection, "SELECT marketGroupID, parentGroupID FROM invMarketGroups");
+        reader = this.Database.Select (ref connection, "SELECT marketGroupID, parentGroupID FROM invMarketGroups");
 
         using (connection)
         using (reader)
@@ -199,7 +198,7 @@ public class MarketDB : DatabaseAccessor
 
         connection = null;
 
-        reader = Database.Select (ref connection, "SELECT marketGroupID, typeID FROM invTypes WHERE marketGroupID IS NOT NULL ORDER BY marketGroupID");
+        reader = this.Database.Select (ref connection, "SELECT marketGroupID, typeID FROM invTypes WHERE marketGroupID IS NOT NULL ORDER BY marketGroupID");
 
         using (connection)
         using (reader)
@@ -257,7 +256,7 @@ public class MarketDB : DatabaseAccessor
 
     public CRowset GetOldPriceHistory (int regionID, int typeID)
     {
-        return Database.PrepareCRowset (
+        return this.Database.PrepareCRowset (
             "SELECT historyDate, lowPrice, highPrice, avgPrice, volume, orders FROM mktHistoryOld WHERE regionID = @regionID AND typeID = @typeID",
             new Dictionary <string, object>
             {
@@ -269,7 +268,7 @@ public class MarketDB : DatabaseAccessor
 
     public CRowset GetNewPriceHistory (int regionID, int typeID)
     {
-        return Database.PrepareCRowset (
+        return this.Database.PrepareCRowset (
             "SELECT transactionDateTime - (transactionDateTime % @dayLength) AS historyDate, MIN(price) AS lowPrice, MAX(price) AS highPrice, AVG(price) AS avgPrice, SUM(quantity) AS volume, COUNT(*) AS orders FROM mktTransactions LEFT JOIN staStations USING (stationID) WHERE regionID = @regionID AND typeID = @typeID AND transactionType = @transactionType GROUP BY historyDate",
             new Dictionary <string, object>
             {
@@ -285,7 +284,7 @@ public class MarketDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT COUNT(*) FROM mktOrders WHERE charID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
@@ -311,14 +310,14 @@ public class MarketDB : DatabaseAccessor
     public IDbConnection AcquireMarketLock ()
     {
         IDbConnection connection = null;
-        Database.GetLock (ref connection, "market");
+        this.Database.GetLock (ref connection, "market");
 
         return connection;
     }
 
     public MarketOrder [] FindMatchingOrders (IDbConnection connection, double price, int typeID, int characterID, int solarSystemID, TransactionType type)
     {
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, jumps, escrow, issued, chrInformation.corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID LEFT JOIN staStations ON staStations.stationID = mktOrders.stationID LEFT JOIN mapPrecalculatedSolarSystemJumps ON staStations.solarSystemID = fromSolarSystemID AND toSolarsystemID = @solarSystemID WHERE bid = @transactionType AND price >= @price AND typeID = @typeID AND charID != @characterID AND `range` >= jumps ORDER BY price",
             new Dictionary <string, object>
@@ -363,7 +362,7 @@ public class MarketDB : DatabaseAccessor
 
     public void UpdateOrderRemainingQuantity (IDbConnection connection, int orderID, int newQuantityRemaining, double escrowCost)
     {
-        Database.Query (
+        this.Database.Query (
             ref connection, "UPDATE mktOrders SET volRemaining = @quantity, escrow = escrow - @escrowCost WHERE orderID = @orderID",
             new Dictionary <string, object>
             {
@@ -376,7 +375,7 @@ public class MarketDB : DatabaseAccessor
 
     public void UpdatePrice (IDbConnection connection, int orderID, double newPrice, double newEscrow)
     {
-        Database.Query (
+        this.Database.Query (
             ref connection, "UPDATE mktOrders SET price = @price, escrow = @escrowCost WHERE orderID = @orderID",
             new Dictionary <string, object>
             {
@@ -389,7 +388,7 @@ public class MarketDB : DatabaseAccessor
 
     public void RemoveOrder (IDbConnection connection, int orderID)
     {
-        Database.Query (
+        this.Database.Query (
             ref connection, "DELETE FROM mktOrders WHERE orderID = @orderID",
             new Dictionary <string, object> {{"@orderID", orderID}}
         );
@@ -410,7 +409,7 @@ public class MarketDB : DatabaseAccessor
             CorporationRole.HangarCanTake5.Is (corporationRoles) ||
             CorporationRole.HangarCanTake6.Is (corporationRoles) ||
             CorporationRole.HangarCanTake7.Is (corporationRoles))
-            reader = Database.Select (
+            reader = this.Database.Select (
                 ref connection,
                 "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, flag, ownerID, locationID FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2 OR locationID = (SELECT officeID FROM crpOffices WHERE corporationID = @corporationID AND stationID = @locationID1)) AND (ownerID = @ownerID1 OR ownerID = @ownerID2)",
                 new Dictionary <string, object>
@@ -425,7 +424,7 @@ public class MarketDB : DatabaseAccessor
                 }
             );
         else
-            reader = Database.Select (
+            reader = this.Database.Select (
                 ref connection,
                 "SELECT invItems.itemID, quantity, singleton, nodeID, IF(valueInt IS NULL, valueFloat, valueInt) AS damage, flag, ownerID, locationID FROM invItems LEFT JOIN invItemsAttributes ON invItemsAttributes.itemID = invItems.itemID AND invItemsAttributes.attributeID = @damageAttributeID WHERE typeID = @typeID AND (locationID = @locationID1 OR locationID = @locationID2) AND (ownerID = @ownerID1 OR ownerID = @ownerID2)",
                 new Dictionary <string, object>
@@ -504,13 +503,13 @@ public class MarketDB : DatabaseAccessor
 
             // the item is just gone, remove it
             if (entry.Quantity == 0)
-                Database.Query (
+                this.Database.Query (
                     ref connection, "DELETE FROM invItems WHERE itemID = @itemID",
                     new Dictionary <string, object> {{"@itemID", itemID}}
                 );
             else
                 // reduce the item quantity available
-                Database.Query (
+                this.Database.Query (
                     ref connection,
                     "UPDATE invItems SET quantity = @quantity WHERE itemID = @itemID",
                     new Dictionary <string, object>
@@ -527,7 +526,7 @@ public class MarketDB : DatabaseAccessor
 
     public void CheckRepackagedItem (IDbConnection connection, int itemID, out bool singleton)
     {
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT singleton FROM invItems WHERE itemID = @itemID",
             new Dictionary <string, object> {{"@itemID", itemID}}
@@ -553,7 +552,7 @@ public class MarketDB : DatabaseAccessor
         int           volEntered, int accountID, long duration,    bool isCorp
     )
     {
-        Database.Query (
+        this.Database.Query (
             ref connection,
             "INSERT INTO mktOrders(typeID, charID, corpID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @characterID, @corporationID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
             new Dictionary <string, object>
@@ -583,7 +582,7 @@ public class MarketDB : DatabaseAccessor
         int           volEntered, int minVolume, int accountID,   long duration,      bool isCorp
     )
     {
-        Database.Query (
+        this.Database.Query (
             ref connection,
             "INSERT INTO mktOrders(typeID, charID, corpID, stationID, `range`, bid, price, volEntered, volRemaining, issued, minVolume, accountID, duration, isCorp, escrow)VALUES(@typeID, @characterID, @corporationID, @stationID, @range, @sell, @price, @volEntered, @volRemaining, @issued, @minVolume, @accountID, @duration, @isCorp, @escrow)",
             new Dictionary <string, object>
@@ -616,12 +615,12 @@ public class MarketDB : DatabaseAccessor
     /// <param name="connection"></param>
     public void ReleaseMarketLock (IDbConnection connection)
     {
-        Database.ReleaseLock (connection, "market");
+        this.Database.ReleaseLock (connection, "market");
     }
 
     public MarketOrder GetOrderById (IDbConnection connection, int orderID)
     {
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE orderID = @orderID",
             new Dictionary <string, object> {{"@orderID", orderID}}
@@ -654,7 +653,7 @@ public class MarketDB : DatabaseAccessor
 
     public List <MarketOrder> GetExpiredOrders (IDbConnection connection)
     {
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT orderID, typeID, charID, mktOrders.stationID AS locationID, price, mktOrders.accountID, volRemaining, minVolume, `range`, escrow, bid, issued, corporationID, isCorp FROM mktOrders LEFT JOIN chrInformation ON charID = characterID WHERE (issued + (duration * @ticksPerHour)) < @currentTime",
             new Dictionary <string, object>

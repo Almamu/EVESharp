@@ -1,9 +1,9 @@
-﻿using EVESharp.EVE.Data.Inventory;
+﻿using EVESharp.Database.Old;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

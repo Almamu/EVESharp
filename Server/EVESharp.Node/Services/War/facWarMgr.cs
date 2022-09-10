@@ -1,4 +1,5 @@
 using System;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
@@ -11,7 +12,6 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
-using EVESharp.Node.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

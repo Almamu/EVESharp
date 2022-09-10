@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -17,11 +18,10 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
-using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
-using ItemDB = EVESharp.Node.Database.ItemDB;
+using ItemDB = EVESharp.Database.Old.ItemDB;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Services.Stations;

@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using EVESharp.Database;
+using EVESharp.Database.Old;
+using EVESharp.EVE.Data.Chat;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
@@ -13,7 +15,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Types;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Chat;
-using EVESharp.Node.Database;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -90,7 +91,7 @@ public class LSC : Service
                     entityID = channelID;
 
                 // get the full channel identifier
-                channelType = ChatDB.CHANNEL_TYPE_NORMAL;
+                channelType = ChannelType.NORMAL;
                 break;
 
             case PyTuple tuple:
@@ -163,7 +164,7 @@ public class LSC : Service
         Rowset    mods            = null;
         Rowset    chars           = null;
 
-        if (typeValue != ChatDB.CHANNEL_TYPE_REGIONID && typeValue != ChatDB.CHANNEL_TYPE_CONSTELLATIONID && typeValue != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2)
+        if (typeValue != ChannelType.REGIONID && typeValue != ChannelType.CONSTELLATIONID && typeValue != ChannelType.SOLARSYSTEMID2)
         {
             mods  = DB.GetChannelMods (actualChannelID);
             chars = DB.GetChannelMembers (actualChannelID, callerCharacterID);
@@ -239,7 +240,7 @@ public class LSC : Service
                 throw new LSCCannotJoin ($"The specified channel cannot be found ({ex.Message}): " + PrettyPrinter.FromDataType (channel));
             }
 
-            if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
+            if (channelType == ChannelType.NORMAL)
                 channelIDExtended = channelID;
             else
                 channelIDExtended = new PyTuple (1)
@@ -253,12 +254,12 @@ public class LSC : Service
 
             // send notifications only on channels that should be receiving notifications
             // we don't want people in local to know about players unless they talk there
-            if (channelType != ChatDB.CHANNEL_TYPE_REGIONID && channelType != ChatDB.CHANNEL_TYPE_CONSTELLATIONID &&
-                channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2)
+            if (channelType != ChannelType.REGIONID && channelType != ChannelType.CONSTELLATIONID &&
+                channelType != ChannelType.SOLARSYSTEMID2)
             {
                 OnLSC joinNotification = new OnLSC (call.Session, "JoinChannel", channelIDExtended, new PyTuple (0));
 
-                if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
+                if (channelType == ChannelType.NORMAL)
                 {
                     if (channelID < ChatDB.MIN_CHANNEL_ENTITY_ID)
                     {
@@ -285,7 +286,7 @@ public class LSC : Service
                 // most of the time this indicates a destroyed channel
                 // so build a destroy notification and let the client know this channel
                 // can be removed from it's lists
-                if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && channelID != entityID)
+                if (channelType == ChannelType.NORMAL && channelID != entityID)
                     // notify all characters in the channel
                     Notifications.NotifyCharacter (callerCharacterID, new OnLSC (call.Session, "DestroyChannel", channelID, new PyTuple (0)));
 
@@ -324,15 +325,15 @@ public class LSC : Service
         }
 
         // ensure the player is allowed to chat in there
-        if (channelType == ChatDB.CHANNEL_TYPE_NORMAL && DB.IsPlayerAllowedToChat (channelID, callerCharacterID) == false)
+        if (channelType == ChannelType.NORMAL && DB.IsPlayerAllowedToChat (channelID, callerCharacterID) == false)
             throw new LSCCannotSendMessage ("Insufficient permissions");
 
-        if (channelType != ChatDB.CHANNEL_TYPE_NORMAL && DB.IsPlayerAllowedToChatOnRelatedEntity ((int) entityID, callerCharacterID) == false)
+        if (channelType != ChannelType.NORMAL && DB.IsPlayerAllowedToChatOnRelatedEntity ((int) entityID, callerCharacterID) == false)
             throw new LSCCannotSendMessage ("Insufficient permissions");
 
         PyTuple notificationBody = new PyTuple (1) {[0] = message};
 
-        if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
+        if (channelType == ChannelType.NORMAL)
         {
             Notifications.NotifyCharacters (
                 DB.GetOnlineCharsOnChannel (channelID),
@@ -412,12 +413,12 @@ public class LSC : Service
             return null;
 
         // TODO: ENSURE THIS CHECK IS CORRECT, FOR SOME REASON IT DOES NOT SIT RIGHT WITH ME (Almamu)
-        if (channelType != ChatDB.CHANNEL_TYPE_CORPID && channelType != ChatDB.CHANNEL_TYPE_SOLARSYSTEMID2 && announce == 1)
+        if (channelType != ChannelType.CORPID && channelType != ChannelType.SOLARSYSTEMID2 && announce == 1)
         {
             // notify everyone in the channel only when it should
             OnLSC leaveNotification = new OnLSC (call.Session, "LeaveChannel", channel, new PyTuple (0));
 
-            if (channelType != ChatDB.CHANNEL_TYPE_NORMAL)
+            if (channelType != ChannelType.NORMAL)
                 Notifications.SendNotification (channelType, new PyList (1) {[0] = channel}, leaveNotification);
             else
                 Notifications.NotifyCharacters (
@@ -445,7 +446,7 @@ public class LSC : Service
         int channelID = (int) DB.CreateChannel (callerCharacterID, null, "Private Channel\\" + name, mailingList);
 
         // join the character to this channel
-        DB.JoinChannel (channelID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
+        DB.JoinChannel (channelID, callerCharacterID, Roles.CREATOR);
 
         Rowset mods  = DB.GetChannelMods (channelID);
         Rowset chars = DB.GetChannelMembers (channelID, callerCharacterID);
@@ -504,7 +505,7 @@ public class LSC : Service
             [2] = null,
             [3] = accessLevel,
             [4] = "",
-            [5] = accessLevel == ChatDB.CHATROLE_CREATOR
+            [5] = accessLevel == Roles.CREATOR
         };
 
         // get users in the channel that are online now
@@ -566,7 +567,7 @@ public class LSC : Service
 
         // you should only be able to invite to global channels as of now
         // TODO: CORP CHANNELS SHOULD BE SUPPORTED TOO
-        if (channelType == ChatDB.CHANNEL_TYPE_NORMAL)
+        if (channelType == ChannelType.NORMAL)
         {
             // notify all the characters in the channel
             Notifications.NotifyCharacters (
@@ -579,9 +580,9 @@ public class LSC : Service
             PyTuple args = new PyTuple (6)
             {
                 [0] = call.ToCharacterID,
-                [1] = ChatDB.CHATROLE_SPEAKER,
+                [1] = Roles.SPEAKER,
                 [2] = null,
-                [3] = ChatDB.CHATROLE_SPEAKER,
+                [3] = Roles.SPEAKER,
                 [4] = "",
                 [5] = false
             };

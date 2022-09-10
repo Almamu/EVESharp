@@ -108,6 +108,10 @@ public abstract class ClientBoundService : BoundService
 
     public override void ClientHasReleasedThisObject (Session session)
     {
+        // ensure the session is the same as the one that created the service
+        if (IsClientAllowedToCall (session) == false)
+            return;
+        
         // first call any freeing code (if any)
         this.OnClientDisconnected ();
         // then tell the bound service that we are not alive anymore

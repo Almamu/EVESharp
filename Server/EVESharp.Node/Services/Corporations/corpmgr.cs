@@ -1,11 +1,11 @@
 ﻿using System;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
-using EVESharp.Node.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -61,8 +61,6 @@ public class corpmgr : Service
         }
 
         throw new Exception ("This asset inventory is not supported yet!");
-
-        return new PyList ();
     }
 
     public PyDataType GetAssetInventoryForLocation (CallInformation call, PyInteger corporationID, PyInteger location, PyString which)

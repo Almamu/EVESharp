@@ -1,7 +1,7 @@
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Services;
-using EVESharp.Node.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Serilog;

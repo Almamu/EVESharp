@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Types;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class SkillDB : DatabaseAccessor
 {
@@ -14,12 +13,12 @@ public class SkillDB : DatabaseAccessor
 
     public SkillDB (IDatabaseConnection db, ItemDB itemDB) : base (db)
     {
-        ItemDB = itemDB;
+        this.ItemDB = itemDB;
     }
 
     public int CreateSkill (Type skill, Character character)
     {
-        return (int) Database.InvCreateItem (
+        return (int) this.Database.InvCreateItem (
             null, skill, character, character, Flags.Skill,
             false, true, 1, null, null, null, null
         );
@@ -27,7 +26,7 @@ public class SkillDB : DatabaseAccessor
 
     public void CreateSkillHistoryRecord (Type skill, Character character, SkillHistoryReason reason, double skillPoints)
     {
-        Database.Prepare (
+        this.Database.Prepare (
             "INSERT INTO chrSkillHistory(characterID, skillTypeID, eventID, logDateTime, absolutePoints)VALUES(@characterID, @skillTypeID, @eventID, @logDateTime, @skillPoints)",
             new Dictionary <string, object>
             {
@@ -42,7 +41,7 @@ public class SkillDB : DatabaseAccessor
 
     public Rowset GetSkillHistory (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT skillTypeID, eventID, logDateTime, absolutePoints FROM chrSkillHistory WHERE characterID=@characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );

@@ -26,14 +26,13 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class InsuranceDB : DatabaseAccessor
 {
@@ -46,7 +45,7 @@ public class InsuranceDB : DatabaseAccessor
 
     public PyList <PyPackedRow> GetContractsForShipsOnStation (int characterID, int stationID)
     {
-        return Database.PreparePackedRowList (
+        return this.Database.PreparePackedRowList (
             "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE chrShipInsurances.ownerID = @characterID AND invItems.locationID = @stationID",
             new Dictionary <string, object>
             {
@@ -58,7 +57,7 @@ public class InsuranceDB : DatabaseAccessor
 
     public PyList <PyPackedRow> GetContractsForShipsOnStationIncludingCorp (int characterID, int corporationID, int stationID)
     {
-        return Database.PreparePackedRowList (
+        return this.Database.PreparePackedRowList (
             "SELECT chrShipInsurances.ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances LEFT JOIN invItems ON invItems.itemID = shipID WHERE (chrShipInsurances.ownerID = @characterID OR chrShipInsurances.ownerID = @corporationID) AND invItems.locationID = @stationID",
             new Dictionary <string, object>
             {
@@ -71,7 +70,7 @@ public class InsuranceDB : DatabaseAccessor
 
     public PyPackedRow GetContractForShip (int characterID, int shipID)
     {
-        return Database.PreparePackedRow (
+        return this.Database.PreparePackedRow (
             "SELECT ownerID, shipID, fraction, startDate, endDate FROM chrShipInsurances WHERE ownerID = @characterID AND shipID = @shipID",
             new Dictionary <string, object>
             {
@@ -88,7 +87,7 @@ public class InsuranceDB : DatabaseAccessor
 
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT COUNT(*) AS insuranceCount, ownerID FROM chrShipInsurances WHERE shipID = @shipID",
             new Dictionary <string, object> {{"@shipID", shipID}}
@@ -114,7 +113,7 @@ public class InsuranceDB : DatabaseAccessor
         // calculate the expiration date based on the game's UI, 12 weeks
         long endDate = expirationDate.ToFileTimeUtc ();
 
-        return (int) Database.PrepareLID (
+        return (int) this.Database.PrepareLID (
             "INSERT INTO chrShipInsurances(ownerID, shipID, fraction, startDate, endDate)VALUES(@characterID, @shipID, @fraction, @startDate, @endDate)",
             new Dictionary <string, object>
             {
@@ -129,7 +128,7 @@ public class InsuranceDB : DatabaseAccessor
 
     public void UnInsureShip (int shipID)
     {
-        Database.Prepare (
+        this.Database.Prepare (
             "DELETE FROM chrShipInsurances WHERE shipID = @shipID",
             new Dictionary <string, object> {{"@shipID", shipID}}
         );
@@ -145,7 +144,7 @@ public class InsuranceDB : DatabaseAccessor
 
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT insuranceID, chrShipInsurances.ownerID, shipID, ship.itemName AS shipName, invItems.typeID AS shipTypeID, eveNames.typeID AS ownerTypeID, startDate FROM chrShipInsurances LEFT JOIN eveNames ON eveNames.itemID = chrShipInsurances.ownerID LEFT JOIN invItems ON invItems.itemID = chrShipInsurances.shipID LEFT JOIN eveNames ship ON eveNames.itemID = shipID WHERE endDate < @currentDate",
             new Dictionary <string, object> {{"@currentDate", currentDate}}
@@ -174,7 +173,7 @@ public class InsuranceDB : DatabaseAccessor
         }
 
         // remove all the insurances from the database
-        Database.Prepare (
+        this.Database.Prepare (
             "DELETE FROM chrShipInsurances WHERE insuranceID < @currentDate",
             new Dictionary <string, object> {{"@currentDate", currentDate}}
         );

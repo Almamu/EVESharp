@@ -25,17 +25,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
-using EVESharp.Database.MySql;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types.Information;
 using EVESharp.EVE.Database;
 using EVESharp.EVE.Types;
-using EVESharp.Node.Data.Inventory.Exceptions;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class ItemDB : DatabaseAccessor
 {
@@ -54,7 +50,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT itemID FROM invItems WHERE locationID = @inventoryID",
             new Dictionary <string, object> {{"@inventoryID", inventoryID}}
@@ -76,7 +72,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT description, tickerName, url, taxRate," +
             " minimumJoinStanding, corporationType, hasPlayerPersonnelManager, sendCharTerminationMessage," +
@@ -148,7 +144,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT allianceID, accountID, activeCloneID, title, chrInformation.description, securityRating," +
             " petitionMessage, logonMinutes, corporationID, roles, rolesAtBase, rolesAtHQ," +
@@ -254,7 +250,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT description, raceIDs, solarSystemID, corporationID, sizeFactor, stationCount," +
             " stationSystemCount, militiaCorporationID" +
@@ -287,7 +283,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT shortName, description, url, executorCorpID, creatorCorpID, creatorCharID, dictatorial FROM crpAlliances WHERE allianceID = @itemID",
             new Dictionary <string, object> {{"@itemID", item.ID}}
@@ -317,7 +313,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT operationID, security, dockingCostPerVolume, maxShipVolumeDockable, officeRentalCost, constellationID, regionID, reprocessingEfficiency, reprocessingStationsTake, reprocessingHangarFlag FROM staStations WHERE stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", item.ID}}
@@ -331,8 +327,8 @@ public class ItemDB : DatabaseAccessor
 
             return new Station
             {
-                Type                     = StationManager.StationTypes [item.Type.ID],
-                Operations               = StationManager.Operations [reader.GetInt32 (0)],
+                Type                     = this.StationManager.StationTypes [item.Type.ID],
+                Operations               = this.StationManager.Operations [reader.GetInt32 (0)],
                 Security                 = reader.GetInt32 (1),
                 DockingCostPerVolume     = reader.GetDouble (2),
                 MaxShipVolumeDockable    = reader.GetDouble (3),
@@ -349,7 +345,7 @@ public class ItemDB : DatabaseAccessor
 
     public ulong CreateShip (Type shipType, ItemEntity location, ItemEntity owner)
     {
-        return Database.InvCreateItem (
+        return this.Database.InvCreateItem (
             $"{owner.Name}'s {shipType.Name}", shipType, owner, location, Flags.Hangar,
             false, true, 1, null, null, null, null
         );
@@ -359,7 +355,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT itemID FROM invItems WHERE locationID = @locationID AND flag != @flag",
             new Dictionary <string, object>
@@ -381,7 +377,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
             new Dictionary <string, object>
@@ -404,7 +400,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT regionID, constellationID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, luminosity, border, fringe, corridor, hub, international, regional, constellation, security, factionID, radius, sunTypeID, securityClass FROM mapSolarSystems WHERE solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", item.ID}}
@@ -451,7 +447,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT regionID, x, y, z, xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapConstellations WHERE constellationID = @constellationID",
             new Dictionary <string, object> {{"@constellationID", item.ID}}
@@ -486,7 +482,7 @@ public class ItemDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT xMin, yMin, zMin, xMax, yMax, zMax, factionID, radius FROM mapRegions WHERE regionID = @regionID",
             new Dictionary <string, object> {{"@regionID", item.ID}}
@@ -515,7 +511,7 @@ public class ItemDB : DatabaseAccessor
 
     public CRowset ListStations (int ownerID, int blueprintsOnly)
     {
-        return Database.PrepareCRowset (
+        return this.Database.PrepareCRowset (
             "SELECT stationID, COUNT(itemID) AS itemCount, COUNT(invBlueprints.itemID) AS blueprintCount " +
             "FROM staStations " +
             "LEFT JOIN invItems ON locationID = stationID " +
@@ -534,7 +530,7 @@ public class ItemDB : DatabaseAccessor
 
     public CRowset ListStationItems (int locationID, int ownerID)
     {
-        return Database.PrepareCRowset (
+        return this.Database.PrepareCRowset (
             "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID " +
             "FROM invItems " +
             "LEFT JOIN invTypes USING(typeID) " +
@@ -551,7 +547,7 @@ public class ItemDB : DatabaseAccessor
 
     public Rowset ListStationBlueprintItems (int locationID, int ownerID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID, copy, productivityLevel, materialLevel, licensedProductionRunsRemaining FROM invItems LEFT JOIN invTypes USING (typeID) LEFT JOIN invGroups USING (groupID) LEFT JOIN invBlueprints USING (itemID) WHERE ownerID = @ownerID AND locationID = @locationID AND categoryID = @blueprintCategoryID",
             new Dictionary <string, object>
             {
@@ -565,7 +561,7 @@ public class ItemDB : DatabaseAccessor
     public Rowset GetClonesForCharacter (int characterID, int activeCloneID)
     {
         // TODO: CACHE THIS IN A INTERMEDIATE TABLE TO MAKE THINGS EASIER TO QUERY
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND itemID != @activeCloneID AND locationID IN(SELECT stationID FROM staStations)",
             new Dictionary <string, object>
             {
@@ -578,7 +574,7 @@ public class ItemDB : DatabaseAccessor
 
     public Rowset GetClonesInShipForCharacter (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT itemID AS jumpCloneID, typeID, locationID FROM invItems WHERE flag = @cloneFlag AND ownerID = @characterID AND locationID NOT IN(SELECT stationID FROM staStations)",
             new Dictionary <string, object>
             {
@@ -590,7 +586,7 @@ public class ItemDB : DatabaseAccessor
 
     public Rowset GetImplantsForCharacterClones (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT invItems.itemID, invItems.typeID, invItems.locationID as jumpCloneID FROM invItems LEFT JOIN invItems second ON invItems.locationID = second.itemID  WHERE invItems.flag = @implantFlag AND second.flag = @cloneFlag AND second.ownerID = @characterID",
             new Dictionary <string, object>
             {

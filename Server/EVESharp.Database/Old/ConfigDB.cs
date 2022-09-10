@@ -1,14 +1,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Database;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class ConfigDB : DatabaseAccessor
 {
@@ -16,7 +15,7 @@ public class ConfigDB : DatabaseAccessor
 
     public ConfigDB (IConstants constants, IDatabaseConnection db) : base (db)
     {
-        Constants = constants;
+        this.Constants = constants;
     }
 
     /// <summary>
@@ -28,7 +27,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT itemID as ownerID, itemName as ownerName, typeID FROM eveNames WHERE itemID IN ({PyString.Join (',', ids)})"
         );
@@ -49,7 +48,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT graphicID, url3D, urlWeb, icon, urlSound, explosionID FROM eveGraphics WHERE graphicID IN ({PyString.Join (',', ids)})"
         );
@@ -70,7 +69,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT itemID as locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID IN ({PyString.Join (',', ids)})"
         );
@@ -91,7 +90,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT allianceID, shortName FROM crpAlliances WHERE allianceID IN ({PyString.Join (',', ids)})"
         );
@@ -112,7 +111,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT corporationID, tickerName, shape1, shape2, shape3, color1, color2, color3 FROM corporation WHERE corporationID IN ({PyString.Join (',', ids)})"
         );
@@ -131,7 +130,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetMap (int solarSystemID)
     {
-        Rowset result = Database.PrepareRowset (
+        Rowset result = this.Database.PrepareRowset (
             "SELECT IF(groupID = 10, (SELECT GROUP_CONCAT(celestialID SEPARATOR ',') FROM mapJumps WHERE stargateID = itemID), NULL) AS destinations, itemID, itemName, typeID, mapDenormalize.x, mapDenormalize.y, mapDenormalize.z, xMin, yMin, zMin, xMax, yMax, zMax, orbitID, luminosity, mapDenormalize.solarSystemID AS locationID FROM mapDenormalize LEFT JOIN mapSolarSystems ON mapSolarSystems.solarSystemID = mapDenormalize.itemID WHERE mapDenormalize.solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
         );
@@ -174,12 +173,12 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public CRowset GetMapObjects (int itemID)
     {
-        if (itemID == Constants.LocationUniverse)
-            return Database.PrepareCRowset (
+        if (itemID == this.Constants.LocationUniverse)
+            return this.Database.PrepareCRowset (
                 $"SELECT groupID, typeID, itemID, itemName, {itemID} as locationID, orbitID, 0 AS connection, x, y, z FROM mapDenormalize WHERE typeID = 3"
             );
 
-        return Database.PrepareCRowset (
+        return this.Database.PrepareCRowset (
             "SELECT groupID, typeID, itemID, itemName, solarSystemID AS locationID, orbitID, 0 AS connection, x, y, z FROM mapDenormalize WHERE solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", itemID}}
         );
@@ -192,7 +191,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetMapOffices (int solarSystemID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT crpOffices.corporationID, crpOffices.stationID FROM crpOffices, staStations WHERE crpOffices.stationID = staStations.stationID AND staStations.solarSystemID = @solarSystemID",
             new Dictionary <string, object> {{"@solarSystemID", solarSystemID}}
         );
@@ -205,7 +204,7 @@ public class ConfigDB : DatabaseAccessor
     /// <returns></returns>
     public CRowset GetCelestialStatistic (int celestialID)
     {
-        return Database.PrepareCRowset (
+        return this.Database.PrepareCRowset (
             "SELECT temperature, spectralClass, luminosity, age, life, orbitRadius, eccentricity, massDust, massGas, fragmented, density, surfaceGravity, escapeVelocity, orbitPeriod, rotationRate, locked, pressure, radius, mass FROM mapCelestialStatistics WHERE celestialID = @celestialID",
             new Dictionary <string, object> {{"@celestialID", celestialID}}
         );
@@ -215,7 +214,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             $"SELECT typeID, groupID, typeName, description, graphicID, radius, mass, volume, capacity, portionSize, raceID, basePrice, published, marketGroupID, chanceOfDuplicating, dataID FROM invTypes WHERE typeID IN ({PyString.Join (',', ids)})"
         );
@@ -229,7 +228,7 @@ public class ConfigDB : DatabaseAccessor
 
     public Rowset GetStationSolarSystemsByOwner (int ownerID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT corporationID, solarSystemID FROM staStations WHERE corporationID = @corporationID",
             new Dictionary <string, object> {{"@corporationID", ownerID}}
         );
@@ -239,7 +238,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT origin.regionID AS fromRegionID, origin.constellationID AS fromConstellationID, origin.solarSystemID AS fromSolarSystemID, stargateID, celestialID, destination.solarSystemID AS toSolarSystemID, destination.constellationID AS toConstellationID, destination.regionID AS toRegionID FROM mapJumps LEFT JOIN mapDenormalize origin ON origin.itemID = mapJumps.stargateID LEFT JOIN mapDenormalize destination ON destination.itemID = mapJumps.celestialID",
             new Dictionary <string, object> {{"@locationID", universeID}}
@@ -274,7 +273,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT fromRegionID, fromConstellationID, toConstellationID, toRegionID FROM mapConstellationJumps WHERE fromRegionID = @locationID",
             new Dictionary <string, object> {{"@locationID", regionID}}
@@ -309,7 +308,7 @@ public class ConfigDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT fromRegionID, fromConstellationID, fromSolarSystemID, toSolarSystemID, toConstellationID, toRegionID FROM mapSolarSystemJumps WHERE fromConstellationID = @locationID",
             new Dictionary <string, object> {{"@locationID", constellationID}}

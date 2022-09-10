@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Database;
 using EVESharp.EVE.Types;
 
-namespace EVESharp.Node.Database;
+namespace EVESharp.Database.Old;
 
 public class StandingDB : DatabaseAccessor
 {
@@ -13,7 +12,7 @@ public class StandingDB : DatabaseAccessor
 
     public Rowset GetStandings (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT toID, standing FROM chrStandings WHERE characterID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
@@ -21,7 +20,7 @@ public class StandingDB : DatabaseAccessor
 
     public Rowset GetPrime (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT itemID as ownerID, itemName as ownerName, typeID FROM chrStandings, eveNames WHERE characterID = @characterID AND eveNames.itemID = chrStandings.toID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
@@ -29,7 +28,7 @@ public class StandingDB : DatabaseAccessor
 
     public Rowset GetNPCStandings (int characterID)
     {
-        return Database.PrepareRowset (
+        return this.Database.PrepareRowset (
             "SELECT fromID, standing FROM chrNPCStandings WHERE characterID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
@@ -86,14 +85,14 @@ public class StandingDB : DatabaseAccessor
             parameters ["@eventDateTime"] =  (long) eventDateTime;
         }
 
-        return Database.PrepareRowset (query, parameters);
+        return this.Database.PrepareRowset (query, parameters);
     }
 
     public double? GetSecurityRating (int characterID)
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT securityRating FROM chrInformation WHERE characterID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
@@ -115,7 +114,7 @@ public class StandingDB : DatabaseAccessor
         int int_3 = 0
     )
     {
-        Database.Prepare (
+        this.Database.Prepare (
             "INSERT INTO chrStandingTransactions (fromID, toID, modification, direction, msg, eventDateTime, eventTypeID, int_1, int_2, int_3)VALUES(@fromID, @toID, @modification, @direction, @msg, @eventDateTime, @eventTypeID, @int_1, @int_2, @int_3)",
             new Dictionary <string, object>
             {
@@ -135,7 +134,7 @@ public class StandingDB : DatabaseAccessor
 
     public void SetPlayerStanding (int fromID, int toID, double value)
     {
-        Database.Prepare (
+        this.Database.Prepare (
             "REPLACE INTO chrStandings(characterID, toID, standing)VALUES(@fromID, @toID, @value)",
             new Dictionary <string, object>
             {
@@ -150,7 +149,7 @@ public class StandingDB : DatabaseAccessor
     {
         IDbConnection connection = null;
 
-        DbDataReader reader = Database.Select (
+        DbDataReader reader = this.Database.Select (
             ref connection,
             "SELECT standing FROM chrStandings WHERE characterID = @fromID AND toID = @toID",
             new Dictionary <string, object>

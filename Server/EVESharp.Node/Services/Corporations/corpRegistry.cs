@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Alliances;
+using EVESharp.EVE.Data.Chat;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -25,7 +27,6 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Chat;
-using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -472,10 +473,10 @@ public class corpRegistry : MultiClientBoundService
             {
                 // join the player to the corp channel
                 ChatDB.JoinEntityChannel (
-                    allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST
+                    allianceID, characterID, characterID == callerCharacterID ? Roles.CREATOR : Roles.CONVERSATIONALIST
                 );
 
-                ChatDB.JoinChannel (allianceID, characterID, characterID == callerCharacterID ? ChatDB.CHATROLE_CREATOR : ChatDB.CHATROLE_CONVERSATIONALIST);
+                ChatDB.JoinChannel (allianceID, characterID, characterID == callerCharacterID ? Roles.CREATOR : Roles.CONVERSATIONALIST);
             }
 
             // perform a session change for all the corp members available
@@ -568,8 +569,8 @@ public class corpRegistry : MultiClientBoundService
                 ChatDB.CreateChannel (corporationID, corporationID, "System Channels\\Corp", true);
                 ChatDB.CreateChannel (corporationID, corporationID, "System Channels\\Corp", false);
                 // join the player to the corp channel
-                ChatDB.JoinEntityChannel (corporationID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
-                ChatDB.JoinChannel (corporationID, callerCharacterID, ChatDB.CHATROLE_CREATOR);
+                ChatDB.JoinEntityChannel (corporationID, callerCharacterID, Roles.CREATOR);
+                ChatDB.JoinChannel (corporationID, callerCharacterID, Roles.CREATOR);
                 // build the notification of corporation change
                 OnCorporationMemberChanged change = new OnCorporationMemberChanged (character.ID, call.Session.CorporationID, corporationID);
 

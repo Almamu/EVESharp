@@ -16,7 +16,7 @@ using EVESharp.Node.Dogma;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Container = EVESharp.EVE.Data.Inventory.Container;
-using ItemDB = EVESharp.Node.Database.ItemDB;
+using ItemDB = EVESharp.Database.Old.ItemDB;
 
 namespace EVESharp.Node.Services.Inventory;
 

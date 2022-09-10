@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Database;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -18,7 +19,6 @@ using EVESharp.EVE.Notifications.Alliances;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Types;
 

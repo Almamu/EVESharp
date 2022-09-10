@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Client.Notifications.Database;
-using EVESharp.Node.Database;
 using EVESharp.Node.Services.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
