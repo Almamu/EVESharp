@@ -16,7 +16,7 @@ builder.Host.UseSerilog ();
 // add controllers
 builder.Services.AddControllers ();
 builder.Services.AddSingleton (Log.Logger);
-builder.Services.AddSingleton (Loader.LoadSection <Database> (builder.Configuration));
+builder.Services.AddSingleton <Database, DatabaseConfiguration> ();
 builder.Services.AddSingleton <IStartupInfoProvider, StartupInfoProvider> ();
 builder.Services.AddSingleton <IDatabaseConnection, DatabaseConnection> ();
 builder.Services.AddSingleton <IClusterRepository, ClusterRepository> ();
