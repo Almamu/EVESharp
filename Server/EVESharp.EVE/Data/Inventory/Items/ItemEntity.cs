@@ -30,9 +30,8 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.Internal;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Exceptions.ship;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Item = EVESharp.EVE.Data.Inventory.Items.Types.Information.Item;
 
 namespace EVESharp.EVE.Data.Inventory.Items;

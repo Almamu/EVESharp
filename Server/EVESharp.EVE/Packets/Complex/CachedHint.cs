@@ -1,7 +1,7 @@
-using EVESharp.PythonTypes;
-using EVESharp.PythonTypes.Marshal;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Common.Checksum;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
+using EVESharp.Types.Serialization;
 
 namespace EVESharp.EVE.Packets.Complex;
 

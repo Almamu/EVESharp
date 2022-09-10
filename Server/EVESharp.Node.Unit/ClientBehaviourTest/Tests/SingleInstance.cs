@@ -1,5 +1,6 @@
 using System.Net.Http;
 using EVESharp.Common.Configuration;
+using EVESharp.Database;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
@@ -11,11 +12,8 @@ using EVESharp.EVE.Services;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Server.Shared.Helpers;
-using EVESharp.Node.Server.Single;
 using EVESharp.Node.Server.Single.Messages;
 using EVESharp.Node.Sessions;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 using Moq;
 using Serilog.Core;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;

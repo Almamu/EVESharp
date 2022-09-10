@@ -26,8 +26,8 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 
 namespace EVESharp.Node.Services.CacheSvc;

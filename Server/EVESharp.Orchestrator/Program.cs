@@ -1,8 +1,7 @@
 using EVESharp.Common.Configuration;
-using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.Orchestrator.Providers;
 using EVESharp.Orchestrator.Repositories;
-using EVESharp.PythonTypes.Database;
 using Serilog;
 using ILogger = Serilog.ILogger;
 

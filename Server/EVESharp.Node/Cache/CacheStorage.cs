@@ -26,15 +26,14 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Common.Database;
+using EVESharp.Database;
+using EVESharp.EVE.Database;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Marshal;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
+using EVESharp.Types.Serialization;
 using Serilog;
 
 namespace EVESharp.Node.Cache;
@@ -213,12 +212,12 @@ public class CacheStorage : DatabaseAccessor, ICacheStorage
         {
             return type switch
             {
-                CacheObjectType.Rowset        => Rowset.FromDataReader (Database, reader),
-                CacheObjectType.CRowset       => CRowset.FromDataReader (Database, reader),
-                CacheObjectType.TupleSet      => TupleSet.FromDataReader (Database, reader),
-                CacheObjectType.PackedRowList => PyPackedRowList.FromDataReader (Database, reader),
-                CacheObjectType.IntIntDict    => IntIntDictionary.FromDataReader (reader),
-                CacheObjectType.IndexRowset   => IndexRowset.FromDataReader (Database, reader, 0),
+                CacheObjectType.Rowset        => reader.Rowset (),
+                CacheObjectType.CRowset       => reader.CRowset (),
+                CacheObjectType.TupleSet      => reader.TupleSet (),
+                CacheObjectType.PackedRowList => reader.PackedRowList (),
+                CacheObjectType.IntIntDict    => reader.IntIntDictionary (),
+                CacheObjectType.IndexRowset   => reader.IndexRowset (0),
                 _                             => null
             };
         }

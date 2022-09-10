@@ -23,13 +23,12 @@ using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using OnCorporationChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationChanged;
 using OnCorporationMemberChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationMemberChanged;
 
@@ -238,7 +237,7 @@ public class corpRegistry : MultiClientBoundService
         if (MembersSparseRowset is null)
         {
             // generate the sparse rowset
-            SparseRowsetHeader rowsetHeader = DB.GetMembersSparseRowset (call.Session.CorporationID);
+            SparseRowset rowsetHeader = DB.GetMembersSparseRowset (call.Session.CorporationID);
 
             PyDictionary dict = new PyDictionary {["realRowCount"] = rowsetHeader.Count};
 
@@ -261,7 +260,7 @@ public class corpRegistry : MultiClientBoundService
         if (OfficesSparseRowset is null)
         {
             // generate the sparse rowset
-            SparseRowsetHeader rowsetHeader = DB.GetOfficesSparseRowset (call.Session.CorporationID);
+            SparseRowset rowsetHeader = DB.GetOfficesSparseRowset (call.Session.CorporationID);
 
             PyDictionary dict = new PyDictionary {["realRowCount"] = rowsetHeader.Count};
 

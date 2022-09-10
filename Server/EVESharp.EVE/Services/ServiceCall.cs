@@ -1,6 +1,6 @@
 ﻿using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
+using EVESharp.EVE.Types.Network;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Services;
 

@@ -23,10 +23,9 @@
 */
 
 using System.Collections.ObjectModel;
+using EVESharp.Database;
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Node.Data.Inventory;
 

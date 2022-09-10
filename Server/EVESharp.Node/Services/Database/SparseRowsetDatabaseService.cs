@@ -1,17 +1,17 @@
 ﻿using System;
+using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Services.Database;
 
 public abstract class SparseRowsetDatabaseService : MultiClientBoundService
 {
-    public SparseRowsetHeader RowsetHeader { get; init; }
+    public SparseRowset RowsetHeader { get; init; }
 
     protected SparseRowsetDatabaseService
-        (SparseRowsetHeader rowsetHeader, BoundServiceManager manager, Session session, bool keepAlive = false) : base (manager, 0, keepAlive)
+        (SparseRowset rowsetHeader, BoundServiceManager manager, Session session, bool keepAlive = false) : base (manager, 0, keepAlive)
     {
         RowsetHeader = rowsetHeader;
     }

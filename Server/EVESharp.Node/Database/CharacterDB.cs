@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Common.Database;
+using EVESharp.Database;
+using EVESharp.Database.MySql;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
+using EVESharp.EVE.Database;
+using EVESharp.EVE.Types;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 
 namespace EVESharp.Node.Database;
@@ -55,7 +55,7 @@ public class CharacterDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return Rowset.FromDataReader (Database, reader);
+            return reader.Rowset ();
         }
     }
 
@@ -91,7 +91,7 @@ public class CharacterDB : DatabaseAccessor
         using (connection)
         using (reader)
         {
-            return Rowset.FromDataReader (Database, reader);
+            return reader.Rowset ();
         }
     }
 

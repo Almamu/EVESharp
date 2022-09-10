@@ -2,9 +2,9 @@
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Types.Network;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Notifications;
 

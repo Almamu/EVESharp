@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Company>Almamu</Company>
+        <Product>eveMarshal</Product>
+        <LangVersion>10</LangVersion>
+        <Nullable>disable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj" />
+      <ProjectReference Include="..\EVESharp.Database.MySql\EVESharp.Database.MySql.csproj" />
+    </ItemGroup>
+
+</Project>

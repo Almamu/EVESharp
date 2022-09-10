@@ -23,9 +23,9 @@
 */
 
 using System;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Types;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Data.Inventory.Items.Types;
 

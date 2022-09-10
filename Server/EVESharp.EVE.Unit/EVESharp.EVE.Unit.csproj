@@ -16,8 +16,12 @@
 
     <ItemGroup>
       <ProjectReference Include="..\EVESharp.EVE\EVESharp.EVE.csproj" />
-      <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj" />
+      <ProjectReference Include="..\EVESharp.Types\EVESharp.Types.csproj" />
       <ProjectReference Include="..\EVESharp.TestExtensions\EVESharp.TestExtensions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Types" />
     </ItemGroup>
 
 </Project>

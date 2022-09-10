@@ -8,9 +8,8 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Client.Notifications.Database;
 using EVESharp.Node.Database;
 using EVESharp.Node.Services.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Services.Corporations;
 
@@ -24,7 +23,7 @@ public class MembersSparseRowsetService : SparseRowsetDatabaseService
 
     public MembersSparseRowsetService
     (
-        Corporation corporation, CorporationDB db, SparseRowsetHeader rowsetHeader, INotificationSender notificationSender, BoundServiceManager manager,
+        Corporation corporation, CorporationDB db, SparseRowset rowsetHeader, INotificationSender notificationSender, BoundServiceManager manager,
         Session     session
     ) : base (rowsetHeader, manager, session, true)
     {

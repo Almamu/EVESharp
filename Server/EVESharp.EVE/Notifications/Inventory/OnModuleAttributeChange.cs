@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 using Attribute = EVESharp.EVE.Data.Inventory.Attributes.Attribute;
 
 namespace EVESharp.EVE.Notifications.Inventory;

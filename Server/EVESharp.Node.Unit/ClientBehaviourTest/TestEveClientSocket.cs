@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using EVESharp.Common.Network.Sockets;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Network.Sockets;
+using EVESharp.Types;
 
 namespace EVESharp.Node.Unit.ClientBehaviourTest;
 

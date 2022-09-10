@@ -1,5 +1,5 @@
 using EVESharp.EVE.Packets;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 using NUnit.Framework;
 using TestExtensions;
 

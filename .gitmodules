@@ -1,0 +1,3 @@
+[submodule "Server/EVESharp.Database.MySql"]
+	path = Server/EVESharp.Database.MySql
+	url = git@github.com:Almamu/EVESharp.Database.MySql.git

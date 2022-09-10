@@ -1,7 +1,7 @@
 using System;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.EVE.Services.Validators;
 

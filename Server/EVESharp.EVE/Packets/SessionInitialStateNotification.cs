@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Packets;
 

@@ -1,8 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using EVESharp.Common.Database;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Database;
 

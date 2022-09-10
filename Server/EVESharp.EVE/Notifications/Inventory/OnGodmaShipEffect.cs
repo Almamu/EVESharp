@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Data.Inventory.Items.Dogma;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.EVE.Notifications.Inventory;
 

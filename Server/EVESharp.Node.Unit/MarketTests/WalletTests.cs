@@ -1,5 +1,4 @@
 using System.Data;
-using System.Runtime.CompilerServices;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
@@ -7,14 +6,10 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Wallet;
-using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Market;
 using EVESharp.Node.Unit.Utils;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 using HarmonyLib;
 using Moq;
-using MySql.Data.MySqlClient;
 using NUnit.Framework;
 
 namespace EVESharp.Node.Unit.MarketTests;

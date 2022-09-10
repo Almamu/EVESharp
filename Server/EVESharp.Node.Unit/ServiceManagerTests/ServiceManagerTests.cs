@@ -10,8 +10,8 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using NUnit.Framework;
 
 namespace EVESharp.Node.Unit.ServiceManagerTests;

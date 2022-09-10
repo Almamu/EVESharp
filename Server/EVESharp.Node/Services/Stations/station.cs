@@ -2,7 +2,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Services.Stations;
 

@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EVESharp.PythonTypes\EVESharp.PythonTypes.csproj" />
+      <ProjectReference Include="..\EVESharp.Types\EVESharp.Types.csproj" />
     </ItemGroup>
 
 </Project>

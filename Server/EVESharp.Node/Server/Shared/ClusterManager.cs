@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Network.Sockets;
 using EVESharp.EVE;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;

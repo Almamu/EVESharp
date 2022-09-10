@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EVESharp.Database;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -10,11 +11,10 @@ using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Types;
 using EVESharp.Node.Database;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Services.Corporations;
 

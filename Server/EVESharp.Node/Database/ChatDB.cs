@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory.Items;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Database;
+using EVESharp.EVE.Types;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Database;
 
@@ -319,7 +319,7 @@ public class ChatDB : DatabaseAccessor
             if (reader.Read () == false)
                 throw new Exception ($"Cannot find channel information for channelID {channelID} and characterID {characterID}");
 
-            return Row.FromDataReader (Database, reader);
+            return reader.Row();
         }
     }
 
@@ -357,7 +357,7 @@ public class ChatDB : DatabaseAccessor
             if (reader.Read () == false)
                 throw new Exception ($"Cannot find channel information for channel related to the entity {relatedEntityID} and characterID {characterID}");
 
-            return Row.FromDataReader (Database, reader);
+            return reader.Row();
         }
     }
 
@@ -433,7 +433,7 @@ public class ChatDB : DatabaseAccessor
             if (reader.Read () == false)
                 return null;
 
-            return Row.FromDataReader (Database, reader);
+            return reader.Row();
         }
     }
 

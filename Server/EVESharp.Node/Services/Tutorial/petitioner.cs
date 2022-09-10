@@ -1,6 +1,6 @@
 ﻿using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Services;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Tutorial;
 

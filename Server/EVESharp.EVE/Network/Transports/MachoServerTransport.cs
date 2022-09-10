@@ -1,8 +1,7 @@
 using System;
 using System.Net.Http;
 using EVESharp.Common.Logging;
-using EVESharp.Common.Network;
-using EVESharp.Common.Network.Sockets;
+using EVESharp.EVE.Network.Sockets;
 using Serilog;
 
 namespace EVESharp.EVE.Network.Transports;

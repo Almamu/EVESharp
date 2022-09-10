@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
-using EVESharp.Common.Database;
+using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
+using EVESharp.EVE.Types;
 
 namespace EVESharp.Node.Database;
 

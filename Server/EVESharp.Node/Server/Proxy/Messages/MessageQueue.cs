@@ -8,11 +8,11 @@ using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Services;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 
 namespace EVESharp.Node.Server.Proxy.Messages;

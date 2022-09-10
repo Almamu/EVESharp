@@ -9,7 +9,7 @@ using EVESharp.EVE.Exceptions.dogma;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 using Environment = EVESharp.EVE.Dogma.Interpreter.Environment;
 
 namespace EVESharp.EVE.Dogma;

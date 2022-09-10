@@ -9,14 +9,13 @@ using EVESharp.EVE.Notifications.Chat;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Types;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Database;
 using EVESharp.Node.Server.Shared.Helpers;
-using EVESharp.PythonTypes;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 
 namespace EVESharp.Node.Services.Chat;

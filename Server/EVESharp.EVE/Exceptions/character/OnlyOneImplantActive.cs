@@ -1,5 +1,5 @@
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Exceptions.character;
 

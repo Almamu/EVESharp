@@ -4,9 +4,9 @@ using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Types.Network;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 
 namespace EVESharp.EVE.Network;

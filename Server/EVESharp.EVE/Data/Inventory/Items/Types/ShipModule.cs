@@ -1,7 +1,7 @@
 ﻿using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory.Items.Dogma;
 using EVESharp.EVE.Dogma;
-using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Data.Inventory.Items.Types;
 

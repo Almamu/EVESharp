@@ -16,12 +16,11 @@ using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using ItemDB = EVESharp.Node.Database.ItemDB;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 

@@ -1,7 +1,7 @@
 ﻿using System;
-using EVESharp.Common.Network.Sockets;
-using EVESharp.EVE.Sessions; 
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Network.Sockets;
+using EVESharp.EVE.Sessions;
+using EVESharp.Types;
 using Serilog;
 
 namespace EVESharp.EVE.Network.Transports;

@@ -14,7 +14,6 @@ using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Server.Single.Messages;
 using EVESharp.Node.Sessions;
 using EVESharp.Node.Unit.Utils;
-using EVESharp.PythonTypes.Types.Database;
 using HarmonyLib;
 using Moq;
 using NUnit.Framework;

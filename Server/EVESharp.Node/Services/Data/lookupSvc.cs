@@ -1,6 +1,6 @@
 ﻿using EVESharp.EVE.Services;
 using EVESharp.Node.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Data;
 

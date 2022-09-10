@@ -25,16 +25,15 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Common.Database;
 using EVESharp.Database;
+using EVESharp.Database.MySql;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types.Information;
+using EVESharp.EVE.Database;
+using EVESharp.EVE.Types;
 using EVESharp.Node.Data.Inventory.Exceptions;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
-using MySql.Data.MySqlClient;
 
 namespace EVESharp.Node.Database;
 

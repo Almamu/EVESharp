@@ -4,14 +4,14 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using EVESharp.Common.Network.Sockets;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Data.Account;
+using EVESharp.EVE.Network.Sockets;
 using EVESharp.EVE.Packets;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Types.Network;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 using Version = EVESharp.EVE.Data.Version;
 

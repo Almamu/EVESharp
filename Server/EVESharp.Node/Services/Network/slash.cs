@@ -15,7 +15,7 @@ using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 using Serilog;
 using Type = EVESharp.EVE.Data.Inventory.Type;
 

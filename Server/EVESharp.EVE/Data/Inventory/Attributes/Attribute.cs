@@ -28,7 +28,7 @@ using System.Globalization;
 using System.IO;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Dogma.Exception;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.EVE.Data.Inventory.Attributes;
 

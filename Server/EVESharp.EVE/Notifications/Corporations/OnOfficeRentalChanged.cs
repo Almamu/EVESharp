@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.EVE.Notifications.Corporations;
 

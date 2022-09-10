@@ -1,5 +1,5 @@
 ﻿using System;
-using EVESharp.Common.Network.Sockets;
+using EVESharp.EVE.Network.Sockets;
 using EVESharp.EVE.Sessions;
 using Serilog;
 

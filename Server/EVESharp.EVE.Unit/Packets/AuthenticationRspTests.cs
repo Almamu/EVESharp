@@ -1,8 +1,8 @@
 using System.Net.Http;
 using EVESharp.EVE.Data;
 using EVESharp.EVE.Packets;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using NUnit.Framework;
 using TestExtensions;
 

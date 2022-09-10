@@ -5,9 +5,9 @@ using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Services;
-using EVESharp.PythonTypes.Types.Network;
 using Serilog;
 
 namespace EVESharp.Node.Server.Single.Messages;

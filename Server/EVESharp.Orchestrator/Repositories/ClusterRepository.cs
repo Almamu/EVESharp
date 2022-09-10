@@ -1,8 +1,6 @@
 using System.Data.Common;
 using EVESharp.Database;
 using EVESharp.Orchestrator.Models;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 
 namespace EVESharp.Orchestrator.Repositories;
 

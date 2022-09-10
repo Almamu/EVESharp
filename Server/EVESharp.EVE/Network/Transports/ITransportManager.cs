@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Common.Configuration;
-using EVESharp.Common.Network;
-using EVESharp.Common.Network.Sockets;
+using EVESharp.EVE.Network.Sockets;
 
 namespace EVESharp.EVE.Network.Transports;
 

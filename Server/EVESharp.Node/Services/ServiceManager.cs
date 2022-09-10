@@ -46,7 +46,7 @@ using EVESharp.Node.Services.Network;
 using EVESharp.Node.Services.Stations;
 using EVESharp.Node.Services.Tutorial;
 using EVESharp.Node.Services.War;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 using Serilog;
 
 namespace EVESharp.Node.Services;

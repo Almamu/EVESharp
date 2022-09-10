@@ -9,12 +9,12 @@ using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Corporations;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 using OnItemChange = EVESharp.Node.Notifications.Nodes.Inventory.OnItemChange;
 

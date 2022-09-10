@@ -13,11 +13,11 @@ using EVESharp.EVE.Notifications.Contracts;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Inventory;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Services.Contracts;

@@ -5,7 +5,7 @@ using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.Node.Unit.ServiceManagerTests;
 

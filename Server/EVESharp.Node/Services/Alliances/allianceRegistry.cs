@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Common.Database;
 using EVESharp.Database;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
+using EVESharp.EVE.Database;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.allianceRegistry;
 using EVESharp.EVE.Exceptions.corpRegistry;
@@ -20,9 +20,7 @@ using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Database;
 using EVESharp.Node.Notifications.Nodes.Corps;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Alliances;
 

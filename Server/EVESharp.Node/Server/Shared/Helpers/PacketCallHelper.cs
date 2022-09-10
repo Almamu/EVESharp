@@ -1,9 +1,9 @@
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Packets.Exceptions;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Services;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Server.Shared.Helpers;
 

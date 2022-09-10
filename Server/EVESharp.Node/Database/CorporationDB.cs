@@ -2,17 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.Common.Database;
+using EVESharp.Database;
+using EVESharp.Database.MySql;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Database;
 using EVESharp.EVE.Exceptions.corpRegistry;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
-using MySql.Data.MySqlClient;
+using EVESharp.EVE.Services;
+using EVESharp.EVE.Types;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Database;
 
@@ -254,7 +255,7 @@ public class CorporationDB : DatabaseAccessor
         );
     }
 
-    public PyList <PyTuple> GetOffices (PyList <PyInteger> itemIDs, int corporationID, SparseRowsetHeader header, Dictionary <PyDataType, int> rowsIndex)
+    public PyList <PyTuple> GetOffices (PyList <PyInteger> itemIDs, int corporationID, SparseRowset header, Dictionary <PyDataType, int> rowsIndex)
     {
         Dictionary <string, object> parameters = new Dictionary <string, object> ();
 
@@ -287,7 +288,7 @@ public class CorporationDB : DatabaseAccessor
 
     public PyList <PyTuple> GetOffices
     (
-        PyString columnName, PyList <PyInteger> itemIDs, int corporationID, SparseRowsetHeader header, Dictionary <PyDataType, int> rowsIndex
+        PyString columnName, PyList <PyInteger> itemIDs, int corporationID, SparseRowset header, Dictionary <PyDataType, int> rowsIndex
     )
     {
         if (columnName != "officeID")
@@ -313,7 +314,7 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public PyList <PyTuple> GetOffices (int corporationID, int startPos, int limit, SparseRowsetHeader header)
+    public PyList <PyTuple> GetOffices (int corporationID, int startPos, int limit, SparseRowset header)
     {
         IDbConnection connection = null;
 
@@ -335,7 +336,7 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public SparseRowsetHeader GetOfficesSparseRowset (int corporationID)
+    public SparseRowset GetOfficesSparseRowset (int corporationID)
     {
         IDbConnection connection = null;
 
@@ -360,9 +361,9 @@ public class CorporationDB : DatabaseAccessor
             FieldType [] fieldTypes = new FieldType[4] {FieldType.I4, FieldType.I4, FieldType.I2, FieldType.I4};
 
             if (reader.Read () == false)
-                return new SparseRowsetHeader (0, headers, fieldTypes);
+                return new SparseRowset (0, headers, fieldTypes);
 
-            return new SparseRowsetHeader (reader.GetInt32 (0), headers, fieldTypes);
+            return new SparseRowset (reader.GetInt32 (0), headers, fieldTypes);
         }
     }
 
@@ -389,7 +390,7 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public PyList <PyTuple> GetMembers (PyList <PyInteger> characterIDs, int corporationID, SparseRowsetHeader header, Dictionary <PyDataType, int> rowsIndex)
+    public PyList <PyTuple> GetMembers (PyList <PyInteger> characterIDs, int corporationID, SparseRowset header, Dictionary <PyDataType, int> rowsIndex)
     {
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
@@ -422,7 +423,7 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public PyList <PyTuple> GetMembers (int corporationID, int startPos, int limit, SparseRowsetHeader header, Dictionary <PyDataType, int> rowsIndex)
+    public PyList <PyTuple> GetMembers (int corporationID, int startPos, int limit, SparseRowset header, Dictionary <PyDataType, int> rowsIndex)
     {
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
@@ -454,7 +455,7 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public PyList <PyTuple> GetMembers (int corporationID, int startPos, int limit, SparseRowsetHeader header)
+    public PyList <PyTuple> GetMembers (int corporationID, int startPos, int limit, SparseRowset header)
     {
         // TODO: GENERATE PROPER FIELDS FOR THE FOLLOWING FIELDS
         // TODO: divisionID, squadronID
@@ -486,7 +487,7 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public SparseRowsetHeader GetMembersSparseRowset (int corporationID)
+    public SparseRowset GetMembersSparseRowset (int corporationID)
     {
         IDbConnection connection = null;
 
@@ -543,9 +544,9 @@ public class CorporationDB : DatabaseAccessor
             };
 
             if (reader.Read () == false)
-                return new SparseRowsetHeader (0, headers, fieldTypes);
+                return new SparseRowset (0, headers, fieldTypes);
 
-            return new SparseRowsetHeader (reader.GetInt32 (0), headers, fieldTypes);
+            return new SparseRowset (reader.GetInt32 (0), headers, fieldTypes);
         }
     }
 

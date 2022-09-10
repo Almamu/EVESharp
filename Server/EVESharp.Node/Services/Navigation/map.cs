@@ -4,10 +4,9 @@ using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Services;
-using EVESharp.Node.Cache;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.EVE.Types;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Service = EVESharp.EVE.Services.Service;
 
 namespace EVESharp.Node.Services.Navigation;

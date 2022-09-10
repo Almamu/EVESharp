@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Sessions;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Notifications;
 

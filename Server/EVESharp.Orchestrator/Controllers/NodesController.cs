@@ -2,8 +2,6 @@ using EVESharp.Database;
 using EVESharp.Orchestrator.Models;
 using EVESharp.Orchestrator.Providers;
 using EVESharp.Orchestrator.Repositories;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EVESharp.Orchestrator.Controllers;

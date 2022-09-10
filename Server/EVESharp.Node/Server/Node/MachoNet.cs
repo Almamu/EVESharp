@@ -1,19 +1,13 @@
-﻿using System.Net.Http;
-using EVESharp.Common.Logging;
-using EVESharp.Database;
+﻿using EVESharp.Database;
 using EVESharp.EVE.Accounts;
-using EVESharp.EVE.Messages;
 using EVESharp.EVE.Messages.Processor;
-using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Configuration;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Database;
-using EVESharp.PythonTypes.Types.Network;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 using Serilog;
 
 namespace EVESharp.Node.Server.Node;

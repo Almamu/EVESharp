@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using EVESharp.PythonTypes.Types.Collections;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Data.Inventory.Items.Dogma;
 

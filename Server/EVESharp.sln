@@ -2,13 +2,13 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Common", "EVESharp.Common\EVESharp.Common.csproj", "{37CAB47C-2395-483B-9E21-947B152A1D19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.PythonTypes", "EVESharp.PythonTypes\EVESharp.PythonTypes.csproj", "{8E8A9A83-05F8-4744-A3CE-7AECBBAE6754}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Types", "EVESharp.Types\EVESharp.Types.csproj", "{8E8A9A83-05F8-4744-A3CE-7AECBBAE6754}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Destiny", "EVESharp.Destiny\EVESharp.Destiny.csproj", "{0CA562B7-141F-40DC-A408-B0BACE964169}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Node", "EVESharp.Node\EVESharp.Node.csproj", "{78C8FBA0-95A0-4FD6-B2E9-80AC22563D76}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.PythonTypes.Unit", "EVESharp.PythonTypes.Unit\EVESharp.PythonTypes.Unit.csproj", "{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Types.Unit", "EVESharp.Types.Unit\EVESharp.Types.Unit.csproj", "{DA7A3801-9E1C-4D6A-A59E-8F9F5704B3E5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Node.Unit", "EVESharp.Node.Unit\EVESharp.Node.Unit.csproj", "{C12534E4-2400-4829-930F-D62E93CF3618}"
 EndProject
@@ -21,6 +21,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.TestExtensions", "EVESharp.TestExtensions\EVESharp.TestExtensions.csproj", "{7F55DA9C-DAB0-40D5-AAA9-5ABBB39B68C5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.EVE.Unit", "EVESharp.EVE.Unit\EVESharp.EVE.Unit.csproj", "{F60E2D87-04D2-4A96-8764-7071FC46F5B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Database.MySql", "EVESharp.Database.MySql\EVESharp.Database.MySql.csproj", "{195EE1CD-2782-4008-B4F2-0929B34C5710}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,5 +74,9 @@ Global
 		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F60E2D87-04D2-4A96-8764-7071FC46F5B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

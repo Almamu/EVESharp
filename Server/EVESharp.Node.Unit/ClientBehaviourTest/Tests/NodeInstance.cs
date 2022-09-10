@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using EVESharp.Common.Configuration;
+using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Data.Account;
@@ -16,8 +17,6 @@ using EVESharp.Node.Server.Node.Messages;
 using EVESharp.Node.Server.Shared;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Sessions;
-using EVESharp.PythonTypes.Database;
-using EVESharp.PythonTypes.Types.Database;
 using Moq;
 using RichardSzalay.MockHttp;
 using Serilog.Core;

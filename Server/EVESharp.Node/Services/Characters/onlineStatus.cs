@@ -2,7 +2,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Database;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Characters;
 

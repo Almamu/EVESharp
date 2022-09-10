@@ -5,8 +5,8 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Primitives;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Services;
 

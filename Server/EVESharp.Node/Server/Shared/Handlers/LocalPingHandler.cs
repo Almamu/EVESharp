@@ -1,8 +1,8 @@
 ﻿using System;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
-using EVESharp.PythonTypes.Types.Collections;
-using EVESharp.PythonTypes.Types.Network;
+using EVESharp.EVE.Types.Network;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Server.Shared.Handlers;
 
