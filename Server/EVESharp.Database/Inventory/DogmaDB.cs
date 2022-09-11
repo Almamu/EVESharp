@@ -12,16 +12,13 @@ public static class DogmaDB
 {
     public static Dictionary <int, Expression> InvDgmLoadExpressions (this IDatabaseConnection Database, ILogger Log)
     {
-        IDbConnection connection = null;
-        DbDataReader reader = Database.Select (
-            ref connection,
+        IDataReader reader = Database.Select (
             "SELECT expressionID, operandID, arg1, arg2, expressionValue, expressionName, expressionAttributeID FROM dgmExpressions ORDER BY arg1, arg2, expressionID"
         );
 
         Dictionary <int, Expression>            expressions  = new Dictionary <int, Expression> ();
         Dictionary <int, DogmaExpressionStruct> databaseLoad = new Dictionary <int, DogmaExpressionStruct> ();
 
-        using (connection)
         using (reader)
         {
             while (reader.Read ())
