@@ -153,35 +153,37 @@ internal class Program
             logEvent =>
             {
                 // check if it should be hidden by default
-                if (logEvent.Properties.TryGetValue (LoggingExtensions.HIDDEN_PROPERTY_NAME, out LogEventPropertyValue value))
-                {
-                    // now check if the name is in the allowed list
-                    string name = "";
+                if (logEvent.Properties.TryGetValue (LoggingExtensions.HIDDEN_PROPERTY_NAME, out LogEventPropertyValue _) == false)
+                    return false;
 
-                    if (logEvent.Properties.TryGetValue ("Name", out LogEventPropertyValue nameProp))
-                        name = nameProp.ToString ();
-                    else if (logEvent.Properties.TryGetValue ("SourceContext", out LogEventPropertyValue sourceContext))
-                        name = sourceContext.ToString ();
+                // now check if the name is in the allowed list
+                string name = "";
 
-                    return !configuration.Logging.EnableChannels.Contains (name);
-                }
+                if (logEvent.Properties.TryGetValue ("Name", out LogEventPropertyValue nameProp))
+                    name = nameProp.ToString ();
+                else if (logEvent.Properties.TryGetValue ("SourceContext", out LogEventPropertyValue sourceContext))
+                    name = sourceContext.ToString ();
 
-                return false;
+                return !configuration.Logging.EnableChannels.Contains (name);
+
             }
         );
 
-        // log to console by default
-        loggerConfiguration.WriteTo.Console (template);
-
-        if (configuration.FileLog.Enabled)
-            loggerConfiguration.WriteTo.File (template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}");
-
-        // TODO: ADD SUPPORT FOR LOGLITE BACK
-
-        return loggerConfiguration.CreateLogger ();
+        // setup all the required logging sinks
+        return loggerConfiguration
+            .WriteTo.Console (template)
+            .WriteTo.Conditional (
+                _ => configuration.FileLog.Enabled,
+                cfg => cfg.File (template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}")
+            )
+            .WriteTo.Conditional (
+                _ => configuration.LogLite.Enabled,
+                cfg => cfg.LogLite (configuration.LogLite)
+            )
+            .CreateLogger ();
     }
 
-    private static Container SetupDIContainer (General configuration, ILogger baseLogger)
+    private static Container SetupDependencyInjection (General configuration, ILogger baseLogger)
     {
         Container container = new Container ();
 
@@ -335,7 +337,7 @@ internal class Program
         // initialize the logging system
         Logger log = SetupLogger (configuration);
         // finally initialize the dependency injection
-        Container dependencies = SetupDIContainer (configuration, log);
+        Container dependencies = SetupDependencyInjection (configuration, log);
 
         using (log)
         {
@@ -356,10 +358,10 @@ internal class Program
                 // wait for all the tasks to be done
                 Task.WaitAll (itemFactory, cacheStorage);
 
-                // register the current machonet handler
+                // register the current machoNet handler
                 IMachoNet machoNet = dependencies.GetInstance <IMachoNet> ();
 
-                // initialize the machonet protocol
+                // initialize the machoNet protocol
                 machoNet.Initialize ();
 
                 // based on the mode do some things with the cluster manager
