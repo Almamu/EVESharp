@@ -170,17 +170,14 @@ internal class Program
         );
 
         // setup all the required logging sinks
-        return loggerConfiguration
-            .WriteTo.Console (template)
-            .WriteTo.Conditional (
-                _ => configuration.FileLog.Enabled,
-                cfg => cfg.File (template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}")
-            )
-            .WriteTo.Conditional (
-                _ => configuration.LogLite.Enabled,
-                cfg => cfg.LogLite (configuration.LogLite)
-            )
-            .CreateLogger ();
+        loggerConfiguration.WriteTo.Console (template);
+            
+        if (configuration.FileLog.Enabled)
+            loggerConfiguration.WriteTo.File (template, $"{configuration.FileLog.Directory}/{configuration.FileLog.LogFile}");
+        if (configuration.LogLite.Enabled)
+            loggerConfiguration.WriteTo.LogLite (configuration.LogLite);
+
+        return loggerConfiguration.CreateLogger ();
     }
 
     private static Container SetupDependencyInjection (General configuration, ILogger baseLogger)
