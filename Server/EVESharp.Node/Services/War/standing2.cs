@@ -5,11 +5,10 @@ using EVESharp.EVE.Data.Standings;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Notifications;
-using EVESharp.EVE.Notifications.Character;
 using EVESharp.EVE.Packets.Complex;
+using EVESharp.EVE.Relationships;
 using EVESharp.EVE.Services;
 using EVESharp.EVE.Services.Validators;
-using EVESharp.Node.Cache;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -23,13 +22,15 @@ public class standing2 : Service
     private         ICacheStorage       CacheStorage  { get; }
     private         IItems              Items         { get; }
     private         INotificationSender Notifications { get; }
+    private         IStandings          Standings     { get; }
 
-    public standing2 (ICacheStorage cacheStorage, StandingDB db, IItems items, INotificationSender notificationSender)
+    public standing2 (ICacheStorage cacheStorage, StandingDB db, IItems items, INotificationSender notificationSender, IStandings standings)
     {
         CacheStorage  = cacheStorage;
         DB            = db;
         this.Items    = items;
         Notifications = notificationSender;
+        Standings     = standings;
     }
 
     public PyTuple GetMyKillRights (CallInformation call)
@@ -56,28 +57,24 @@ public class standing2 : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("standing2", "GetNPCNPCStandings"));
     }
 
-    public PyTuple GetCharStandings (CallInformation call)
+    private PyTuple GetStandingsFor (int entityID)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
         return new PyTuple (3)
         {
-            [0] = DB.GetStandings (callerCharacterID),
-            [1] = DB.GetPrime (callerCharacterID),
-            [2] = DB.GetNPCStandings (callerCharacterID)
+            [0] = DB.GetStandings (entityID),
+            [1] = DB.GetPrime (entityID),
+            [2] = DB.GetNPCStandings (entityID)
         };
+    }
+
+    public PyTuple GetCharStandings (CallInformation call)
+    {
+        return GetStandingsFor (call.Session.CharacterID);
     }
 
     public PyTuple GetCorpStandings (CallInformation call)
     {
-        int corporationID = call.Session.CorporationID;
-
-        return new PyTuple (3)
-        {
-            [0] = DB.GetStandings (corporationID),
-            [1] = DB.GetPrime (corporationID),
-            [2] = DB.GetNPCStandings (corporationID)
-        };
+        return GetStandingsFor (call.Session.CorporationID);
     }
 
     public PyDataType GetStandingTransactions
@@ -97,10 +94,9 @@ public class standing2 : Service
 
     public PyDecimal GetSecurityRating (CallInformation call, PyInteger characterID)
     {
-        if (this.Items.TryGetItem (characterID, out Character character))
-            return character.SecurityRating;
-
-        return DB.GetSecurityRating (characterID);
+        return this.Items.TryGetItem (characterID, out Character character)
+            ? character.SecurityRating
+            : this.DB.GetSecurityRating (characterID);
     }
 
     public PyDataType GetNPCStandingsTo (CallInformation call, PyInteger characterID)
@@ -110,41 +106,15 @@ public class standing2 : Service
 
     public PyDataType SetPlayerStanding (CallInformation call, PyInteger entityID, PyDecimal standing, PyString reason)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
-        DB.CreateStandingTransaction ((int) EventType.StandingPlayerSetStanding, callerCharacterID, entityID, standing, reason);
-        DB.SetPlayerStanding (callerCharacterID, entityID, standing);
-
-        // send the same notification to both players
-        Notifications.NotifyOwners (
-            new PyList <PyInteger> (2)
-            {
-                [0] = callerCharacterID,
-                [1] = entityID
-            },
-            new OnStandingSet (callerCharacterID, entityID, standing)
-        );
-
+        Standings.SetStanding (EventType.StandingPlayerSetStanding, call.Session.CharacterID, entityID, standing, reason);
+        
         return null;
     }
 
     public PyDataType SetCorpStanding (CallInformation call, PyInteger entityID, PyDecimal standing, PyString reason)
     {
-        // check for permissions
-        DB.CreateStandingTransaction ((int) EventType.StandingPlayerCorpSetStanding, call.Session.CorporationID, entityID, standing, reason);
-        DB.SetPlayerStanding (call.Session.CorporationID, entityID, standing);
-
-        // TODO: MAYBE SEND ONSETCORPSTANDING NOTIFICATION?!
-        // send the same notification to both players
-        Notifications.NotifyOwners (
-            new PyList <PyInteger> (2)
-            {
-                [0] = call.Session.CorporationID,
-                [1] = entityID
-            },
-            new OnStandingSet (call.Session.CorporationID, entityID, standing)
-        );
-
+        Standings.SetStanding (EventType.StandingPlayerCorpSetStanding, call.Session.CorporationID, entityID, standing, reason);
+        
         return null;
     }
 }

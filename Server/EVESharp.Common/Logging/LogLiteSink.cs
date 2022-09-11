@@ -185,9 +185,7 @@ public class LogLiteSink : ILogEventSink, IDisposable
             name = value.Substring (value.LastIndexOf ('.') + 1).TrimEnd ('"');
         }
         
-        this.SendTextMessage (
-            logEvent.Level, logEvent.Timestamp, name, message
-        );
+        this.SendTextMessage (logEvent.Level, logEvent.Timestamp, name, message);
     }
 
     public void Dispose ()

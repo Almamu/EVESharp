@@ -92,19 +92,19 @@ public class Marshal
 
         this.Process (this.mWriter, this.mData);
 
-        if (writeHeader && this.mHashToListPosition.Count > 0)
-        {
-            // order the map by the position
-            IOrderedEnumerable <KeyValuePair <int, int>> ordered = this.mHashToListPosition.OrderBy (x => this.mHashToPosition [x.Key]);
+        if (writeHeader == false || this.mHashToListPosition.Count == 0)
+            return;
+        
+        // order the map by the position
+        IOrderedEnumerable <KeyValuePair <int, int>> ordered = this.mHashToListPosition.OrderBy (x => this.mHashToPosition [x.Key]);
 
-            // write the saved element list
-            foreach ((int _, int position) in ordered)
-                this.mWriter.Write (position + 1);
+        // write the saved element list
+        foreach ((int _, int position) in ordered)
+            this.mWriter.Write (position + 1);
 
-            // finally go back to where the count is and write it too
-            this.mWriter.Seek (1, SeekOrigin.Begin);
-            this.mWriter.Write (this.mHashToListPosition.Count);
-        }
+        // finally go back to where the count is and write it too
+        this.mWriter.Seek (1, SeekOrigin.Begin);
+        this.mWriter.Write (this.mHashToListPosition.Count);
     }
 
     /// <summary>
@@ -400,10 +400,10 @@ public class Marshal
         writer.WriteOpcode (Opcode.Dictionary);
         writer.WriteSizeEx (dictionary.Length);
 
-        foreach (PyDictionaryKeyValuePair pair in dictionary)
+        foreach ((PyDataType key, PyDataType value) in dictionary)
         {
-            this.Process (writer, pair.Value);
-            this.Process (writer, pair.Key);
+            this.Process (writer, value);
+            this.Process (writer, key);
         }
     }
 
@@ -506,10 +506,10 @@ public class Marshal
         writer.Write (Specification.PACKED_TERMINATOR);
 
         if (data.Dictionary.Length > 0)
-            foreach (PyDictionaryKeyValuePair <PyDataType, PyDataType> entry in data.Dictionary)
+            foreach ((PyDataType key, PyDataType value) in data.Dictionary)
             {
-                this.Process (writer, entry.Key);
-                this.Process (writer, entry.Value);
+                this.Process (writer, key);
+                this.Process (writer, value);
             }
 
         writer.Write (Specification.PACKED_TERMINATOR);

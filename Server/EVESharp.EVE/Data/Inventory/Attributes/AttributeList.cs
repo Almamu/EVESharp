@@ -86,11 +86,11 @@ public class AttributeList : IEnumerable
     {
         PyDictionary result = new PyDictionary ();
 
-        foreach (KeyValuePair <int, Attribute> attrib in list.mDefaultAttributes)
-            result [attrib.Key] = attrib.Value;
+        foreach ((int attribID, Attribute attrib) in list.mDefaultAttributes)
+            result [attribID] = attrib;
 
-        foreach (KeyValuePair <int, Attribute> attrib in list.mItemAttributes)
-            result [attrib.Key] = attrib.Value;
+        foreach ((int attribID, Attribute attrib) in list.mItemAttributes)
+            result [attribID] = attrib;
 
         return result;
     }

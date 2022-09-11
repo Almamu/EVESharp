@@ -605,8 +605,9 @@ public class skillMgr : ClientBoundService
 
         PyList <PyTuple> modifiers = new PyList <PyTuple> ();
 
-        foreach (KeyValuePair <int, ItemEntity> modifier in Character.Modifiers)
-            if (modifier.Value.Attributes.AttributeExists (attribute))
+        foreach ((int _, ItemEntity modifier) in Character.Modifiers)
+        {
+            if (modifier.Attributes.AttributeExists (attribute))
                 // for now add all the elements as dgmAssModAdd
                 // check ApplyModifiers on attributes.py
                 // TODO: THE THIRD PARAMETER HERE WAS DECIDED RANDOMLY BASED ON THE CODE ITSELF
@@ -615,12 +616,13 @@ public class skillMgr : ClientBoundService
                 modifiers.Add (
                     new PyTuple (4)
                     {
-                        [0] = modifier.Value.ID,
-                        [1] = modifier.Value.Type.ID,
+                        [0] = modifier.ID,
+                        [1] = modifier.Type.ID,
                         [2] = 2,
-                        [3] = modifier.Value.Attributes [attribute]
+                        [3] = modifier.Attributes [attribute]
                     }
                 );
+        }
 
         // search for skills that modify this attribute
         return modifiers;

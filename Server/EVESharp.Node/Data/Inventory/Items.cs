@@ -739,14 +739,14 @@ public class Items : IItems
 
     public void DestroyItems (ConcurrentDictionary <int, ItemEntity> items)
     {
-        foreach (KeyValuePair <int, ItemEntity> pair in items)
-            this.DestroyItem (pair.Value);
+        foreach ((int _, ItemEntity item) in items)
+            this.DestroyItem (item);
     }
 
     public void DestroyItems (Dictionary <int, ItemEntity> items)
     {
-        foreach (KeyValuePair <int, ItemEntity> pair in items)
-            this.DestroyItem (pair.Value);
+        foreach ((int _, ItemEntity item) in items)
+            this.DestroyItem (item);
     }
 
     public void DestroyItems (List <ItemEntity> items)

@@ -659,10 +659,10 @@ public static class PyAssert
     {
         PyDictionary dict = Type <PyDictionary> (data);
 
-        foreach (KeyValuePair <PyDataType, PyDataType> pair in values)
+        foreach ((PyDataType key, PyDataType value) in values)
         {
-            Assert.IsTrue (dict.TryGetValue (pair.Key, out PyDataType value));
-            Assert.AreEqual (pair.Value, value);
+            Assert.IsTrue (dict.TryGetValue (key, out PyDataType cur));
+            Assert.AreEqual (value, cur);
         }
 
         return dict;

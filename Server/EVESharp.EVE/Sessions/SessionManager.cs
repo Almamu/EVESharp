@@ -73,26 +73,26 @@ public abstract class SessionManager : ISessionManager
         SessionChange changes = new SessionChange();
         
         // get the new values and compare which ones have changed
-        foreach (PyDictionaryKeyValuePair<PyString, PyDataType> keypair in values)
+        foreach ((PyString key, PyDataType newValue) in values)
         {
             // check for non-existent values first
-            if (current.TryGetValue(keypair.Key, out PyDataType value) == false)
+            if (current.TryGetValue(key, out PyDataType value) == false)
             {
                 // add the change to the list
-                changes.AddChange(keypair.Key, null, keypair.Value);
+                changes.AddChange(key, null, newValue);
                 // update the session value
-                current[keypair.Key] = keypair.Value;
+                current[key] = newValue;
                 continue;
             }
 
             // value exists, compare them
-            if (value == keypair.Value)
+            if (value == newValue)
                 continue;
 
             // add the change to the list
-            changes.AddChange(keypair.Key, value, keypair.Value);
+            changes.AddChange(key, value, newValue);
             // update the session value
-            current[keypair.Key] = keypair.Value;
+            current[key] = newValue;
         }
         
         // changes should have all the updated values, return the difference so notifications can be sent

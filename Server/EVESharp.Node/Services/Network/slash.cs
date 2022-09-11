@@ -61,8 +61,8 @@ public class slash : Service
     {
         string result = "";
 
-        foreach (KeyValuePair <string, Action <string [], CallInformation>> pair in this.mCommands)
-            result += $"'{pair.Key}',";
+        foreach ((string name, _) in this.mCommands)
+            result += $"'{name}',";
 
         return $"[{result}]";
     }
@@ -204,11 +204,11 @@ public class slash : Service
 
             Dictionary <int, Skill> injectedSkills = character.InjectedSkillsByTypeID;
 
-            foreach (KeyValuePair <int, Type> pair in skillTypes)
+            foreach ((int typeID, Type type) in skillTypes)
                 // skill already injected, train it to the desired level
-                if (injectedSkills.ContainsKey (pair.Key))
+                if (injectedSkills.ContainsKey (typeID))
                 {
-                    Skill skill = injectedSkills [pair.Key];
+                    Skill skill = injectedSkills [typeID];
 
                     skill.Level = level;
                     skill.Persist ();
@@ -218,7 +218,7 @@ public class slash : Service
                 {
                     // skill not injected, create it, inject and done
                     Skill skill = this.Items.CreateSkill (
-                        pair.Value, character, level,
+                        type, character, level,
                         SkillHistoryReason.GMGiveSkill
                     );
 

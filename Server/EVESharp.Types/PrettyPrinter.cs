@@ -216,10 +216,10 @@ public class PrettyPrinter
         this.mIndentation++;
 
         // process all the keys and values
-        foreach (PyDictionaryKeyValuePair pair in dictionary)
+        foreach ((PyDataType key, PyDataType value) in dictionary)
         {
-            this.Process (pair.Key);
-            this.Process (pair.Value);
+            this.Process (key);
+            this.Process (value);
         }
 
         this.mIndentation--;
