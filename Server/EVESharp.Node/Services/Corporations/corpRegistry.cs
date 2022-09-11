@@ -1261,7 +1261,7 @@ public class corpRegistry : MultiClientBoundService
 
         try
         {
-            if (call.Session.CorporationID <= ItemRanges.NPC_CORPORATION_ID_MAX)
+            if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID) == true)
                 if (call.Session.WarFactionID is null)
                     throw new CrpCantQuitDefaultCorporation ();
 

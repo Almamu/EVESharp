@@ -73,7 +73,7 @@ public static class Cache
         "SELECT typeID, requiredTypeID AS materialTypeID, quantity FROM typeActivityMaterials WHERE activityID = 6 AND damagePerJob = 1.0 UNION SELECT productTypeID AS typeID, requiredTypeID AS materialTypeID, quantity FROM typeActivityMaterials JOIN invBlueprintTypes ON typeID = blueprintTypeID WHERE activityID = 1 AND damagePerJob = 1.0",
         "SELECT a.assemblyLineTypeID, b.activityID, a.categoryID, a.timeMultiplier, a.materialMultiplier FROM ramAssemblyLineTypeDetailPerCategory AS a LEFT JOIN ramAssemblyLineTypes AS b ON a.assemblyLineTypeID = b.assemblyLineTypeID",
         "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = 0",
-        $"SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE categoryID = 1 AND itemID < {ItemRanges.USERGENERATED_ID_MIN}",
+        $"SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE categoryID = 1 AND itemID < {ItemRanges.UserGenerated.MIN}",
         "SELECT raceID, raceName, description, graphicID, shortDescription, 0 AS dataID FROM chrRaces",
         "SELECT attributeID, attributeName, description, graphicID FROM chrAttributes",
         "SELECT	typeID, attributeID, IF(valueInt IS NULL, valueFloat, valueInt) AS value FROM dgmTypeAttributes",
@@ -91,7 +91,7 @@ public static class Cache
 #endif
         "SELECT celestialID, description FROM mapCelestialDescriptions",
         "SELECT certificateID, categoryID, classID, grade, iconID, corpID, description, 0 AS dataID FROM crtCertificates",
-        $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Constellation} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Region}) AND itemID < {ItemRanges.USERGENERATED_ID_MIN}",
+        $"SELECT itemID AS locationID, itemName as locationName, x, y, z FROM invItems LEFT JOIN eveNames USING (itemID) LEFT JOIN invPositions USING (itemID) WHERE (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Constellation} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Region}) AND itemID < {ItemRanges.UserGenerated.MIN}",
         "SELECT factionID, typeID, standingLoss, confiscateMinSec, fineByValue, attackMinSec FROM invContrabandTypes",
         "SELECT relationshipID, parentID, parentTypeID, parentLevel, childID, childTypeID FROM crtRelationships",
         "SELECT unitID,unitName,displayName FROM eveUnits",

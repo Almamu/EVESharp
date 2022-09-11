@@ -2,52 +2,120 @@ namespace EVESharp.EVE.Data.Inventory;
 
 public static class ItemRanges
 {
-    public const int FACTION_ID_MIN         = 500000;
-    public const int FACTION_ID_MAX         = 1000000;
-    public const int NPC_CORPORATION_ID_MIN = 1000000;
-    public const int NPC_CORPORATION_ID_MAX = 2000000;
-    public const int CELESTIAL_ID_MIN       = 40000000;
-    public const int CELESTIAL_ID_MAX       = 50000000;
-    public const int SOLARSYSTEM_ID_MIN     = 30000000;
-    public const int SOLARSYSTEM_ID_MAX     = 40000000;
-    public const int STATION_ID_MIN         = 60000000;
-    public const int STATION_ID_MAX         = 70000000;
-    public const int NPC_CHARACTER_ID_MIN   = 10000;
-    public const int NPC_CHARACTER_ID_MAX   = 100000000;
-    public const int USERGENERATED_ID_MIN   = 100000000;
+    public static class Factions
+    {
+        public const int MIN = 500000;
+        public const int MAX = 599999;
+    }
+
+    public static class NPC
+    {
+        public const int MIN = 10001;
+        public const int MAX = 99999999;
+    }
+
+    public static class NPCCorporations
+    {
+        public const int MIN = 1000000;
+        public const int MAX = 1999999;
+    }
+
+    public static class Agents
+    {
+        public const int MIN = 3000000;
+        public const int MAX = 3999999;
+    }
+
+    public static class Regions
+    {
+        public const int MIN = 10000000;
+        public const int MAX = 19999999;
+    }
+
+    public static class Constellations
+    {
+        public const int MIN = 20000000;
+        public const int MAX = 29999999;
+    }
+
+    public static class SolarSystems
+    {
+        public const int MIN = 30000000;
+        public const int MAX = 39999999;
+    }
+
+    public static class Celestials
+    {
+        public const int MIN = 40000000;
+        public const int MAX = 49999999;
+    }
+
+    public static class Stargates
+    {
+        public const int MIN = 50000000;
+        public const int MAX = 59999999;
+    }
+
+    public static class Stations
+    {
+        public const int MIN = 60000000;
+        public const int MAX = 69999999;
+    }
+
+    public static class Asteroids
+    {
+        public const int MIN = 70000000;
+        public const int MAX = 79999999;
+    }
+
+    public static class UserGenerated
+    {
+        public const int MIN = 100000000;
+        public const int MAX = 2099999999;
+    }
+
+    public static class FakeItems
+    {
+        public const int MIN = 2100000000;
+    }
 
     public static bool IsFactionID (int itemID)
     {
-        return itemID >= FACTION_ID_MIN && itemID < FACTION_ID_MAX;
+        return itemID >= Factions.MIN && itemID <= Factions.MAX;
     }
     
     public static bool IsStationID (int itemID)
     {
-        return itemID >= STATION_ID_MIN && itemID < STATION_ID_MAX;
+        return itemID >= Stations.MIN && itemID <= Stations.MAX;
     }
 
     public static bool IsSolarSystemID (int itemID)
     {
-        return itemID >= SOLARSYSTEM_ID_MIN && itemID < SOLARSYSTEM_ID_MAX;
+        return itemID >= SolarSystems.MIN && itemID <= SolarSystems.MAX;
     }
 
     public static bool IsNPCCorporationID (int itemID)
     {
-        return itemID >= NPC_CORPORATION_ID_MIN && itemID < NPC_CORPORATION_ID_MAX;
+        return itemID >= NPCCorporations.MIN && itemID <= NPCCorporations.MAX;
     }
 
     public static bool IsNPC (int itemID)
     {
-        return itemID >= NPC_CHARACTER_ID_MIN && itemID < NPC_CHARACTER_ID_MAX;
+        return itemID >= NPC.MIN && itemID <= NPC.MAX;
     }
 
     public static bool IsCelestialID (int itemID)
     {
-        return itemID >= CELESTIAL_ID_MIN && itemID < CELESTIAL_ID_MAX;
+        return itemID >= Celestials.MIN && itemID <= Celestials.MAX;
     }
 
     public static bool IsStaticData (int itemID)
     {
-        return itemID < USERGENERATED_ID_MIN;
+        return itemID < UserGenerated.MIN;
+    }
+
+    public static bool IsFakeItem (int itemID)
+    {
+        return itemID >= FakeItems.MIN;
     }
 }

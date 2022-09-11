@@ -57,7 +57,7 @@ public static class ItemDB
     public static IEnumerable <Item> InvGetStaticItems (this IDatabaseConnection Database, ITypes types, IAttributes attributes)
     {
         IDataReader reader = Database.Select (
-            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Faction} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.System})"
+            $"SELECT itemID, eveNames.itemName, invItems.typeID, ownerID, locationID, flag, contraband, singleton, quantity, x, y, z, custominfo FROM invItems LEFT JOIN eveNames USING(itemID) LEFT JOIN invPositions USING (itemID) WHERE itemID < {ItemRanges.UserGenerated.MIN} AND (groupID = {(int) GroupID.Station} OR groupID = {(int) GroupID.Faction} OR groupID = {(int) GroupID.SolarSystem} OR groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.System})"
         );
 
         using (reader)
@@ -81,7 +81,7 @@ public static class ItemDB
 
             Item newItem = BuildItemFromReader (Database, reader, types, attributes);
 
-            if (itemID < ItemRanges.USERGENERATED_ID_MIN)
+            if (ItemRanges.IsStaticData (itemID) == true)
                 return newItem;
 
             if (reader.IsDBNull (13) == false && reader.GetInt32 (13) != 0)

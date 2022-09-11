@@ -335,7 +335,7 @@ public class Items : IItems
                 inventory.AddItem (wrapperItem);
 
             // notify the meta inventory manager about the new item only if the item is user-generated
-            if (item.ID >= ItemRanges.USERGENERATED_ID_MIN)
+            if (ItemRanges.IsStaticData (item.ID) == false)
                 this.MetaInventories.OnItemLoaded (wrapperItem);
 
             // ensure the item is in the loaded list

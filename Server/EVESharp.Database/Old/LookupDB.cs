@@ -40,12 +40,12 @@ public class LookupDB : DatabaseAccessor
     {
         if (exact)
             return this.Database.PrepareRowset (
-                $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemRanges.USERGENERATED_ID_MIN} AND groupID = {(int) GroupID.Character} AND itemName = @namePart",
+                $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemRanges.UserGenerated.MIN} AND groupID = {(int) GroupID.Character} AND itemName = @namePart",
                 new Dictionary <string, object> {{"@namePart", namePart}}
             );
 
         return this.Database.PrepareRowset (
-            $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemRanges.USERGENERATED_ID_MIN} AND groupID = {(int) GroupID.Character} AND itemName LIKE @namePart",
+            $"SELECT itemID AS characterID, itemName AS characterName, typeID FROM eveNames WHERE itemID >= {ItemRanges.UserGenerated.MIN} AND groupID = {(int) GroupID.Character} AND itemName LIKE @namePart",
             new Dictionary <string, object> {{"@namePart", namePart + "%"}}
         );
     }
@@ -68,12 +68,12 @@ public class LookupDB : DatabaseAccessor
     {
         if (exact)
             return this.Database.PrepareRowset (
-                $"SELECT itemID AS corporationID, itemName AS corporationName, typeID FROM eveNames WHERE itemID >= {ItemRanges.NPC_CORPORATION_ID_MIN} AND groupID = {(int) GroupID.Corporation} AND itemName = @namePart",
+                $"SELECT itemID AS corporationID, itemName AS corporationName, typeID FROM eveNames WHERE itemID >= {ItemRanges.NPCCorporations.MIN} AND groupID = {(int) GroupID.Corporation} AND itemName = @namePart",
                 new Dictionary <string, object> {{"@namePart", namePart}}
             );
 
         return this.Database.PrepareRowset (
-            $"SELECT itemID AS corporationID, itemName AS corporationName, typeID FROM eveNames WHERE itemID >= {ItemRanges.NPC_CORPORATION_ID_MIN} AND groupID = {(int) GroupID.Corporation} AND itemName LIKE @namePart",
+            $"SELECT itemID AS corporationID, itemName AS corporationName, typeID FROM eveNames WHERE itemID >= {ItemRanges.NPCCorporations.MIN} AND groupID = {(int) GroupID.Corporation} AND itemName LIKE @namePart",
             new Dictionary <string, object> {{"@namePart", namePart + "%"}}
         );
     }
@@ -82,12 +82,12 @@ public class LookupDB : DatabaseAccessor
     {
         if (exact)
             return this.Database.PrepareRowset (
-                $"SELECT itemID AS allianceID, itemName AS allianceName, typeID FROM eveNames WHERE itemID >= {ItemRanges.NPC_CORPORATION_ID_MIN} AND groupID = {(int) GroupID.Alliance} AND itemName = @namePart",
+                $"SELECT itemID AS allianceID, itemName AS allianceName, typeID FROM eveNames WHERE itemID >= {ItemRanges.UserGenerated.MIN} AND groupID = {(int) GroupID.Alliance} AND itemName = @namePart",
                 new Dictionary <string, object> {{"@namePart", namePart}}
             );
 
         return this.Database.PrepareRowset (
-            $"SELECT itemID AS allianceID, itemName AS allianceName, typeID FROM eveNames WHERE itemID >= {ItemRanges.NPC_CORPORATION_ID_MIN} AND groupID = {(int) GroupID.Alliance} AND itemName LIKE @namePart",
+            $"SELECT itemID AS allianceID, itemName AS allianceName, typeID FROM eveNames WHERE itemID >= {ItemRanges.UserGenerated.MIN} AND groupID = {(int) GroupID.Alliance} AND itemName LIKE @namePart",
             new Dictionary <string, object> {{"@namePart", namePart + "%"}}
         );
     }
@@ -124,12 +124,12 @@ public class LookupDB : DatabaseAccessor
     {
         if (exact)
             return this.Database.PrepareRowset (
-                $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE itemID >= {ItemRanges.NPC_CORPORATION_ID_MIN} AND (groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.Alliance}) AND itemName = @namePart",
+                $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE itemID >= {ItemRanges.NPCCorporations.MIN} AND (groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.Alliance}) AND itemName = @namePart",
                 new Dictionary <string, object> {{"@namePart", namePart}}
             );
 
         return this.Database.PrepareRowset (
-            $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE itemID >= {ItemRanges.NPC_CORPORATION_ID_MIN} AND (groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.Alliance}) AND itemName LIKE @namePart",
+            $"SELECT itemID as ownerID, itemName AS ownerName, typeID, groupID FROM eveNames WHERE itemID >= {ItemRanges.NPCCorporations.MIN} AND (groupID = {(int) GroupID.Corporation} OR groupID = {(int) GroupID.Alliance}) AND itemName LIKE @namePart",
             new Dictionary <string, object> {{"@namePart", namePart + "%"}}
         );
     }
@@ -151,7 +151,7 @@ public class LookupDB : DatabaseAccessor
     public Rowset LookupKnownLocationsByGroup (string namePart, int groupID)
     {
         return this.Database.PrepareRowset (
-            $"SELECT itemID, itemName, typeID FROM eveNames WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND groupID = {groupID} AND itemName LIKE @namePart",
+            $"SELECT itemID, itemName, typeID FROM eveNames WHERE itemID < {ItemRanges.UserGenerated.MIN} AND groupID = {groupID} AND itemName LIKE @namePart",
             new Dictionary <string, object> {{"@namePart", namePart + "%"}}
         );
     }
@@ -160,12 +160,12 @@ public class LookupDB : DatabaseAccessor
     {
         if (exact)
             return this.Database.PrepareRowset (
-                $"SELECT itemID AS locationID, itemName AS locationName, typeID FROM eveNames WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND groupID = {(int) GroupID.Faction} AND itemName = @namePart",
+                $"SELECT itemID AS locationID, itemName AS locationName, typeID FROM eveNames WHERE itemID < {ItemRanges.UserGenerated.MIN} AND groupID = {(int) GroupID.Faction} AND itemName = @namePart",
                 new Dictionary <string, object> {{"@namePart", namePart}}
             );
 
         return this.Database.PrepareRowset (
-            $"SELECT itemID AS locationID, itemName AS locationName, typeID FROM eveNames WHERE itemID < {ItemRanges.USERGENERATED_ID_MIN} AND groupID = {(int) GroupID.Faction} AND itemName LIKE @namePart",
+            $"SELECT itemID AS locationID, itemName AS locationName, typeID FROM eveNames WHERE itemID < {ItemRanges.UserGenerated.MIN} AND groupID = {(int) GroupID.Faction} AND itemName LIKE @namePart",
             new Dictionary <string, object> {{"@namePart", namePart + "%"}}
         );
     }
