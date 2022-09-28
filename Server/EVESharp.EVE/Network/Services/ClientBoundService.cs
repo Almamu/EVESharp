@@ -3,7 +3,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public abstract class ClientBoundService : BoundService
 {
@@ -16,7 +16,7 @@ public abstract class ClientBoundService : BoundService
     /// Creates a base bound service to no client to be used as a normal service
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
-    public ClientBoundService (BoundServiceManager manager) : base (manager) { }
+    protected ClientBoundService (IBoundServiceManager manager) : base (manager) { }
 
     /// <summary>
     /// Creates a bound service to the given objectID
@@ -24,7 +24,7 @@ public abstract class ClientBoundService : BoundService
     /// <param name="manager">The bound service manager used by this service</param>
     /// <param name="session">The client that it belongs to</param>
     /// <param name="objectID">The object it's bound to</param>
-    public ClientBoundService (BoundServiceManager manager, Session session, int objectID) : base (manager, objectID)
+    protected ClientBoundService (IBoundServiceManager manager, Session session, int objectID) : base (manager, objectID)
     {
         Session = session;
     }
@@ -40,7 +40,7 @@ public abstract class ClientBoundService : BoundService
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected override PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo)
+    protected override PyDataType MachoBindObject (ServiceCall call, ServiceBindParams bindParams, PyDataType callInfo)
     {
         // TODO: ensure that the request is at the right node and throw an util.UpdateMoniker if it's not right
         // create the bound instance and register it in the bound services
@@ -52,7 +52,7 @@ public abstract class ClientBoundService : BoundService
         BoundServiceInformation = new PyTuple (2)
         {
             [0] = instance.BoundString,
-            [1] = DateTime.UtcNow.Add (TimeSpan.FromDays (1)).ToFileTime ()
+            [1] = Guid.NewGuid ().ToString() // ReferenceID, this should be unique
         };
 
         // after the service is bound the call can be run (if required)
@@ -61,6 +61,9 @@ public abstract class ClientBoundService : BoundService
             [0] = new PySubStruct (new PySubStream (BoundServiceInformation)),
             [1] = null
         };
+        
+        // ensure the session is properly registered in the session manager
+        BoundServiceManager.MachoNet.SessionManager.RegisterSession (call.Session);
 
         if (callInfo is not null)
         {
@@ -69,7 +72,7 @@ public abstract class ClientBoundService : BoundService
             PyTuple      arguments      = data [1] as PyTuple;
             PyDictionary namedArguments = data [2] as PyDictionary;
 
-            CallInformation callInformation = new CallInformation
+            ServiceCall callInformation = new ServiceCall
             {
                 MachoNet            = call.MachoNet,
                 CallID              = call.CallID,
@@ -97,7 +100,7 @@ public abstract class ClientBoundService : BoundService
     /// <param name="bindParams">The information required for the instantiation</param>
     /// <returns>The new boudn service</returns>
     /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-    protected abstract BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams);
+    protected abstract BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams);
 
     protected virtual void OnClientDisconnected () { }
 

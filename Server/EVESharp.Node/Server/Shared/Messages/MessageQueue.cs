@@ -3,8 +3,8 @@ using EVESharp.EVE.Messages;
 using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Notifications;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Server.Shared.Handlers;
 using EVESharp.Node.Server.Shared.Helpers;
@@ -23,13 +23,13 @@ public abstract class MessageQueue : MessageQueue <MachoMessage>
     protected LocalPingHandler         LocalPingHandler         { get; }
     protected LocalNotificationHandler LocalNotificationHandler { get; }
     protected ServiceManager           ServiceManager           { get; }
-    protected BoundServiceManager      BoundServiceManager      { get; }
+    protected IBoundServiceManager     BoundServiceManager      { get; }
     protected ISessionManager          SessionManager           { get; }
-    protected IRemoteServiceManager     RemoteServiceManager     { get; }
+    protected IRemoteServiceManager    RemoteServiceManager     { get; }
 
     protected MessageQueue
     (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, IBoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
         PacketCallHelper packetCallHelper, IItems items, ISolarSystems solarSystems, INotificationSender notifications, ISessionManager sessionManager
     )
     {

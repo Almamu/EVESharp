@@ -1,4 +1,4 @@
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -8,7 +8,7 @@ public class userSvc : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    public PyList GetRedeemTokens (CallInformation call)
+    public PyList GetRedeemTokens (ServiceCall call)
     {
         // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
         // tokens structure
@@ -23,13 +23,13 @@ public class userSvc : Service
         return new PyList ();
     }
 
-    public PyDataType ClaimRedeemTokens (CallInformation call, PyList tokens, PyInteger characterID)
+    public PyDataType ClaimRedeemTokens (ServiceCall call, PyList tokens, PyInteger characterID)
     {
         // TODO: IMPLEMENT SUPPORT FOR USER REWARDS
         return null;
     }
 
-    public PyDataType ConvertETCToPilotLicence (CallInformation call, PyString code)
+    public PyDataType ConvertETCToPilotLicence (ServiceCall call, PyString code)
     {
         return null;
     }

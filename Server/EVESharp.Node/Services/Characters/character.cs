@@ -35,10 +35,10 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Chat;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
@@ -91,34 +91,34 @@ public class character : Service
     }
 
     [MustNotBeCharacter]
-    public PyDataType GetCharactersToSelect (CallInformation call)
+    public PyDataType GetCharactersToSelect (ServiceCall call)
     {
         return DB.GetCharacterList (call.Session.UserID);
     }
 
     [MustNotBeCharacter]
-    public PyDataType LogStartOfCharacterCreation (CallInformation call)
+    public PyDataType LogStartOfCharacterCreation (ServiceCall call)
     {
         return null;
     }
 
-    public PyDataType GetCharCreationInfo (CallInformation call)
+    public PyDataType GetCharCreationInfo (ServiceCall call)
     {
         return CacheStorage.GetHints (EVE.Data.Cache.CreateCharacterCacheTable);
     }
 
-    public PyDataType GetAppearanceInfo (CallInformation call)
+    public PyDataType GetAppearanceInfo (ServiceCall call)
     {
         return CacheStorage.GetHints (EVE.Data.Cache.CharacterAppearanceCacheTable);
     }
 
-    public PyDataType GetCharNewExtraCreationInfo (CallInformation call)
+    public PyDataType GetCharNewExtraCreationInfo (ServiceCall call)
     {
         return new PyDictionary ();
     }
 
     [MustNotBeCharacter]
-    public PyInteger ValidateNameEx (CallInformation call, PyString name)
+    public PyInteger ValidateNameEx (ServiceCall call, PyString name)
     {
         string characterName = name;
 
@@ -248,7 +248,7 @@ public class character : Service
 
     private Character CreateCharacter
     (
-        CallInformation call, string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime
+        ServiceCall call, string characterName, Ancestry ancestry, int genderID, PyDictionary appearance, long currentTime
     )
     {
         // load the item into memory
@@ -296,7 +296,7 @@ public class character : Service
     [MustNotBeCharacter]
     public PyDataType CreateCharacter2
     (
-        CallInformation call, PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
+        ServiceCall call, PyString characterName, PyInteger bloodlineID, PyInteger genderID, PyInteger ancestryID,
         PyDictionary    appearance
     )
     {
@@ -423,7 +423,7 @@ public class character : Service
     }
 
     [MustNotBeCharacter]
-    public PyDataType GetCharacterToSelect (CallInformation call, PyInteger characterID)
+    public PyDataType GetCharacterToSelect (ServiceCall call, PyInteger characterID)
     {
         return DB.GetCharacterSelectionInfo (characterID, call.Session.UserID);
     }
@@ -431,14 +431,14 @@ public class character : Service
     [MustNotBeCharacter]
     public PyDataType SelectCharacterID
     (
-        CallInformation call, PyInteger characterID, PyBool loadDungeon, PyDataType secondChoiceID
+        ServiceCall call, PyInteger characterID, PyBool loadDungeon, PyDataType secondChoiceID
     )
     {
         return this.SelectCharacterID (call, characterID, loadDungeon == true ? 1 : 0, secondChoiceID);
     }
 
     [MustNotBeCharacter]
-    public PyDataType SelectCharacterID (CallInformation call, PyInteger characterID)
+    public PyDataType SelectCharacterID (ServiceCall call, PyInteger characterID)
     {
         return this.SelectCharacterID (call, characterID, 0, 0);
     }
@@ -448,7 +448,7 @@ public class character : Service
     [MustNotBeCharacter]
     public PyDataType SelectCharacterID
     (
-        CallInformation call, PyInteger characterID, PyInteger loadDungeon, PyDataType secondChoiceID
+        ServiceCall call, PyInteger characterID, PyInteger loadDungeon, PyDataType secondChoiceID
     )
     {
         // ensure the character belongs to the current account
@@ -525,19 +525,19 @@ public class character : Service
         return null;
     }
 
-    public PyDataType Ping (CallInformation call)
+    public PyDataType Ping (ServiceCall call)
     {
         return call.Session.UserID;
     }
 
     [MustBeCharacter]
-    public PyDataType GetOwnerNoteLabels (CallInformation call)
+    public PyDataType GetOwnerNoteLabels (ServiceCall call)
     {
         return DB.GetOwnerNoteLabels (call.Session.CharacterID);
     }
 
     [MustBeCharacter]
-    public PyDataType GetCloneTypeID (CallInformation call)
+    public PyDataType GetCloneTypeID (ServiceCall call)
     {
         // TODO: FETCH THIS FROM THE DATABASE INSTEAD
         // return character.ActiveClone.Type.ID;
@@ -545,7 +545,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetHomeStation (CallInformation call)
+    public PyDataType GetHomeStation (ServiceCall call)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -558,7 +558,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetCharacterDescription (CallInformation call, PyInteger characterID)
+    public PyDataType GetCharacterDescription (ServiceCall call, PyInteger characterID)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -566,7 +566,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType SetCharacterDescription (CallInformation call, PyString newBio)
+    public PyDataType SetCharacterDescription (ServiceCall call, PyString newBio)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -577,7 +577,7 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetRecentShipKillsAndLosses (CallInformation call, PyInteger count, PyInteger startIndex)
+    public PyDataType GetRecentShipKillsAndLosses (ServiceCall call, PyInteger count, PyInteger startIndex)
     {
         // limit number of records to 100 at maximum
         if (count > 100)
@@ -586,7 +586,7 @@ public class character : Service
         return DB.GetRecentShipKillsAndLosses (call.Session.CharacterID, count, startIndex);
     }
 
-    public PyDataType GetCharacterAppearanceList (CallInformation call, PyList ids)
+    public PyDataType GetCharacterAppearanceList (ServiceCall call, PyList ids)
     {
         PyList result = new PyList (ids.Count);
 
@@ -606,20 +606,20 @@ public class character : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetNote (CallInformation call, PyInteger characterID)
+    public PyDataType GetNote (ServiceCall call, PyInteger characterID)
     {
         return Database.ChrGetNote (characterID, call.Session.CharacterID);
     }
 
     [MustBeCharacter]
-    public PyDataType SetNote (CallInformation call, PyInteger characterID, PyString note)
+    public PyDataType SetNote (ServiceCall call, PyInteger characterID, PyString note)
     {
         Database.ChrSetNote (characterID, call.Session.CharacterID, note);
 
         return null;
     }
 
-    public PyDataType GetFactions (CallInformation call)
+    public PyDataType GetFactions (ServiceCall call)
     {
         PyList result = new PyList ();
 

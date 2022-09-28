@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Exceptions;
 using EVESharp.EVE.Network.Transports;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using Serilog;
@@ -17,19 +17,23 @@ namespace EVESharp.Node.Services;
 /// These bound objects are usually stateful services that keep information about the player,
 /// location, items, etc, and is used as a way of managing the resources
 /// </summary>
-public class BoundServiceManager : IServiceManager <int>
+public class BoundServiceManager : IBoundServiceManager
 {
     private int                            mNextBoundID = 1;
-    public  IMachoNet                      MachoNet      { get; }
-    public  Dictionary <int, BoundService> BoundServices { get; } = new Dictionary <int, BoundService> ();
-    private ILogger                        Log           { get; }
+    public  IMachoNet                      MachoNet       { get; }
+    public  Dictionary <int, BoundService> BoundServices  { get; } = new Dictionary <int, BoundService> ();
+    private ILogger                        Log            { get; }
+    private ISessionManager                SessionManager { get; }
 
-    public BoundServiceManager (IMachoNet machoNet, ILogger logger)
+    public BoundServiceManager (IMachoNet machoNet, ILogger logger, ISessionManager sessionManager)
     {
-        MachoNet = machoNet;
-        Log      = logger;
+        MachoNet       = machoNet;
+        Log            = logger;
+        SessionManager = sessionManager;
         // register on transport closed so proxies and single-instance servers cleanup properly
         MachoNet.TransportManager.TransportRemoved += this.OnTransportRemoved;
+        // register session freeing so proxies and single-instance server cleanup properly
+        SessionManager.OnSessionFreed += this.OnClientDisconnected;
     }
 
     /// <summary>
@@ -87,22 +91,6 @@ public class BoundServiceManager : IServiceManager <int>
         }
     }
 
-    /// <summary>
-    /// Removes the given boundID service off the list
-    /// </summary>
-    /// <param name="boundID"></param>
-    public void FreeBoundService (int boundID)
-    {
-        Log.Debug ($"Freeing bound service {boundID}");
-
-        // TODO: TAKE INTO ACCOUNT THE KEEPALIVE OR DELEGATE THIS TO THE BOUND SERVICE ITSELF
-
-        lock (BoundServices)
-        {
-            BoundServices.Remove (boundID);
-        }
-    }
-
     /// <param name="boundID">The boundID to generate the string for</param>
     /// <returns>A string representation of the given boundID</returns>
     public string BuildBoundServiceString (int boundID)
@@ -141,7 +129,7 @@ public class BoundServiceManager : IServiceManager <int>
         }
     }
 
-    public void OnTransportRemoved (IMachoTransport transport)
+    private void OnTransportRemoved (IMachoTransport transport)
     {
         if (transport is not MachoClientTransport clientTransport)
             return;

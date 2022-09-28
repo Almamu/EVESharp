@@ -7,10 +7,10 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Clones;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
@@ -36,7 +36,7 @@ public class jumpCloneSvc : ClientBoundService
     public jumpCloneSvc
     (
         ItemDB        itemDB,       MarketDB marketDB, IItems              items,
-        ISolarSystems solarSystems, IWallets wallets,  INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database
+        ISolarSystems solarSystems, IWallets wallets,  INotificationSender notificationSender, IBoundServiceManager manager, IDatabaseConnection database
     ) : base (manager)
     {
         ItemDB            = itemDB;
@@ -50,8 +50,8 @@ public class jumpCloneSvc : ClientBoundService
 
     protected jumpCloneSvc
     (
-        int           locationID,   ItemDB              itemDB,  MarketDB marketDB, IItems              items,
-        ISolarSystems solarSystems, BoundServiceManager manager, IWallets wallets,  INotificationSender notificationSender, Session session
+        int           locationID,   ItemDB               itemDB, MarketDB marketDB, IItems items,
+        ISolarSystems solarSystems, IBoundServiceManager manager, IWallets wallets,  INotificationSender notificationSender, Session session
     ) : base (manager, session, locationID)
     {
         ItemDB            = itemDB;
@@ -72,7 +72,7 @@ public class jumpCloneSvc : ClientBoundService
         Notifications.NotifyCharacter (characterID, new OnJumpCloneCacheInvalidated ());
     }
 
-    public PyDataType GetCloneState (CallInformation call)
+    public PyDataType GetCloneState (ServiceCall call)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -88,7 +88,7 @@ public class jumpCloneSvc : ClientBoundService
         );
     }
 
-    public PyDataType DestroyInstalledClone (CallInformation call, PyInteger jumpCloneID)
+    public PyDataType DestroyInstalledClone (ServiceCall call, PyInteger jumpCloneID)
     {
         // if the clone is not loaded the clone cannot be removed, players can only remove clones from where they're at
         int callerCharacterID = call.Session.CharacterID;
@@ -111,19 +111,19 @@ public class jumpCloneSvc : ClientBoundService
         return null;
     }
 
-    public PyDataType GetShipCloneState (CallInformation call)
+    public PyDataType GetShipCloneState (ServiceCall call)
     {
         return ItemDB.GetClonesInShipForCharacter (call.Session.CharacterID);
     }
 
-    public PyDataType CloneJump (CallInformation call, PyInteger locationID, PyBool unknown)
+    public PyDataType CloneJump (ServiceCall call, PyInteger locationID, PyBool unknown)
     {
         // TODO: IMPLEMENT THIS CALL PROPERLY, INVOLVES SESSION CHANGES
         // TODO: AND SEND PROPER NOTIFICATION AFTER A JUMP CLONE OnJumpCloneTransitionCompleted
         return null;
     }
 
-    public PyInteger GetPriceForClone (CallInformation call)
+    public PyInteger GetPriceForClone (ServiceCall call)
     {
         // TODO: CALCULATE THIS ON POS, AS THIS VALUE IS STATIC OTHERWISE
 
@@ -132,7 +132,7 @@ public class jumpCloneSvc : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType InstallCloneInStation (CallInformation call)
+    public PyDataType InstallCloneInStation (ServiceCall call)
     {
         int callerCharacterID = call.Session.CharacterID;
         int stationID         = call.Session.StationID;
@@ -181,7 +181,7 @@ public class jumpCloneSvc : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -191,7 +191,7 @@ public class jumpCloneSvc : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

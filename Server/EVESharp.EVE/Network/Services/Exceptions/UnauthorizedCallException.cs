@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EVESharp.EVE.Services.Exceptions;
+namespace EVESharp.EVE.Network.Services.Exceptions;
 
 public class UnauthorizedCallException<T> : Exception
 {
@@ -10,7 +10,7 @@ public class UnauthorizedCallException<T> : Exception
 
     public UnauthorizedCallException(T service, string call, ulong roles)
     {
-        Service = service;
-        Call = call;
+        this.Service = service;
+        this.Call    = call;
     }
 }

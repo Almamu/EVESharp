@@ -9,11 +9,11 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions.slash;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Skills;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using Serilog;
@@ -25,8 +25,8 @@ namespace EVESharp.Node.Services.Network;
 [MustHaveRole (Roles.ROLE_ADMIN)]
 public class slash : Service
 {
-    private readonly Dictionary <string, Action <string [], CallInformation>> mCommands =
-        new Dictionary <string, Action <string [], CallInformation>> ();
+    private readonly Dictionary <string, Action <string [], ServiceCall>> mCommands =
+        new Dictionary <string, Action <string [], ServiceCall>> ();
     public override AccessLevel         AccessLevel        => AccessLevel.None;
     private         ITypes              Types              => this.Items.Types;
     private         IItems              Items              { get; }
@@ -67,7 +67,7 @@ public class slash : Service
         return $"[{result}]";
     }
 
-    public PyDataType SlashCmd (CallInformation call, PyString line)
+    public PyDataType SlashCmd (ServiceCall call, PyString line)
     {
         try
         {
@@ -97,7 +97,7 @@ public class slash : Service
         return null;
     }
 
-    private void GiveIskCmd (string [] argv, CallInformation call)
+    private void GiveIskCmd (string [] argv, ServiceCall call)
     {
         if (argv.Length < 3)
             throw new SlashError ("giveisk takes two arguments");
@@ -139,7 +139,7 @@ public class slash : Service
         }
     }
 
-    private void CreateCmd (string [] argv, CallInformation call)
+    private void CreateCmd (string [] argv, ServiceCall call)
     {
         if (argv.Length < 2)
             throw new SlashError ("create takes at least one argument");
@@ -179,7 +179,7 @@ public class slash : Service
         return int.Parse (value);
     }
 
-    private void GiveSkillCmd (string [] argv, CallInformation call)
+    private void GiveSkillCmd (string [] argv, ServiceCall call)
     {
         // TODO: NOT NODE-SAFE, MUST REIMPLEMENT TAKING THAT INTO ACCOUNT!
         if (argv.Length != 4)

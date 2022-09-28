@@ -1,5 +1,5 @@
 ﻿using System;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -11,14 +11,14 @@ public abstract class SparseRowsetDatabaseService : MultiClientBoundService
     public SparseRowset RowsetHeader { get; init; }
 
     protected SparseRowsetDatabaseService
-        (SparseRowset rowsetHeader, BoundServiceManager manager, Session session, bool keepAlive = false) : base (manager, 0, keepAlive)
+        (SparseRowset rowsetHeader, IBoundServiceManager manager, Session session, bool keepAlive = false) : base (manager, 0, keepAlive)
     {
         RowsetHeader = rowsetHeader;
     }
 
-    public abstract PyDataType Fetch (CallInformation                      call, PyInteger startPos, PyInteger fetchSize);
-    public abstract PyDataType FetchByKey (CallInformation                 call, PyList    keyList);
-    public abstract PyDataType SelectByUniqueColumnValues (CallInformation call, PyString  columnName, PyList values);
+    public abstract PyDataType Fetch (ServiceCall                      call, PyInteger startPos, PyInteger fetchSize);
+    public abstract PyDataType FetchByKey (ServiceCall                 call, PyList    keyList);
+    public abstract PyDataType SelectByUniqueColumnValues (ServiceCall call, PyString  columnName, PyList values);
 
     /// <summary>
     /// Notifies consumers of this SparseRowset that something in the list has changed
@@ -47,17 +47,17 @@ public abstract class SparseRowsetDatabaseService : MultiClientBoundService
     /// <param name="primaryKey"></param>
     public abstract void RemoveRow (PyDataType primaryKey);
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         throw new NotImplementedException ();
     }
 
-    protected override PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo)
+    protected override PyDataType MachoBindObject (ServiceCall call, ServiceBindParams bindParams, PyDataType callInfo)
     {
         throw new NotImplementedException ();
     }
 
-    protected override MultiClientBoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override MultiClientBoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         throw new NotImplementedException ();
     }

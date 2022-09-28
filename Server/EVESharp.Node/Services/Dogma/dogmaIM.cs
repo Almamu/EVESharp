@@ -6,11 +6,11 @@ using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.inventory;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Station;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Dogma;
@@ -34,7 +34,7 @@ public class dogmaIM : ClientBoundService
 
     public dogmaIM
     (
-        EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager, IDatabaseConnection database,
+        EffectsManager effectsManager, IItems items, INotificationSender notificationSender, IBoundServiceManager manager, IDatabaseConnection database,
         ISolarSystems  solarSystems
     ) : base (manager)
     {
@@ -47,7 +47,7 @@ public class dogmaIM : ClientBoundService
 
     protected dogmaIM
     (
-        int     locationID, EffectsManager effectsManager, IItems items, INotificationSender notificationSender, BoundServiceManager manager,
+        int     locationID, EffectsManager effectsManager, IItems items, INotificationSender notificationSender, IBoundServiceManager manager,
         Session session,    ISolarSystems  solarSystems
     ) : base (manager, session, locationID)
     {
@@ -57,7 +57,7 @@ public class dogmaIM : ClientBoundService
         SolarSystems   = solarSystems;
     }
 
-    public PyDataType ShipGetInfo (CallInformation call)
+    public PyDataType ShipGetInfo (ServiceCall call)
     {
         int  callerCharacterID = call.Session.CharacterID;
         int? shipID            = call.Session.ShipID;
@@ -105,7 +105,7 @@ public class dogmaIM : ClientBoundService
         }
     }
 
-    public PyDataType CharGetInfo (CallInformation call)
+    public PyDataType CharGetInfo (ServiceCall call)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -138,7 +138,7 @@ public class dogmaIM : ClientBoundService
         return itemInfo;
     }
 
-    public PyDataType ItemGetInfo (CallInformation call, PyInteger itemID)
+    public PyDataType ItemGetInfo (ServiceCall call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -167,7 +167,7 @@ public class dogmaIM : ClientBoundService
         );
     }
 
-    public PyDataType GetWeaponBankInfoForShip (CallInformation call)
+    public PyDataType GetWeaponBankInfoForShip (ServiceCall call)
     {
         // this function seems to indicate the client when modules are grouped
         // so it can display them on the UI and I guess act on them too
@@ -175,7 +175,7 @@ public class dogmaIM : ClientBoundService
         return new PyDictionary ();
     }
 
-    public PyDataType GetCharacterBaseAttributes (CallInformation call)
+    public PyDataType GetCharacterBaseAttributes (ServiceCall call)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -194,12 +194,12 @@ public class dogmaIM : ClientBoundService
         };
     }
 
-    public PyDataType LogAttribute (CallInformation call, PyInteger itemID, PyInteger attributeID)
+    public PyDataType LogAttribute (ServiceCall call, PyInteger itemID, PyInteger attributeID)
     {
         return this.LogAttribute (call, itemID, attributeID, "");
     }
 
-    public PyList <PyString> LogAttribute (CallInformation call, PyInteger itemID, PyInteger attributeID, PyString reason)
+    public PyList <PyString> LogAttribute (ServiceCall call, PyInteger itemID, PyInteger attributeID, PyString reason)
     {
         ulong role     = call.Session.Role;
         ulong roleMask = (ulong) (Roles.ROLE_GDH | Roles.ROLE_QA | Roles.ROLE_PROGRAMMER | Roles.ROLE_GMH);
@@ -224,7 +224,7 @@ public class dogmaIM : ClientBoundService
         };
     }
 
-    public PyDataType Activate (CallInformation call, PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat)
+    public PyDataType Activate (ServiceCall call, PyInteger itemID, PyString effectName, PyDataType target, PyDataType repeat)
     {
         ShipModule module = this.Items.GetItem <ShipModule> (itemID);
 
@@ -233,7 +233,7 @@ public class dogmaIM : ClientBoundService
         return null;
     }
 
-    public PyDataType Deactivate (CallInformation call, PyInteger itemID, PyString effectName)
+    public PyDataType Deactivate (ServiceCall call, PyInteger itemID, PyString effectName)
     {
         ShipModule module = this.Items.GetItem <ShipModule> (itemID);
 
@@ -242,7 +242,7 @@ public class dogmaIM : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -252,7 +252,7 @@ public class dogmaIM : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         int characterID = call.Session.CharacterID;
 

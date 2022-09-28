@@ -4,9 +4,9 @@ using System.Linq;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Server.Shared.Helpers;
@@ -21,9 +21,9 @@ public class MessageQueue : Shared.Messages.MessageQueue
 {
     public MessageQueue
     (
-        IMachoNet            machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, ISessionManager sessionManager,
+        IMachoNet             machoNet, ILogger logger, ServiceManager serviceManager, IBoundServiceManager boundServiceManager, ISessionManager sessionManager,
         IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper, INotificationSender notificationSender, IItems items,
-        ISolarSystems        solarSystems
+        ISolarSystems         solarSystems
     ) :
         base (
             machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,
@@ -61,21 +61,16 @@ public class MessageQueue : Shared.Messages.MessageQueue
         if (machoMessage.Transport is MachoClientTransport &&
             machoMessage.Packet.OutOfBounds.TryGetValue ("OID-", out PyDictionary deleted))
         {
-            foreach ((PyString guid, PyInteger refID) in deleted.GetEnumerable <PyString, PyInteger> ())
-            {
-                BoundServiceManager.ParseBoundServiceString (guid, out int nodeID, out int boundID);
-                // cleanup the association if any
-                machoMessage.Transport.Session.BoundObjects.Remove (boundID);
-                // if the bound service is local, do it too
-                BoundServiceManager.ClientHasReleasedThisObject (boundID, machoMessage.Transport.Session);
-            }
+            foreach ((PyString _, PyString refID) in deleted.GetEnumerable <PyString, PyString> ())
+                // remove associated nodes from the list
+                machoMessage.Transport.Session.BoundObjects.Remove (refID);
 
-            // update node list
+            // clear nodes of interest list and re-add every nodeID
             machoMessage.Transport.Session.NodesOfInterest.Clear ();
 
-            foreach ((int boundID, long nodeID) in machoMessage.Transport.Session.BoundObjects)
-                if (machoMessage.Transport.Session.NodesOfInterest.Contains (nodeID) == false)
-                    machoMessage.Transport.Session.NodesOfInterest.Add (nodeID);
+            // add back all the node IDs
+            foreach (long nodeID in machoMessage.Transport.Session.BoundObjects.Values.Distinct ())
+                machoMessage.Transport.Session.NodesOfInterest.Add (nodeID);
         }
         else if (machoMessage.Transport is MachoNodeTransport &&
                  machoMessage.Packet.OutOfBounds.TryGetValue ("OID+", out PyList added))
@@ -92,11 +87,11 @@ public class MessageQueue : Shared.Messages.MessageQueue
                 if (entry.Count != 2)
                     continue;
 
-                PyString  guid  = entry [0] as PyString;
-                PyInteger refID = entry [1] as PyInteger;
+                PyString guid  = entry [0] as PyString;
+                PyString refID = entry [1] as PyString;
 
-                BoundServiceManager.ParseBoundServiceString (guid, out int nodeID, out int boundID);
-                transport.Session.BoundObjects [boundID] = nodeID;
+                IBoundServiceManager.ParseBoundServiceString (guid, out int nodeID, out int boundID);
+                transport.Session.BoundObjects [refID] = nodeID;
 
                 if (transport.Session.NodesOfInterest.Contains (nodeID) == false)
                     transport.Session.NodesOfInterest.Add (nodeID);

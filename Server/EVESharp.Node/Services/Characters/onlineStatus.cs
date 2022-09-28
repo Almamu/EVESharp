@@ -1,7 +1,7 @@
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Characters;
@@ -21,13 +21,13 @@ public class onlineStatus : Service
         this.Items  = items;
     }
 
-    public PyDataType GetInitialState (CallInformation call)
+    public PyDataType GetInitialState (ServiceCall call)
     {
         // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK
         return ChatDB.GetAddressBookMembers (call.Session.CharacterID);
     }
 
-    public PyDataType GetOnlineStatus (CallInformation call, PyInteger characterID)
+    public PyDataType GetOnlineStatus (ServiceCall call, PyInteger characterID)
     {
         // TODO: CHECK IF THE OTHER CHARACTER HAS US IN THEIR ADDRESSBOOK?
         return CharacterDB.IsOnline (characterID);

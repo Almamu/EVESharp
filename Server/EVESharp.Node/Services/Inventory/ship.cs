@@ -4,10 +4,10 @@ using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.ship;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -28,7 +28,7 @@ public class ship : ClientBoundService
 
     public ship
     (
-        IItems        items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
+        IItems        items, IBoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
         ISolarSystems solarSystems
     ) : base (manager)
     {
@@ -41,7 +41,7 @@ public class ship : ClientBoundService
 
     protected ship
     (
-        ItemEntity location, IItems items, BoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
+        ItemEntity location, IItems items, IBoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
         ISolarSystems solarSystems
     ) : base (manager, session, location.ID)
     {
@@ -52,7 +52,7 @@ public class ship : ClientBoundService
         SolarSystems       = solarSystems;
     }
 
-    public PyInteger LeaveShip (CallInformation call)
+    public PyInteger LeaveShip (ServiceCall call)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -80,7 +80,7 @@ public class ship : ClientBoundService
         return capsule.ID;
     }
 
-    public PyDataType Board (CallInformation call, PyInteger itemID)
+    public PyDataType Board (ServiceCall call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -126,7 +126,7 @@ public class ship : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType AssembleShip (CallInformation call, PyInteger itemID)
+    public PyDataType AssembleShip (ServiceCall call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
         int stationID         = call.Session.StationID;
@@ -173,7 +173,7 @@ public class ship : ClientBoundService
         return null;
     }
 
-    public PyDataType AssembleShip (CallInformation call, PyList itemIDs)
+    public PyDataType AssembleShip (ServiceCall call, PyList itemIDs)
     {
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
             this.AssembleShip (call, itemID);
@@ -181,7 +181,7 @@ public class ship : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return parameters.ExtraValue switch
         {
@@ -191,7 +191,7 @@ public class ship : ClientBoundService
         };
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

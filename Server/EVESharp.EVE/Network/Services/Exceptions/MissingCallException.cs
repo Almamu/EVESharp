@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EVESharp.EVE.Services.Exceptions;
+namespace EVESharp.EVE.Network.Services.Exceptions;
 
 public class MissingCallException : Exception
 {
@@ -9,7 +9,7 @@ public class MissingCallException : Exception
 
     public MissingCallException(string service, string call)
     {
-        Service = service;
-        Call = call;
+        this.Service = service;
+        this.Call    = call;
     }
 }

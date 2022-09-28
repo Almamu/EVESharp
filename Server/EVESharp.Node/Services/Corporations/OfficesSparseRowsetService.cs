@@ -2,8 +2,8 @@
 using System.Linq;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Notifications;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Client.Notifications.Database;
 using EVESharp.Node.Services.Database;
@@ -22,7 +22,7 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
 
     public OfficesSparseRowsetService
     (
-        Corporation         corporation, CorporationDB db, SparseRowset rowsetHeader, BoundServiceManager manager, Session session,
+        Corporation         corporation, CorporationDB db, SparseRowset rowsetHeader, IBoundServiceManager manager, Session session,
         INotificationSender notificationSender
     ) : base (rowsetHeader, manager, session, true)
     {
@@ -34,17 +34,17 @@ public class OfficesSparseRowsetService : SparseRowsetDatabaseService
         this.RowsIndex = DB.GetOffices (corporation.ID);
     }
 
-    public override PyDataType Fetch (CallInformation call, PyInteger startPos, PyInteger fetchSize)
+    public override PyDataType Fetch (ServiceCall call, PyInteger startPos, PyInteger fetchSize)
     {
         return DB.GetOffices (Corporation.ID, startPos, fetchSize, RowsetHeader);
     }
 
-    public override PyDataType FetchByKey (CallInformation call, PyList keyList)
+    public override PyDataType FetchByKey (ServiceCall call, PyList keyList)
     {
         return DB.GetOffices (keyList.GetEnumerable <PyInteger> (), Corporation.ID, RowsetHeader, this.RowsIndex);
     }
 
-    public override PyDataType SelectByUniqueColumnValues (CallInformation call, PyString columnName, PyList values)
+    public override PyDataType SelectByUniqueColumnValues (ServiceCall call, PyString columnName, PyList values)
     {
         return DB.GetOffices (columnName, values.GetEnumerable <PyInteger> (), Corporation.ID, RowsetHeader, this.RowsIndex);
     }

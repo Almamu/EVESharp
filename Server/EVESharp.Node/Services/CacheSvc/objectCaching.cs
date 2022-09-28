@@ -24,7 +24,7 @@
 
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network.Caching;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Node.Cache;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -44,7 +44,7 @@ public class objectCaching : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetCachableObject (CallInformation call, PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID)
+    public PyDataType GetCachableObject (ServiceCall call, PyInteger shared, PyTuple objectID, PyTuple objectVersion, PyInteger nodeID)
     {
         // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
         Log.Debug ("Received cache request for a tuple objectID");
@@ -64,7 +64,7 @@ public class objectCaching : Service
         return CacheStorage.Get (service, method);
     }
 
-    public PyDataType GetCachableObject (CallInformation call, PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID)
+    public PyDataType GetCachableObject (ServiceCall call, PyInteger shared, PyString objectID, PyTuple objectVersion, PyInteger nodeID)
     {
         // TODO: CHECK CACHEOK EXCEPTION ON CLIENT
         Log.Debug ($"Received cache request for {objectID.Value}");

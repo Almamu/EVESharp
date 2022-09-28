@@ -9,8 +9,8 @@ using EVESharp.EVE.Exceptions.insuranceSvc;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Chat;
 using EVESharp.Types;
@@ -33,7 +33,7 @@ public class insuranceSvc : ClientBoundService
 
     public insuranceSvc
     (
-        IClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager,
+        IClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, IBoundServiceManager manager,
         IDatabaseConnection database,
         ISolarSystems solarSystems
     ) : base (manager)
@@ -51,7 +51,7 @@ public class insuranceSvc : ClientBoundService
 
     protected insuranceSvc
     (
-        IItems items,     InsuranceDB db,      MarketDB      marketDB, IWallets wallets, MailManager mailManager, BoundServiceManager manager,
+        IItems items,     InsuranceDB db,      MarketDB      marketDB, IWallets wallets, MailManager mailManager, IBoundServiceManager manager,
         int    stationID, Session     session, ISolarSystems solarSystems
     ) : base (manager, session, stationID)
     {
@@ -64,7 +64,7 @@ public class insuranceSvc : ClientBoundService
         SolarSystems    = solarSystems;
     }
 
-    public PyList <PyPackedRow> GetContracts (CallInformation call)
+    public PyList <PyPackedRow> GetContracts (ServiceCall call)
     {
         if (this.mStationID == 0)
         {
@@ -79,12 +79,12 @@ public class insuranceSvc : ClientBoundService
         return DB.GetContractsForShipsOnStation (call.Session.CharacterID, this.mStationID);
     }
 
-    public PyPackedRow GetContractForShip (CallInformation call, PyInteger itemID)
+    public PyPackedRow GetContractForShip (ServiceCall call, PyInteger itemID)
     {
         return DB.GetContractForShip (call.Session.CharacterID, itemID);
     }
 
-    public PyList <PyPackedRow> GetContracts (CallInformation call, PyInteger includeCorp)
+    public PyList <PyPackedRow> GetContracts (ServiceCall call, PyInteger includeCorp)
     {
         if (includeCorp == 0)
             return DB.GetContractsForShipsOnStation (call.Session.CharacterID, this.mStationID);
@@ -92,7 +92,7 @@ public class insuranceSvc : ClientBoundService
         return DB.GetContractsForShipsOnStationIncludingCorp (call.Session.CharacterID, call.Session.CorporationID, this.mStationID);
     }
 
-    public PyBool InsureShip (CallInformation call, PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem)
+    public PyBool InsureShip (ServiceCall call, PyInteger itemID, PyDecimal insuranceCost, PyInteger isCorpItem)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -150,7 +150,7 @@ public class insuranceSvc : ClientBoundService
         return true;
     }
 
-    public PyDataType UnInsureShip (CallInformation call, PyInteger itemID)
+    public PyDataType UnInsureShip (ServiceCall call, PyInteger itemID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -186,12 +186,12 @@ public class insuranceSvc : ClientBoundService
         }
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("solarsystem", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

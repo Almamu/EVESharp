@@ -4,8 +4,8 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Characters;
@@ -28,25 +28,25 @@ public class charmgr : Service
         this.Wallets = wallets;
     }
 
-    public PyDataType GetPublicInfo (CallInformation call, PyInteger characterID)
+    public PyDataType GetPublicInfo (ServiceCall call, PyInteger characterID)
     {
         return Database.ChrGetPublicInfo (characterID);
     }
 
     [MustBeCharacter]
-    public PyDataType GetPublicInfo3 (CallInformation call, PyInteger characterID)
+    public PyDataType GetPublicInfo3 (ServiceCall call, PyInteger characterID)
     {
         return Database.ChrGetPublicInfo3 (characterID);
     }
 
     [MustBeCharacter]
-    public PyDataType GetTopBounties (CallInformation call)
+    public PyDataType GetTopBounties (ServiceCall call)
     {
         return DB.GetTopBounties ();
     }
 
     [MustBeCharacter]
-    public PyDataType AddToBounty (CallInformation call, PyInteger characterID, PyInteger bounty)
+    public PyDataType AddToBounty (ServiceCall call, PyInteger characterID, PyInteger bounty)
     {
         // access the wallet and do the required changes
         using IWallet wallet = this.Wallets.AcquireWallet (call.Session.CharacterID, WalletKeys.MAIN);
@@ -64,7 +64,7 @@ public class charmgr : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GetPrivateInfo (CallInformation call, PyInteger characterID)
+    public PyDataType GetPrivateInfo (ServiceCall call, PyInteger characterID)
     {
         return DB.GetPrivateInfo (characterID);
     }

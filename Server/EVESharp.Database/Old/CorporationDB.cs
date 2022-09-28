@@ -9,7 +9,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Database;
 using EVESharp.EVE.Exceptions.corpRegistry;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;

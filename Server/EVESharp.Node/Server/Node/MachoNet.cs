@@ -4,6 +4,7 @@ using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
+using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Configuration;
 using EVESharp.Types;
@@ -20,7 +21,7 @@ public class MachoNet : IMachoNet
     public MachoNet
     (
         IDatabaseConnection databaseConnection, ITransportManager transportManager, IQueueProcessor <LoginQueueEntry> loginQueue,
-        General             configuration,      ILogger           logger
+        General             configuration, ILogger           logger
     )
     {
         Database         = databaseConnection;
@@ -39,6 +40,7 @@ public class MachoNet : IMachoNet
     public IQueueProcessor <LoginQueueEntry> LoginProcessor   { get; }
     public IQueueProcessor <MachoMessage>    MessageProcessor { get; set; }
     public ITransportManager                 TransportManager { get; }
+    public ISessionManager                   SessionManager   { get; set; }
     public PyList <PyObjectData>             LiveUpdates      => Database.EveFetchLiveUpdates ();
 
     public void Initialize ()

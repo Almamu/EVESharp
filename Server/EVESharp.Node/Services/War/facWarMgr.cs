@@ -5,11 +5,11 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.facWarMgr;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
@@ -49,7 +49,7 @@ public class facWarMgr : Service
         SessionManager = sessionManager;
     }
 
-    public PyDataType GetWarFactions (CallInformation call)
+    public PyDataType GetWarFactions (ServiceCall call)
     {
         CacheStorage.Load (
             "facWarMgr",
@@ -61,7 +61,7 @@ public class facWarMgr : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("facWarMgr", "GetWarFactions"));
     }
 
-    public PyDataType GetFacWarSystems (CallInformation call)
+    public PyDataType GetFacWarSystems (ServiceCall call)
     {
         /*
          * The data is an integer dict (indicating solar system) with these as entries:
@@ -79,7 +79,7 @@ public class facWarMgr : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("facWarMgr", "GetFacWarSystems"));
     }
 
-    public PyDataType GetCharacterRankOverview (CallInformation call, PyInteger characterID)
+    public PyDataType GetCharacterRankOverview (ServiceCall call, PyInteger characterID)
     {
         return new Rowset (
             new PyList <PyString> (4)
@@ -92,12 +92,12 @@ public class facWarMgr : Service
         );
     }
 
-    public PyInteger GetFactionMilitiaCorporation (CallInformation call, PyInteger factionID)
+    public PyInteger GetFactionMilitiaCorporation (ServiceCall call, PyInteger factionID)
     {
         return this.Items.GetStaticFaction (factionID).MilitiaCorporationId;
     }
 
-    public PyDataType GetFactionalWarStatus (CallInformation call)
+    public PyDataType GetFactionalWarStatus (ServiceCall call)
     {
         if (call.Session.WarFactionID is null)
             return KeyVal.FromDictionary (new PyDictionary {["status"] = null});
@@ -112,12 +112,12 @@ public class facWarMgr : Service
         );
     }
 
-    public PyDataType IsEnemyFaction (CallInformation call, PyInteger factionID, PyInteger warFactionID)
+    public PyDataType IsEnemyFaction (ServiceCall call, PyInteger factionID, PyInteger warFactionID)
     {
         return false;
     }
 
-    public PyDataType JoinFactionAsCharacter (CallInformation call, PyInteger factionID)
+    public PyDataType JoinFactionAsCharacter (ServiceCall call, PyInteger factionID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -164,12 +164,12 @@ public class facWarMgr : Service
         return null;
     }
 
-    public PyDataType JoinFactionAsCorporation (CallInformation call, PyInteger factionID)
+    public PyDataType JoinFactionAsCorporation (ServiceCall call, PyInteger factionID)
     {
         return null;
     }
 
-    public PyDataType GetCharacterRankInfo (CallInformation call, PyInteger characterID)
+    public PyDataType GetCharacterRankInfo (ServiceCall call, PyInteger characterID)
     {
         // TODO: IMPLEMENT THIS
 
@@ -183,13 +183,13 @@ public class facWarMgr : Service
         );
     }
 
-    public PyDataType GetSystemsConqueredThisRun (CallInformation call)
+    public PyDataType GetSystemsConqueredThisRun (ServiceCall call)
     {
         // TODO: IMPLEMENT THIS, IT'S A LIST OF PYDICTIONARY
         return new PyList (0);
     }
 
-    private PyDictionary <PyString, PyDataType> GetStats_Stub (CallInformation call)
+    private PyDictionary <PyString, PyDataType> GetStats_Stub (ServiceCall call)
     {
         return new PyDictionary <PyString, PyDataType>
         {
@@ -198,27 +198,27 @@ public class facWarMgr : Service
         };
     }
 
-    public PyDataType GetStats_Militia (CallInformation call)
+    public PyDataType GetStats_Militia (ServiceCall call)
     {
         return this.GetStats_Stub (call);
     }
 
-    public PyDataType GetStats_Personal (CallInformation call)
+    public PyDataType GetStats_Personal (ServiceCall call)
     {
         return new PyDictionary ();
     }
 
-    public PyDataType GetStats_Corp (CallInformation call)
+    public PyDataType GetStats_Corp (ServiceCall call)
     {
         return new PyDictionary ();
     }
 
-    public PyDataType GetStats_FactionInfo (CallInformation call)
+    public PyDataType GetStats_FactionInfo (ServiceCall call)
     {
         return new PyDictionary ();
     }
 
-    public PyDataType GetStats_Character (CallInformation call)
+    public PyDataType GetStats_Character (ServiceCall call)
     {
         return new PyDictionary
         {
@@ -231,7 +231,7 @@ public class facWarMgr : Service
         };
     }
 
-    public PyDataType GetStats_TopAndAllKillsAndVPs (CallInformation call)
+    public PyDataType GetStats_TopAndAllKillsAndVPs (ServiceCall call)
     {
         PyDictionary values = new PyDictionary
         {
@@ -258,7 +258,7 @@ public class facWarMgr : Service
         };
     }
 
-    public PyDataType GetCorporationWarFactionID (CallInformation call, PyInteger corporationID)
+    public PyDataType GetCorporationWarFactionID (ServiceCall call, PyInteger corporationID)
     {
         return null;
     }

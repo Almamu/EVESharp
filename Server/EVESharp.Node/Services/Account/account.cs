@@ -7,9 +7,9 @@ using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
@@ -37,17 +37,17 @@ public class account : Service
         return this.Wallets.GetWalletBalance (session.CharacterID);
     }
 
-    public PyDataType GetCashBalance (CallInformation call, PyBool isCorpWallet)
+    public PyDataType GetCashBalance (ServiceCall call, PyBool isCorpWallet)
     {
         return this.GetCashBalance (call, isCorpWallet ? 1 : 0, call.Session.CorpAccountKey);
     }
 
-    public PyDataType GetCashBalance (CallInformation call, PyInteger isCorpWallet)
+    public PyDataType GetCashBalance (ServiceCall call, PyInteger isCorpWallet)
     {
         return this.GetCashBalance (call, isCorpWallet, call.Session.CorpAccountKey);
     }
 
-    public PyDataType GetCashBalance (CallInformation call, PyInteger isCorpWallet, PyInteger walletKey)
+    public PyDataType GetCashBalance (ServiceCall call, PyInteger isCorpWallet, PyInteger walletKey)
     {
         if (isCorpWallet == 0)
             return this.GetCashBalance (call.Session);
@@ -58,12 +58,12 @@ public class account : Service
         return this.Wallets.GetWalletBalance (call.Session.CorporationID, walletKey);
     }
 
-    public PyDataType GetKeyMap (CallInformation call)
+    public PyDataType GetKeyMap (ServiceCall call)
     {
         return Database.MktGetKeyMap ();
     }
 
-    public PyDataType GetEntryTypes (CallInformation call)
+    public PyDataType GetEntryTypes (ServiceCall call)
     {
         CacheStorage.Load (
             "account",
@@ -80,7 +80,7 @@ public class account : Service
     [MustBeCharacter]
     public PyDataType GetJournal
     (
-        CallInformation call,         PyInteger accountKey,    PyInteger fromDate, PyInteger entryTypeID,
+        ServiceCall call,         PyInteger accountKey,    PyInteger fromDate, PyInteger entryTypeID,
         PyBool          isCorpWallet, PyInteger transactionID, PyInteger rev
     )
     {
@@ -105,7 +105,7 @@ public class account : Service
         return DB.GetJournal (entityID, entryTypeID, accountKey, fromDate, transactionIDint);
     }
 
-    public PyDataType GetWalletDivisionsInfo (CallInformation call)
+    public PyDataType GetWalletDivisionsInfo (ServiceCall call)
     {
         // build a list of divisions the user can access
         List <int> walletKeys = new List <int> ();
@@ -135,7 +135,7 @@ public class account : Service
     }
 
     [MustBeCharacter]
-    public PyDataType GiveCash (CallInformation call, PyInteger destinationID, PyDecimal quantity, PyString reason)
+    public PyDataType GiveCash (ServiceCall call, PyInteger destinationID, PyDecimal quantity, PyString reason)
     {
         int accountKey = WalletKeys.MAIN;
 
@@ -161,7 +161,7 @@ public class account : Service
         return null;
     }
 
-    public PyDataType GiveCashFromCorpAccount (CallInformation call, PyInteger destinationID, PyDecimal quantity, PyInteger accountKey)
+    public PyDataType GiveCashFromCorpAccount (ServiceCall call, PyInteger destinationID, PyDecimal quantity, PyInteger accountKey)
     {
         // ensure the character can take from the account in question
         if (this.Wallets.IsTakeAllowed (call.Session, accountKey, call.Session.CorporationID) == false)

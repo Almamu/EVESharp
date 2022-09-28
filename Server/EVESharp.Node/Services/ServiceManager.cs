@@ -24,8 +24,8 @@
 
 using EVESharp.EVE;
 using EVESharp.EVE.Network.Caching;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Exceptions;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Services.Account;

@@ -14,10 +14,10 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.allianceRegistry;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Alliances;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Types;
@@ -40,7 +40,7 @@ public class allianceRegistry : MultiClientBoundService
     public allianceRegistry
     (
         IDatabaseConnection databaseConnection, CorporationDB   corporationDB,  ChatDB          chatDB, IItems items, INotificationSender notificationSender,
-        BoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager
+        IBoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager
     ) : base (manager)
     {
         Database       = databaseConnection;
@@ -128,7 +128,7 @@ public class allianceRegistry : MultiClientBoundService
         Database.CrpAlliancesHousekeepApplications (minimumTime);
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("allianceRegistry", parameters.ObjectID);
     }
@@ -138,7 +138,7 @@ public class allianceRegistry : MultiClientBoundService
         return session.AllianceID == ObjectID;
     }
 
-    protected override MultiClientBoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override MultiClientBoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
@@ -148,18 +148,18 @@ public class allianceRegistry : MultiClientBoundService
         return new allianceRegistry (alliance, Database, CorporationDB, this.Items, Notifications, SessionManager, this);
     }
 
-    public PyDataType GetAlliance (CallInformation call)
+    public PyDataType GetAlliance (ServiceCall call)
     {
         return this.GetAlliance (call, ObjectID);
     }
 
-    public PyDataType GetAlliance (CallInformation call, PyInteger allianceID)
+    public PyDataType GetAlliance (ServiceCall call, PyInteger allianceID)
     {
         return Database.CrpAlliancesGet (allianceID);
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_DIRECTOR, CorporationRole.Director)]
-    public PyDataType UpdateAlliance (CallInformation call, PyString description, PyString url)
+    public PyDataType UpdateAlliance (ServiceCall call, PyString description, PyString url)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_UPDATE_ALLIANCE_NOT_EXECUTOR);
@@ -184,23 +184,23 @@ public class allianceRegistry : MultiClientBoundService
         return null;
     }
 
-    public PyDataType GetRelationships (CallInformation call)
+    public PyDataType GetRelationships (ServiceCall call)
     {
         return Database.CrpAlliancesGetRelationships (this.ObjectID);
     }
 
-    public PyDataType GetAllianceMembers (CallInformation call, PyInteger allianceID)
+    public PyDataType GetAllianceMembers (ServiceCall call, PyInteger allianceID)
     {
         return Database.CrpAlliancesGetMembersPublic (allianceID);
     }
 
-    public PyDataType GetMembers (CallInformation call)
+    public PyDataType GetMembers (ServiceCall call)
     {
         return Database.CrpAlliancesGetMembersPrivate (this.ObjectID);
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_SET_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
-    public PyDataType SetRelationship (CallInformation call, PyInteger relationship, PyInteger toID)
+    public PyDataType SetRelationship (ServiceCall call, PyInteger relationship, PyInteger toID)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_SET_RELATIONSHIP_EXECUTOR_ONLY);
@@ -218,7 +218,7 @@ public class allianceRegistry : MultiClientBoundService
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_DECLARE_EXEC_SUPPORT_DIRECTOR_ONLY, CorporationRole.Director)]
-    public PyDataType DeclareExecutorSupport (CallInformation call, PyInteger executorID)
+    public PyDataType DeclareExecutorSupport (ServiceCall call, PyInteger executorID)
     {
         // get corporation's join date
         long minimumJoinDate     = DateTime.UtcNow.AddDays (-7).ToFileTimeUtc ();
@@ -253,18 +253,18 @@ public class allianceRegistry : MultiClientBoundService
         return null;
     }
 
-    public PyDataType GetApplications (CallInformation call)
+    public PyDataType GetApplications (ServiceCall call)
     {
         return Database.CrpAlliancesListApplications (this.ObjectID);
     }
 
-    public PyDataType GetBills (CallInformation call)
+    public PyDataType GetBills (ServiceCall call)
     {
         return Database.MktBillsGetPayable (this.ObjectID);
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
-    public PyDataType DeleteRelationship (CallInformation call, PyInteger toID)
+    public PyDataType DeleteRelationship (ServiceCall call, PyInteger toID)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);
@@ -278,13 +278,13 @@ public class allianceRegistry : MultiClientBoundService
         return null;
     }
 
-    public PyDataType GetRankedAlliances (CallInformation call)
+    public PyDataType GetRankedAlliances (ServiceCall call)
     {
         return Database.CrpAlliancesList ();
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_DELETE_RELATIONSHIP_DIRECTOR_ONLY, CorporationRole.Director)]
-    public PyDataType UpdateApplication (CallInformation call, PyInteger corporationID, PyString message, PyInteger newStatus)
+    public PyDataType UpdateApplication (ServiceCall call, PyInteger corporationID, PyString message, PyInteger newStatus)
     {
         if (Alliance.ExecutorCorpID != call.Session.CorporationID)
             throw new CrpAccessDenied (MLS.UI_CORP_DELETE_RELATIONSHIP_EXECUTOR_ONLY);

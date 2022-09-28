@@ -11,11 +11,11 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpStationMgr;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Corporations;
 using EVESharp.EVE.Notifications.Wallet;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Notifications.Nodes.Corps;
@@ -42,8 +42,8 @@ public class corpStationMgr : ClientBoundService
 
     public corpStationMgr
     (
-        StationDB     stationDb,    INotificationSender notificationSender, IItems              items,    IConstants constants,
-        BoundServiceManager manager,  ISolarSystems solarSystems, IWallets            wallets,            IDatabaseConnection database, ItemDB     itemDB
+        StationDB            stationDb, INotificationSender notificationSender, IItems              items,    IConstants constants,
+        IBoundServiceManager manager,   ISolarSystems solarSystems, IWallets            wallets,            IDatabaseConnection database, ItemDB     itemDB
     ) : base (manager)
     {
         StationDB     = stationDb;
@@ -59,8 +59,8 @@ public class corpStationMgr : ClientBoundService
     // TODO: PROVIDE OBJECTID PROPERLY
     protected corpStationMgr
     (
-        StationDB stationDb, INotificationSender notificationSender, IItems items, IConstants constants,
-        BoundServiceManager manager,  IWallets  wallets,   Session             session,            ItemDB itemDB
+        StationDB            stationDb, INotificationSender notificationSender, IItems  items,   IConstants constants,
+        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB
     ) : base (manager, session, 0)
     {
         StationDB     = stationDb;
@@ -72,13 +72,13 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyList GetCorporateStationOffice (CallInformation call)
+    public PyList GetCorporateStationOffice (ServiceCall call)
     {
         return StationDB.GetOfficesList (call.Session.StationID);
     }
 
     [MustBeInStation]
-    public PyDataType DoStandingCheckForStationService (CallInformation call, PyInteger stationServiceID)
+    public PyDataType DoStandingCheckForStationService (ServiceCall call, PyInteger stationServiceID)
     {
         // TODO: CHECK ACTUAL STANDING VALUE
 
@@ -101,7 +101,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType GetPotentialHomeStations (CallInformation call)
+    public PyDataType GetPotentialHomeStations (ServiceCall call)
     {
         List <Station> availableStations = this.GetPotentialHomeStations (call.Session);
 
@@ -128,7 +128,7 @@ public class corpStationMgr : ClientBoundService
         return result;
     }
 
-    public PyDataType SetHomeStation (CallInformation call, PyInteger stationID)
+    public PyDataType SetHomeStation (ServiceCall call, PyInteger stationID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -182,7 +182,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyBool DoesPlayersCorpHaveJunkAtStation (CallInformation call)
+    public PyBool DoesPlayersCorpHaveJunkAtStation (ServiceCall call)
     {
         if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID))
             return false;
@@ -192,7 +192,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyTuple GetCorporateStationInfo (CallInformation call)
+    public PyTuple GetCorporateStationInfo (ServiceCall call)
     {
         int stationID = call.Session.StationID;
 
@@ -205,7 +205,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyInteger GetNumberOfUnrentedOffices (CallInformation call)
+    public PyInteger GetNumberOfUnrentedOffices (ServiceCall call)
     {
         int stationID = call.Session.StationID;
 
@@ -216,7 +216,7 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType SetCloneTypeID (CallInformation call, PyInteger cloneTypeID)
+    public PyDataType SetCloneTypeID (ServiceCall call, PyInteger cloneTypeID)
     {
         int callerCharacterID = call.Session.CharacterID;
         int stationID         = call.Session.StationID;
@@ -254,14 +254,14 @@ public class corpStationMgr : ClientBoundService
 
     [MustBeInStation]
     [MustHaveCorporationRole (typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
-    public PyInteger GetQuoteForRentingAnOffice (CallInformation call)
+    public PyInteger GetQuoteForRentingAnOffice (ServiceCall call)
     {
         return this.Items.Stations [call.Session.StationID].OfficeRentalCost;
     }
 
     [MustBeInStation]
     [MustHaveCorporationRole (typeof (RentingOfficeQuotesOnlyGivenToActiveCEOsOrEquivale), CorporationRole.Director, CorporationRole.CanRentOffice)]
-    public PyDataType RentOffice (CallInformation call, PyInteger cost)
+    public PyDataType RentOffice (ServiceCall call, PyInteger cost)
     {
         int rentalCost  = this.GetQuoteForRentingAnOffice (call);
         int stationID   = call.Session.StationID;
@@ -330,18 +330,18 @@ public class corpStationMgr : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType MoveCorpHQHere (CallInformation call)
+    public PyDataType MoveCorpHQHere (ServiceCall call)
     {
         // TODO: IMPLEMENT THIS!
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

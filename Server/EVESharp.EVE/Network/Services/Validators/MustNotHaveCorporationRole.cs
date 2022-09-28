@@ -2,7 +2,7 @@
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Sessions;
 
-namespace EVESharp.EVE.Services.Validators;
+namespace EVESharp.EVE.Network.Services.Validators;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public class MustNotHaveCorporationRole : MustHaveCorporationRole

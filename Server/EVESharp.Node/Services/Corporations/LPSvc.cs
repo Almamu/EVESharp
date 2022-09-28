@@ -1,6 +1,6 @@
 ﻿using EVESharp.Database.Old;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Corporations;
@@ -16,7 +16,7 @@ public class LPSvc : Service
         DB = db;
     }
 
-    public PyDecimal GetLPForCharacterCorp (CallInformation call, PyInteger corporationID)
+    public PyDecimal GetLPForCharacterCorp (ServiceCall call, PyInteger corporationID)
     {
         return DB.GetLPForCharacterCorp (corporationID, call.Session.CharacterID);
     }

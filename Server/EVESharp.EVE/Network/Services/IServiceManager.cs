@@ -1,6 +1,6 @@
 ﻿using EVESharp.Types;
 
-namespace EVESharp.EVE.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public interface IServiceManager<in T>
 {

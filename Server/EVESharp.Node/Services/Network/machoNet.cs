@@ -25,7 +25,7 @@
 using System;
 using System.Reflection;
 using EVESharp.EVE.Network.Caching;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Node.Cache;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -42,7 +42,7 @@ public class machoNet : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyTuple GetInitVals (CallInformation call)
+    public PyTuple GetInitVals (ServiceCall call)
     {
         if (CacheStorage.Exists ("machoNet.serviceInfo") == false)
         {
@@ -79,7 +79,7 @@ public class machoNet : Service
         };
     }
 
-    public PyInteger GetTime (CallInformation call)
+    public PyInteger GetTime (ServiceCall call)
     {
         return DateTime.UtcNow.ToFileTimeUtc ();
     }

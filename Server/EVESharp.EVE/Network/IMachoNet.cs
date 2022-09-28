@@ -4,6 +4,7 @@ using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Messages.Queue;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
+using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -49,7 +50,14 @@ public interface IMachoNet
     /// The transport manager in use for this IMachoNet instance
     /// </summary>
     public ITransportManager TransportManager { get; }
-    public PyList<PyObjectData> LiveUpdates { get; }
+    /// <summary>
+    /// The session manager in use for this IMachoNet instance
+    /// </summary>
+    public ISessionManager SessionManager { get; set; }
+    /// <summary>
+    /// List of live updates to be sent to the EVE clients
+    /// </summary>
+    public PyList <PyObjectData> LiveUpdates { get; }
 
     /// <summary>
     /// Initializes this macho net instance

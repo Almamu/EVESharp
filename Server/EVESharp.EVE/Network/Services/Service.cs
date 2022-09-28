@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using EVESharp.EVE.Services.Exceptions;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services.Exceptions;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.EVE.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public abstract class Service
 {
@@ -113,7 +113,7 @@ public abstract class Service
     public PyDataType ExecuteCall(string method, ServiceCall extraInformation)
     {
         if (this.FindSuitableMethod(method, extraInformation, out object[] parameters, out MethodInfo methodInfo) == false)
-            throw new MissingCallException(Name, method);
+            throw new MissingCallException(this.Name, method);
 
         // ensure that the caller has the required roles
         List <CallValidator> requirements = this.GetType ().GetCustomAttributes <CallValidator> ().Concat (methodInfo.GetCustomAttributes <CallValidator> ()).ToList ();

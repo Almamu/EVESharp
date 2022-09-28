@@ -1,7 +1,7 @@
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types.Collections;
 
 namespace EVESharp.Node.Services.Stations;
@@ -17,7 +17,7 @@ public class station : Service
     }
 
     [MustBeInStation]
-    public PyTuple GetStationItemBits (CallInformation call)
+    public PyTuple GetStationItemBits (ServiceCall call)
     {
         int stationID = call.Session.StationID;
 
@@ -34,7 +34,7 @@ public class station : Service
     }
 
     [MustBeInStation]
-    public PyList <PyTuple> GetGuests (CallInformation call)
+    public PyList <PyTuple> GetGuests (ServiceCall call)
     {
         int stationID = call.Session.StationID;
 

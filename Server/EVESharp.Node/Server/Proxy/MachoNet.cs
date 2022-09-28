@@ -7,6 +7,7 @@ using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
+using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Configuration;
 using EVESharp.Types;
@@ -42,6 +43,7 @@ public class MachoNet : IMachoNet
     public IQueueProcessor <LoginQueueEntry> LoginProcessor   { get; }
     public IQueueProcessor <MachoMessage>    MessageProcessor { get; set; }
     public ITransportManager                 TransportManager { get; }
+    public ISessionManager                   SessionManager   { get; set; }
     public PyList <PyObjectData>             LiveUpdates      => Database.EveFetchLiveUpdates ();
 
     public void Initialize ()
@@ -118,6 +120,10 @@ public class MachoNet : IMachoNet
 
     private void OnTransportTerminated (IMachoTransport transport)
     {
+        // make sure the transport is a player
+        if (transport is not MachoClientTransport)
+            return;
+        
         // build the packet to be sent to everyone
         PyPacket clusterPacket = new PyPacket (PyPacket.PacketType.NOTIFICATION)
         {

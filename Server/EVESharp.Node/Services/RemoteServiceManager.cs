@@ -4,7 +4,7 @@ using EVESharp.Database;
 using EVESharp.EVE;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Network;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Types;

@@ -2,9 +2,9 @@
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Server.Shared.Helpers;
@@ -19,8 +19,8 @@ public class MessageQueue : Shared.Messages.MessageQueue
 {
     public MessageQueue
     (
-        IMachoNet       machoNet,       ILogger             logger, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems,
-        ServiceManager  serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper,
+        IMachoNet       machoNet,       ILogger              logger, INotificationSender notificationSender, IItems items, ISolarSystems solarSystems,
+        ServiceManager  serviceManager, IBoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper,
         ISessionManager sessionManager
     ) : base (
         machoNet, logger, serviceManager, boundServiceManager, remoteServiceManager, packetCallHelper, items, solarSystems,

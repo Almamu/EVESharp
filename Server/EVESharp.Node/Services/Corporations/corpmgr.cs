@@ -2,9 +2,9 @@
 using EVESharp.Database.Old;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.Node.Cache;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -24,22 +24,22 @@ public class corpmgr : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetPublicInfo (CallInformation call, PyInteger corporationID)
+    public PyDataType GetPublicInfo (ServiceCall call, PyInteger corporationID)
     {
         return DB.GetPublicInfo (corporationID);
     }
 
-    public PyDataType GetCorporationIDForCharacter (CallInformation call, PyInteger characterID)
+    public PyDataType GetCorporationIDForCharacter (ServiceCall call, PyInteger characterID)
     {
         return DB.GetCorporationIDForCharacter (characterID);
     }
 
-    public PyDataType GetCorporations (CallInformation call, PyInteger corporationID)
+    public PyDataType GetCorporations (ServiceCall call, PyInteger corporationID)
     {
         return DB.GetCorporationRow (corporationID);
     }
 
-    public PyDataType GetAssetInventory (CallInformation call, PyInteger corporationID, PyString which)
+    public PyDataType GetAssetInventory (ServiceCall call, PyInteger corporationID, PyString which)
     {
         // TODO: CHECK PROPER PERMISSIONS TOO!
         if (call.Session.CorporationID != corporationID)
@@ -63,7 +63,7 @@ public class corpmgr : Service
         throw new Exception ("This asset inventory is not supported yet!");
     }
 
-    public PyDataType GetAssetInventoryForLocation (CallInformation call, PyInteger corporationID, PyInteger location, PyString which)
+    public PyDataType GetAssetInventoryForLocation (ServiceCall call, PyInteger corporationID, PyInteger location, PyString which)
     {
         // TODO: CHECK PROPER PERMISSIONS TOO!
         if (call.Session.CorporationID != corporationID)
@@ -87,7 +87,7 @@ public class corpmgr : Service
         return new PyList ();
     }
 
-    public PyDataType GetItemsRented (CallInformation call)
+    public PyDataType GetItemsRented (ServiceCall call)
     {
         return DB.GetItemsRented (call.Session.CorporationID);
     }

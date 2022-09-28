@@ -3,8 +3,8 @@ using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -26,12 +26,12 @@ public class bookmark : Service
         RemoteServiceManager = remoteServiceManager;
     }
 
-    public PyDataType GetBookmarks (CallInformation call)
+    public PyDataType GetBookmarks (ServiceCall call)
     {
         return Database.ChrBookmarksGet (call.Session.CharacterID);
     }
 
-    public PyTuple BookmarkLocation (CallInformation call, PyInteger itemID, PyDataType unk, PyString name, PyString comment)
+    public PyTuple BookmarkLocation (ServiceCall call, PyInteger itemID, PyDataType unk, PyString name, PyString comment)
     {
         if (ItemRanges.IsStaticData (itemID) == false)
             throw new CustomError ("Bookmarks for non-static locations are not supported yet!");
@@ -77,7 +77,7 @@ public class bookmark : Service
         };
     }
 
-    public PyDataType DeleteBookmarks (CallInformation call, PyList bookmarkIDs)
+    public PyDataType DeleteBookmarks (ServiceCall call, PyList bookmarkIDs)
     {
         // if no ids are specified, there's nothing to do
         if (bookmarkIDs.Count == 0)

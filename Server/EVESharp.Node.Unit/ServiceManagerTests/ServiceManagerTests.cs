@@ -5,9 +5,9 @@ using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Exceptions;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services;
 using EVESharp.Types;
@@ -27,7 +27,7 @@ public class ServiceManagerTests
         foreach (PyDataType pyDataType in parameters)
             payload [i++] = pyDataType;
         
-        return new CallInformation ()
+        return new ServiceCall ()
         {
             Destination         = null,
             Source              = null,

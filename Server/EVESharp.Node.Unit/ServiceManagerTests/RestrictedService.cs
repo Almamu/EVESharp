@@ -2,8 +2,8 @@ using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 

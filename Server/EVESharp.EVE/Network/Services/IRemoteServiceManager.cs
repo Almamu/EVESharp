@@ -3,7 +3,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.EVE.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public interface IRemoteServiceManager
 {

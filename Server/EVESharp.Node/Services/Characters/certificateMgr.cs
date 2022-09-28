@@ -5,11 +5,11 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.certificateMgr;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Certificates;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -36,7 +36,7 @@ public class certificateMgr : Service
         CertificateRelationships = Database.GetCertificateRelationships ();
     }
 
-    public PyDataType GetAllShipCertificateRecommendations (CallInformation call)
+    public PyDataType GetAllShipCertificateRecommendations (ServiceCall call)
     {
         CacheStorage.Load (
             "certificateMgr",
@@ -48,7 +48,7 @@ public class certificateMgr : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetAllShipCertificateRecommendations"));
     }
 
-    public PyDataType GetCertificateCategories (CallInformation call)
+    public PyDataType GetCertificateCategories (ServiceCall call)
     {
         CacheStorage.Load (
             "certificateMgr",
@@ -60,7 +60,7 @@ public class certificateMgr : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetCertificateCategories"));
     }
 
-    public PyDataType GetCertificateClasses (CallInformation call)
+    public PyDataType GetCertificateClasses (ServiceCall call)
     {
         CacheStorage.Load (
             "certificateMgr",
@@ -72,12 +72,12 @@ public class certificateMgr : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("certificateMgr", "GetCertificateClasses"));
     }
 
-    public PyDataType GetMyCertificates (CallInformation call)
+    public PyDataType GetMyCertificates (ServiceCall call)
     {
         return Database.CrtGetCharacterCertificates (call.Session.CharacterID);
     }
 
-    public PyBool GrantCertificate (CallInformation call, PyInteger certificateID)
+    public PyBool GrantCertificate (ServiceCall call, PyInteger certificateID)
     {
         int       callerCharacterID = call.Session.CharacterID;
         Character character         = this.Items.GetItem <Character> (callerCharacterID);
@@ -108,7 +108,7 @@ public class certificateMgr : Service
         return null;
     }
 
-    public PyDataType BatchCertificateGrant (CallInformation call, PyList certificateList)
+    public PyDataType BatchCertificateGrant (ServiceCall call, PyList certificateList)
     {
         int       callerCharacterID = call.Session.CharacterID;
         Character character         = this.Items.GetItem <Character> (callerCharacterID);
@@ -151,14 +151,14 @@ public class certificateMgr : Service
         return result;
     }
 
-    public PyDataType UpdateCertificateFlags (CallInformation call, PyInteger certificateID, PyInteger visibilityFlags)
+    public PyDataType UpdateCertificateFlags (ServiceCall call, PyInteger certificateID, PyInteger visibilityFlags)
     {
         Database.CrtUpdateVisibilityFlags (call.Session.CharacterID, certificateID, visibilityFlags);
 
         return null;
     }
 
-    public PyDataType BatchCertificateUpdate (CallInformation call, PyDictionary updates)
+    public PyDataType BatchCertificateUpdate (ServiceCall call, PyDictionary updates)
     {
         foreach ((PyInteger key, PyInteger value) in updates.GetEnumerable <PyInteger, PyInteger> ())
             this.UpdateCertificateFlags (call, key, value);
@@ -166,7 +166,7 @@ public class certificateMgr : Service
         return null;
     }
 
-    public PyDataType GetCertificatesByCharacter (CallInformation call, PyInteger characterID)
+    public PyDataType GetCertificatesByCharacter (ServiceCall call, PyInteger characterID)
     {
         return Database.CrtGetCharacterCertificates (characterID);
     }

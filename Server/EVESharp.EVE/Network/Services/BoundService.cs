@@ -1,10 +1,10 @@
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public abstract class BoundService : Service
 {
@@ -24,13 +24,13 @@ public abstract class BoundService : Service
     /// The objectID to which this service was bound to
     /// </summary>
     public int ObjectID { get; init; }
-    public BoundServiceManager BoundServiceManager { get; }
+    public IBoundServiceManager BoundServiceManager { get; }
 
     /// <summary>
     /// Creates a base bound service to no client to be used as a normal service
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
-    public BoundService (BoundServiceManager manager)
+    public BoundService (IBoundServiceManager manager)
     {
         BoundServiceManager = manager;
     }
@@ -40,7 +40,7 @@ public abstract class BoundService : Service
     /// </summary>
     /// <param name="manager">The bound service manager used by this service</param>
     /// <param name="objectID">The object it's bound to</param>
-    public BoundService (BoundServiceManager manager, int objectID) : this (manager)
+    public BoundService (IBoundServiceManager manager, int objectID) : this (manager)
     {
         ObjectID = objectID;
 
@@ -56,7 +56,7 @@ public abstract class BoundService : Service
     /// <param name="call"></param>
     /// <returns>The node where this object is stored</returns>
     [MustBeCharacter]
-    public PyInteger MachoResolveObject (CallInformation call, PyDataType bindParams, PyInteger justQuery)
+    public PyInteger MachoResolveObject (ServiceCall call, PyDataType bindParams, PyInteger justQuery)
     {
         return this.MachoResolveObject (call, bindParams);
     }
@@ -67,7 +67,7 @@ public abstract class BoundService : Service
     /// <param name="parameters">The parameters used for this resolve call</param>
     /// <param name="call">The caller information</param>
     /// <returns>The node where this object is stored</returns>
-    protected abstract long MachoResolveObject (CallInformation call, ServiceBindParams parameters);
+    protected abstract long MachoResolveObject (ServiceCall call, ServiceBindParams parameters);
 
     /// <summary>
     /// Binds a new object of this type with the given objectData to provide a stateful
@@ -81,7 +81,7 @@ public abstract class BoundService : Service
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
     [MustBeCharacter]
-    public PyDataType MachoBindObject (CallInformation call, PyDataType bindParams, PyDataType callInfo)
+    public PyDataType MachoBindObject (ServiceCall call, PyDataType bindParams, PyDataType callInfo)
     {
         return this.MachoBindObject (call, (ServiceBindParams) bindParams, callInfo);
     }
@@ -97,7 +97,7 @@ public abstract class BoundService : Service
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected abstract PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo);
+    protected abstract PyDataType MachoBindObject (ServiceCall call, ServiceBindParams bindParams, PyDataType callInfo);
 
     /// <summary>
     /// Checks if the caller has enough permissions to use this bound service

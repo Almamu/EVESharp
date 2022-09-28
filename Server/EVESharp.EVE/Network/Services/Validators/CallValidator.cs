@@ -1,7 +1,7 @@
 using System;
 using EVESharp.EVE.Sessions;
 
-namespace EVESharp.EVE.Services.Validators;
+namespace EVESharp.EVE.Network.Services.Validators;
 
 /// <summary>
 /// Helper interface to declare proper validators for service calls

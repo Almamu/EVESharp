@@ -3,7 +3,7 @@ using EVESharp.Database;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Services.Characters;
 using EVESharp.Node.Unit.Utils;

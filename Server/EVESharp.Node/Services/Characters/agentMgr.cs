@@ -1,4 +1,4 @@
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.Node.Agents;
 using EVESharp.Types;
@@ -11,22 +11,22 @@ public class agentMgr : ClientBoundService
     public override AccessLevel  AccessLevel  => AccessLevel.None;
     private         AgentManager AgentManager { get; }
 
-    public agentMgr (AgentManager agentManager, BoundServiceManager manager) : base (manager)
+    public agentMgr (AgentManager agentManager, IBoundServiceManager manager) : base (manager)
     {
         AgentManager = agentManager;
     }
 
-    protected agentMgr (int agentID, AgentManager agentManager, BoundServiceManager manager, Session session) : base (manager, session, agentID)
+    protected agentMgr (int agentID, AgentManager agentManager, IBoundServiceManager manager, Session session) : base (manager, session, agentID)
     {
         AgentManager = agentManager;
     }
 
-    public PyDataType GetAgents (CallInformation call)
+    public PyDataType GetAgents (ServiceCall call)
     {
         return AgentManager.GetAgents ();
     }
 
-    public PyDataType GetMyJournalDetails (CallInformation call)
+    public PyDataType GetMyJournalDetails (ServiceCall call)
     {
         return new PyTuple (2)
         {
@@ -35,23 +35,23 @@ public class agentMgr : ClientBoundService
         };
     }
 
-    public PyDataType GetMyEpicJournalDetails (CallInformation call)
+    public PyDataType GetMyEpicJournalDetails (ServiceCall call)
     {
         return new PyList ();
     }
 
-    public PyDataType GetInfoServiceDetails (CallInformation call)
+    public PyDataType GetInfoServiceDetails (ServiceCall call)
     {
         return AgentManager.GetInfo (ObjectID);
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         // TODO: PROPERLY IMPLEMENT THIS ONE
         return call.MachoNet.NodeID;
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         return new agentMgr (bindParams.ObjectID, AgentManager, BoundServiceManager, call.Session);
     }

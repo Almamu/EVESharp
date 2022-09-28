@@ -22,7 +22,7 @@
     Creator: Almamu
 */
 
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Configuration;
 using EVESharp.Types;
@@ -40,14 +40,13 @@ public class authentication : Service
         this.mConfiguration = configuration;
     }
 
-    public PyDataType GetPostAuthenticationMessage (CallInformation call)
+    public PyDataType GetPostAuthenticationMessage (ServiceCall call)
     {
-        if (this.mConfiguration.MessageType == AuthenticationMessageType.NoMessage)
-            return null;
-
-        if (this.mConfiguration.MessageType == AuthenticationMessageType.Message)
-            return KeyVal.FromDictionary (new PyDictionary {["message"] = this.mConfiguration.Message});
-
-        return null;
+        return this.mConfiguration.MessageType switch
+        {
+            AuthenticationMessageType.NoMessage => null,
+            AuthenticationMessageType.Message   => KeyVal.FromDictionary (new PyDictionary {["message"] = this.mConfiguration.Message}),
+            _                                   => null
+        };
     }
 }

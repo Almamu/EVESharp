@@ -7,7 +7,6 @@ using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
 using EVESharp.EVE.Notifications;
-using EVESharp.EVE.Services;
 using EVESharp.Node.Accounts;
 using EVESharp.Node.Configuration;
 using EVESharp.Node.Server.Shared.Helpers;

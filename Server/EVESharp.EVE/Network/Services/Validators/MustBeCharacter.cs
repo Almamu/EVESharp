@@ -3,15 +3,15 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
-namespace EVESharp.EVE.Services.Validators;
+namespace EVESharp.EVE.Network.Services.Validators;
 
 [AttributeUsage (AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public class MustBeCharacter : CallValidator
 {
     public MustBeCharacter ()
     {
-        Exception           = typeof (CustomError);
-        ExceptionParameters = new object [] {"NoCharacterSelected"};
+        this.Exception           = typeof (CustomError);
+        this.ExceptionParameters = new object [] {"NoCharacterSelected"};
     }
     
     public override bool Validate (Session session)

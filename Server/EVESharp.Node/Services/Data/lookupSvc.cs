@@ -1,5 +1,5 @@
 ﻿using EVESharp.Database.Old;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Data;
@@ -14,7 +14,7 @@ public class lookupSvc : Service
         DB = db;
     }
 
-    public PyDataType LookupPlayerCharacters (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupPlayerCharacters (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -26,7 +26,7 @@ public class lookupSvc : Service
         return DB.LookupPlayerCharacters (criteria, exact);
     }
 
-    public PyDataType LookupOwners (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupOwners (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -38,7 +38,7 @@ public class lookupSvc : Service
         return DB.LookupOwners (criteria, exact);
     }
 
-    public PyDataType LookupCharacters (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupCharacters (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -50,7 +50,7 @@ public class lookupSvc : Service
         return DB.LookupCharacters (criteria, exact);
     }
 
-    public PyDataType LookupStations (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupStations (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -62,7 +62,7 @@ public class lookupSvc : Service
         return DB.LookupStations (criteria, exact);
     }
 
-    public PyDataType LookupCorporations (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupCorporations (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -74,7 +74,7 @@ public class lookupSvc : Service
         return DB.LookupCorporations (criteria, exact);
     }
 
-    public PyDataType LookupAlliances (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupAlliances (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -86,7 +86,7 @@ public class lookupSvc : Service
         return DB.LookupAlliances (criteria, exact);
     }
 
-    public PyDataType LookupAllianceShortNames (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupAllianceShortNames (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -98,7 +98,7 @@ public class lookupSvc : Service
         return DB.LookupAllianceShortNames (criteria, exact);
     }
 
-    public PyDataType LookupCorporationsOrAlliances (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupCorporationsOrAlliances (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -110,7 +110,7 @@ public class lookupSvc : Service
         return DB.LookupCorporationsOrAlliances (criteria, exact);
     }
 
-    public PyDataType LookupCorporationsOrAlliances (CallInformation call, PyString criteria, PyDataType exactMatch, PyDataType warableEntitysOnly)
+    public PyDataType LookupCorporationsOrAlliances (ServiceCall call, PyString criteria, PyDataType exactMatch, PyDataType warableEntitysOnly)
     {
         bool exact = false;
 
@@ -132,7 +132,7 @@ public class lookupSvc : Service
         return DB.LookupCorporationsOrAlliances (criteria, exact);
     }
 
-    public PyDataType LookupCorporationTickers (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupCorporationTickers (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -144,7 +144,7 @@ public class lookupSvc : Service
         return DB.LookupCorporationTickers (criteria, exact);
     }
 
-    public PyDataType LookupFactions (CallInformation call, PyString criteria, PyDataType exactMatch)
+    public PyDataType LookupFactions (ServiceCall call, PyString criteria, PyDataType exactMatch)
     {
         bool exact = false;
 
@@ -156,7 +156,7 @@ public class lookupSvc : Service
         return DB.LookupFactions (criteria, exact);
     }
 
-    public PyDataType LookupKnownLocationsByGroup (CallInformation call, PyInteger groupID, PyString searchStr)
+    public PyDataType LookupKnownLocationsByGroup (ServiceCall call, PyInteger groupID, PyString searchStr)
     {
         return DB.LookupKnownLocationsByGroup (searchStr, groupID);
     }

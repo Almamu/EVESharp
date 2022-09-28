@@ -2,7 +2,7 @@ using System;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
-namespace EVESharp.EVE.Services.Validators;
+namespace EVESharp.EVE.Network.Services.Validators;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public class MustHaveSessionValue : CallValidator
@@ -11,12 +11,12 @@ public class MustHaveSessionValue : CallValidator
     
     public MustHaveSessionValue (string key, Type exception = null)
     {
-        Key       = key;
-        Exception = exception;
+        this.Key       = key;
+        this.Exception = exception;
     }
 
     public override bool Validate (Session session)
     {
-        return session.TryGetValue (Key, out PyDataType value) && value is not null;
+        return session.TryGetValue (this.Key, out PyDataType value) && value is not null;
     }
 }

@@ -23,7 +23,7 @@
 */
 
 using System;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Serilog;
@@ -40,7 +40,7 @@ public class alert : Service
         Log = logger;
     }
 
-    public PyTuple BeanCount (CallInformation call, PyInteger stackID)
+    public PyTuple BeanCount (ServiceCall call, PyInteger stackID)
     {
         return new PyTuple (2)
         {
@@ -49,7 +49,7 @@ public class alert : Service
         };
     }
 
-    public PyDataType SendClientStackTraceAlert (CallInformation call, PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null)
+    public PyDataType SendClientStackTraceAlert (ServiceCall call, PyTuple stackInfo, PyString stackTrace, PyString type, PyDataType extra = null)
     {
         Log.Fatal (
             "Received the following client's stack trace:" + Environment.NewLine +
@@ -62,7 +62,7 @@ public class alert : Service
         return null;
     }
 
-    public PyDataType BeanDelivery (CallInformation call, PyDictionary beanCounts)
+    public PyDataType BeanDelivery (ServiceCall call, PyDictionary beanCounts)
     {
         // I'm not joking, send me the stack trace NOW!!!
         // :P

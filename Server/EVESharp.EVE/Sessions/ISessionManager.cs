@@ -1,9 +1,25 @@
+using System;
 using System.Collections.Generic;
 
 namespace EVESharp.EVE.Sessions;
 
 public interface ISessionManager
 {
+    /// <summary>
+    /// Event fired when a sesssion is free'd
+    /// </summary>
+    public event Action <Session> OnSessionFreed;
+
+    /// <summary>
+    /// Registers a new session in the list
+    /// </summary>
+    /// <param name="source">The session to register</param>
+    public void RegisterSession (Session source);
+
+    /// <summary>
+    /// Initializes the given session so the cluster knows about it
+    /// </summary>
+    /// <param name="session"></param>
     void InitializeSession (Session session);
 
     /// <summary>

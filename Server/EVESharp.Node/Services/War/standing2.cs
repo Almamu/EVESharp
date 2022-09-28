@@ -4,11 +4,11 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Standings;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Relationships;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -33,7 +33,7 @@ public class standing2 : Service
         Standings     = standings;
     }
 
-    public PyTuple GetMyKillRights (CallInformation call)
+    public PyTuple GetMyKillRights (ServiceCall call)
     {
         PyDictionary killRights   = new PyDictionary ();
         PyDictionary killedRights = new PyDictionary ();
@@ -45,7 +45,7 @@ public class standing2 : Service
         };
     }
 
-    public PyDataType GetNPCNPCStandings (CallInformation call)
+    public PyDataType GetNPCNPCStandings (ServiceCall call)
     {
         CacheStorage.Load (
             "standing2",
@@ -67,19 +67,19 @@ public class standing2 : Service
         };
     }
 
-    public PyTuple GetCharStandings (CallInformation call)
+    public PyTuple GetCharStandings (ServiceCall call)
     {
         return GetStandingsFor (call.Session.CharacterID);
     }
 
-    public PyTuple GetCorpStandings (CallInformation call)
+    public PyTuple GetCorpStandings (ServiceCall call)
     {
         return GetStandingsFor (call.Session.CorporationID);
     }
 
     public PyDataType GetStandingTransactions
     (
-        CallInformation call,        PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
+        ServiceCall call,        PyInteger from, PyInteger to, PyInteger direction, PyInteger eventID,
         PyInteger       eventTypeID, PyInteger eventDateTime
     )
     {
@@ -92,26 +92,26 @@ public class standing2 : Service
         return DB.GetStandingTransactions (from, to, direction, eventID, eventTypeID, eventDateTime);
     }
 
-    public PyDecimal GetSecurityRating (CallInformation call, PyInteger characterID)
+    public PyDecimal GetSecurityRating (ServiceCall call, PyInteger characterID)
     {
         return this.Items.TryGetItem (characterID, out Character character)
             ? character.SecurityRating
             : this.DB.GetSecurityRating (characterID);
     }
 
-    public PyDataType GetNPCStandingsTo (CallInformation call, PyInteger characterID)
+    public PyDataType GetNPCStandingsTo (ServiceCall call, PyInteger characterID)
     {
         return DB.GetNPCStandings (characterID);
     }
 
-    public PyDataType SetPlayerStanding (CallInformation call, PyInteger entityID, PyDecimal standing, PyString reason)
+    public PyDataType SetPlayerStanding (ServiceCall call, PyInteger entityID, PyDecimal standing, PyString reason)
     {
         Standings.SetStanding (EventType.StandingPlayerSetStanding, call.Session.CharacterID, entityID, standing, reason);
         
         return null;
     }
 
-    public PyDataType SetCorpStanding (CallInformation call, PyInteger entityID, PyDecimal standing, PyString reason)
+    public PyDataType SetCorpStanding (ServiceCall call, PyInteger entityID, PyDecimal standing, PyString reason)
     {
         Standings.SetStanding (EventType.StandingPlayerCorpSetStanding, call.Session.CorporationID, entityID, standing, reason);
         

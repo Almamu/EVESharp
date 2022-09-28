@@ -8,11 +8,11 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Account;
@@ -41,7 +41,7 @@ public class billMgr : Service
         clusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
 
-    public PyDataType GetBillTypes (CallInformation call)
+    public PyDataType GetBillTypes (ServiceCall call)
     {
         CacheStorage.Load (
             "billMgr",
@@ -56,18 +56,18 @@ public class billMgr : Service
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
-    public PyDataType GetCorporationBillsReceivable (CallInformation call)
+    public PyDataType GetCorporationBillsReceivable (ServiceCall call)
     {
         return Database.MktBillsGetReceivable (call.Session.CorporationID);
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_ACCESSDENIED3, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
-    public PyDataType GetCorporationBills (CallInformation call)
+    public PyDataType GetCorporationBills (ServiceCall call)
     {
         return Database.MktBillsGetPayable (call.Session.CorporationID);
     }
 
-    public PyDataType PayCorporationBill (CallInformation call, PyInteger billID)
+    public PyDataType PayCorporationBill (ServiceCall call, PyInteger billID)
     {
         return null;
     }

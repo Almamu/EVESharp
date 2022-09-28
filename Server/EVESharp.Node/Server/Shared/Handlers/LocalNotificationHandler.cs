@@ -5,6 +5,7 @@ using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
@@ -24,7 +25,7 @@ public class LocalNotificationHandler
 {
     public IMachoNet           MachoNet            { get; }
     public ILogger             Log                 { get; }
-    public BoundServiceManager BoundServiceManager { get; }
+    public IBoundServiceManager BoundServiceManager { get; }
     public ServiceManager      ServiceManager      { get; }
     public IItems              Items               { get; }
     public ISolarSystems       SolarSystems        { get; }
@@ -33,7 +34,7 @@ public class LocalNotificationHandler
 
     public LocalNotificationHandler
     (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IItems items, ISolarSystems solarSystems,
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, IBoundServiceManager boundServiceManager, IItems items, ISolarSystems solarSystems,
         INotificationSender notificationSender, ISessionManager sessionManager
     )
     {
@@ -509,6 +510,6 @@ public class LocalNotificationHandler
     private void HandleClientHasDisconnected (PyTuple data, PyDictionary oob)
     {
         // unbind the player from all the services
-        BoundServiceManager.OnClientDisconnected (Session.FromPyDictionary (oob ["Session"] as PyDictionary));
+        SessionManager.FreeSession (Session.FromPyDictionary (oob ["Session"] as PyDictionary));
     }
 }

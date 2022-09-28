@@ -1,8 +1,8 @@
 ﻿using System;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
 using EVESharp.Node.Cache;
 using EVESharp.Types;
 
@@ -20,7 +20,7 @@ public class stationSvc : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyDataType GetStation (CallInformation call, PyInteger stationID)
+    public PyDataType GetStation (ServiceCall call, PyInteger stationID)
     {
         // generate cache for this call, why is this being called for every item in the assets window
         // when a list is expanded?!
@@ -35,7 +35,7 @@ public class stationSvc : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("stationSvc", $"GetStation_{stationID}"));
     }
 
-    public PyDataType GetSolarSystem (CallInformation call, PyInteger solarSystemID)
+    public PyDataType GetSolarSystem (ServiceCall call, PyInteger solarSystemID)
     {
         return this.Items.SolarSystems [solarSystemID].GetSolarSystemInfo ();
     }

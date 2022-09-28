@@ -1,7 +1,7 @@
 using EVESharp.Database.Old;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -20,7 +20,7 @@ public class tutorialSvc : Service
         DB           = db;
     }
 
-    public PyDataType GetCharacterTutorialState (CallInformation call)
+    public PyDataType GetCharacterTutorialState (ServiceCall call)
     {
         return new Rowset (
             new PyList <PyString> (4)
@@ -33,12 +33,12 @@ public class tutorialSvc : Service
         );
     }
 
-    public PyList GetContextHelp (CallInformation call)
+    public PyList GetContextHelp (ServiceCall call)
     {
         return new PyList ();
     }
 
-    public PyDataType GetTutorials (CallInformation call)
+    public PyDataType GetTutorials (ServiceCall call)
     {
         CacheStorage.Load (
             "tutorialSvc",
@@ -52,7 +52,7 @@ public class tutorialSvc : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    public PyDataType GetCategories (CallInformation call)
+    public PyDataType GetCategories (ServiceCall call)
     {
         CacheStorage.Load (
             "tutorialSvc",
@@ -66,12 +66,12 @@ public class tutorialSvc : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    public PyDataType GetTutorialInfo (CallInformation call, PyInteger tutorialID)
+    public PyDataType GetTutorialInfo (ServiceCall call, PyInteger tutorialID)
     {
         return DB.GetTutorialInfo (tutorialID);
     }
 
-    public PyDataType GetCriterias (CallInformation call)
+    public PyDataType GetCriterias (ServiceCall call)
     {
         CacheStorage.Load (
             "tutorialSvc",
@@ -85,7 +85,7 @@ public class tutorialSvc : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    public PyDataType GetTutorialGoodies (CallInformation call, PyInteger tutorialID, PyInteger pageID, PyInteger pageNumber)
+    public PyDataType GetTutorialGoodies (ServiceCall call, PyInteger tutorialID, PyInteger pageID, PyInteger pageNumber)
     {
         // there's not tutorial goodies that we know of
         return new PyList ();
@@ -93,7 +93,7 @@ public class tutorialSvc : Service
 
     public PyDataType LogStarted
     (
-        CallInformation call, PyInteger tutorialID, PyInteger pageNumber, PyInteger secondsAfterOpeningTutorial
+        ServiceCall call, PyInteger tutorialID, PyInteger pageNumber, PyInteger secondsAfterOpeningTutorial
     )
     {
         // there's no need to log when the tutorial started
@@ -103,7 +103,7 @@ public class tutorialSvc : Service
 
     public PyDataType LogCompleted
     (
-        CallInformation call, PyInteger tutorialID, PyInteger pageNumber,
+        ServiceCall call, PyInteger tutorialID, PyInteger pageNumber,
         PyInteger       secondsAfterOpeningTutorial
     )
     {
@@ -114,7 +114,7 @@ public class tutorialSvc : Service
 
     public PyDataType LogAborted
     (
-        CallInformation call, PyInteger tutorialID, PyInteger pageNumber,
+        ServiceCall call, PyInteger tutorialID, PyInteger pageNumber,
         PyInteger       secondsAfterOpeningTutorial
     )
     {
@@ -123,7 +123,7 @@ public class tutorialSvc : Service
         return null;
     }
 
-    public PyDataType GetTutorialAgents (CallInformation call, PyList agentIDs)
+    public PyDataType GetTutorialAgents (ServiceCall call, PyList agentIDs)
     {
         return DB.GetTutorialAgents (agentIDs.GetEnumerable <PyInteger> ());
     }

@@ -4,9 +4,9 @@ using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Server.Shared.Helpers;
@@ -19,17 +19,17 @@ namespace EVESharp.Node.Server.Shared.Handlers;
 
 public class LocalCallHandler
 {
-    private int                  ErrorID              { get; set; }
-    public  IMachoNet            MachoNet             { get; }
-    public  ServiceManager       ServiceManager       { get; }
-    public  BoundServiceManager  BoundServiceManager  { get; }
+    private int                   ErrorID              { get; set; }
+    public  IMachoNet             MachoNet             { get; }
+    public  ServiceManager        ServiceManager       { get; }
+    public  IBoundServiceManager  BoundServiceManager  { get; }
     public  IRemoteServiceManager RemoteServiceManager { get; }
-    public  ILogger              Log                  { get; }
-    public  PacketCallHelper     PacketCallHelper     { get; }
+    public  ILogger               Log                  { get; }
+    public  PacketCallHelper      PacketCallHelper     { get; }
 
     public LocalCallHandler
     (
-        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, BoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
+        IMachoNet machoNet, ILogger logger, ServiceManager serviceManager, IBoundServiceManager boundServiceManager, IRemoteServiceManager remoteServiceManager,
         PacketCallHelper packetCallHelper
     )
     {
@@ -41,14 +41,14 @@ public class LocalCallHandler
         PacketCallHelper     = packetCallHelper;
     }
 
-    private PyDataType HandleNormalCallReq (CallInformation call, PyTuple information, string service, string method)
+    private PyDataType HandleNormalCallReq (ServiceCall call, PyTuple information, string service, string method)
     {
         MachoNet.Log.Verbose ($"Calling {service}::{method}");
 
         return ServiceManager.ServiceCall (service, method, call);
     }
 
-    private PyDataType HandleBoundCallReq (CallInformation call, PyTuple information, string method)
+    private PyDataType HandleBoundCallReq (ServiceCall call, PyTuple information, string method)
     {
         if (information [0] is PyString == false)
             throw new Exception ("Expected bound call with bound string, but got something different");
@@ -99,7 +99,7 @@ public class LocalCallHandler
         if (machoMessage.Packet.OutOfBounds is not null && machoMessage.Packet.OutOfBounds.TryGetValue ("Session", out PyDictionary dictionary))
             session = Session.FromPyDictionary (dictionary);
 
-        CallInformation callInformation = new CallInformation
+        ServiceCall callInformation = new ServiceCall
         {
             Transport           = machoMessage.Transport,
             CallID              = source.CallID,

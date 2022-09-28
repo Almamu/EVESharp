@@ -1,6 +1,6 @@
 ﻿using EVESharp.Database.Old;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Inventory;
@@ -16,28 +16,28 @@ public class  factory : Service
         DB = db;
     }
 
-    public PyDataType GetBlueprintAttributes (CallInformation call, PyInteger blueprintID)
+    public PyDataType GetBlueprintAttributes (ServiceCall call, PyInteger blueprintID)
     {
         return DB.GetBlueprintAttributes (blueprintID, call.Session.CharacterID);
     }
 
-    public PyDataType GetMaterialsForTypeWithActivity (CallInformation call, PyInteger blueprintTypeID, PyInteger _)
+    public PyDataType GetMaterialsForTypeWithActivity (ServiceCall call, PyInteger blueprintTypeID, PyInteger _)
     {
         return DB.GetMaterialsForTypeWithActivity (blueprintTypeID);
     }
 
-    public PyDataType GetMaterialCompositionOfItemType (CallInformation call, PyInteger typeID)
+    public PyDataType GetMaterialCompositionOfItemType (ServiceCall call, PyInteger typeID)
     {
         return DB.GetMaterialCompositionOfItemType (typeID);
     }
 
-    public PyDataType GetBlueprintInformationAtLocation (CallInformation call, PyInteger hangarID, PyInteger one)
+    public PyDataType GetBlueprintInformationAtLocation (ServiceCall call, PyInteger hangarID, PyInteger one)
     {
         // TODO: IMPLEMENT PROPER PERMISSION CHECKING
         return DB.GetBlueprintInformationAtLocation (hangarID);
     }
 
-    public PyDataType GetBlueprintInformationAtLocationWithFlag (CallInformation call, PyInteger hangarID, PyInteger flag, PyInteger one)
+    public PyDataType GetBlueprintInformationAtLocationWithFlag (ServiceCall call, PyInteger hangarID, PyInteger flag, PyInteger one)
     {
         // TODO: IMPLEMENT PROPER PERMISSION CHECKING
         return DB.GetBlueprintInformationAtLocationWithFlag (hangarID, flag);

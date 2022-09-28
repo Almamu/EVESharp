@@ -2,8 +2,8 @@
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -22,7 +22,7 @@ public class ramProxy : Service
         this.Items = items;
     }
 
-    public PyDataType GetRelevantCharSkills (CallInformation call)
+    public PyDataType GetRelevantCharSkills (ServiceCall call)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -47,7 +47,7 @@ public class ramProxy : Service
         };
     }
 
-    public PyDataType AssemblyLinesSelect (CallInformation call, PyString typeFlag)
+    public PyDataType AssemblyLinesSelect (ServiceCall call, PyString typeFlag)
     {
         if (typeFlag == "region")
             return DB.GetRegionDetails (call.Session.RegionID);
@@ -60,12 +60,12 @@ public class ramProxy : Service
         throw new CustomError ("Unknown type flag for AssemblyLinesSelect");
     }
 
-    public PyDataType AssemblyLinesGet (CallInformation call, PyInteger containerID)
+    public PyDataType AssemblyLinesGet (ServiceCall call, PyInteger containerID)
     {
         return DB.AssemblyLinesGet (containerID);
     }
 
-    public PyDataType GetJobs2 (CallInformation call, PyInteger ownerID, PyBool completed, PyInteger fromDate, PyInteger toDate)
+    public PyDataType GetJobs2 (ServiceCall call, PyInteger ownerID, PyBool completed, PyInteger fromDate, PyInteger toDate)
     {
         if (ownerID != call.Session.CharacterID)
             throw new CustomError ("Corporation and/or alliance stuff not implemented yet!");

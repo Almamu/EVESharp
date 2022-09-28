@@ -10,9 +10,9 @@ using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Dogma;
@@ -35,8 +35,8 @@ public class BoundInventory : ClientBoundService
 
     public BoundInventory
     (
-        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory       item,    IItems  items,
-        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, BoundServiceManager manager, Session session
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
         EffectsManager     = effectsManager;
@@ -50,8 +50,8 @@ public class BoundInventory : ClientBoundService
 
     public BoundInventory
     (
-        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory       item,    Flags   flag, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, BoundServiceManager manager, Session session
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, Flags flag, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager manager, Session session
     ) : base (manager, session, item.ID)
     {
         EffectsManager     = effectsManager;
@@ -63,7 +63,7 @@ public class BoundInventory : ClientBoundService
         DogmaNotifications = dogmaNotifications;
     }
 
-    public PyDataType List (CallInformation call)
+    public PyDataType List (ServiceCall call)
     {
         CRowset result = new CRowset (ItemEntity.EntityItemDescriptor);
 
@@ -74,19 +74,19 @@ public class BoundInventory : ClientBoundService
         return result;
     }
 
-    public PyDataType ListStations (CallInformation call, PyInteger blueprintsOnly, PyInteger forCorp)
+    public PyDataType ListStations (ServiceCall call, PyInteger blueprintsOnly, PyInteger forCorp)
     {
         int callerCharacterID = call.Session.CharacterID;
 
         return ItemDB.ListStations (forCorp == 1 ? call.Session.CorporationID : callerCharacterID, blueprintsOnly);
     }
 
-    public PyDataType ListStationItems (CallInformation call, PyInteger stationID)
+    public PyDataType ListStationItems (ServiceCall call, PyInteger stationID)
     {
         return ItemDB.ListStationItems (stationID, call.Session.CharacterID);
     }
 
-    public PyDataType ListStationBlueprintItems (CallInformation call, PyInteger locationID, PyInteger _, PyInteger isCorp)
+    public PyDataType ListStationBlueprintItems (ServiceCall call, PyInteger locationID, PyInteger _, PyInteger isCorp)
     {
         if (isCorp == 1)
             return ItemDB.ListStationBlueprintItems (locationID, call.Session.CorporationID);
@@ -94,7 +94,7 @@ public class BoundInventory : ClientBoundService
         return ItemDB.ListStationBlueprintItems (locationID, call.Session.CharacterID);
     }
 
-    public PyDataType GetItem (CallInformation call)
+    public PyDataType GetItem (ServiceCall call)
     {
         return this.mInventory.GetEntityRow ();
     }
@@ -536,7 +536,7 @@ public class BoundInventory : ClientBoundService
         }
     }
 
-    public PyDataType Add (CallInformation call, PyInteger itemID)
+    public PyDataType Add (ServiceCall call, PyInteger itemID)
     {
         if (itemID == call.Session.ShipID)
             throw new CantMoveActiveShip ();
@@ -549,7 +549,7 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public PyDataType Add (CallInformation call, PyInteger itemID, PyInteger quantity)
+    public PyDataType Add (ServiceCall call, PyInteger itemID, PyInteger quantity)
     {
         if (itemID == call.Session.ShipID)
             throw new CantMoveActiveShip ();
@@ -562,7 +562,7 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public PyDataType Add (CallInformation call, PyInteger itemID, PyInteger quantity, PyInteger flag)
+    public PyDataType Add (ServiceCall call, PyInteger itemID, PyInteger quantity, PyInteger flag)
     {
         if (itemID == call.Session.ShipID)
             throw new CantMoveActiveShip ();
@@ -581,7 +581,7 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public PyDataType MultiAdd (CallInformation call, PyList adds, PyInteger quantity, PyInteger flag)
+    public PyDataType MultiAdd (ServiceCall call, PyList adds, PyInteger quantity, PyInteger flag)
     {
         if (quantity == null)
             // null quantity means all the items in the list
@@ -601,12 +601,12 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public PyDataType MultiAdd (CallInformation call, PyList adds)
+    public PyDataType MultiAdd (ServiceCall call, PyList adds)
     {
         return this.MultiAdd (call, adds, null, (int) this.mFlag);
     }
 
-    public PyDataType MultiMerge (CallInformation call, PyList merges)
+    public PyDataType MultiMerge (ServiceCall call, PyList merges)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -658,12 +658,12 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public PyDataType StackAll (CallInformation call, PyString password)
+    public PyDataType StackAll (ServiceCall call, PyString password)
     {
         throw new NotImplementedException ("Stacking on passworded containers is not supported yet!");
     }
 
-    private void StackAll (CallInformation call, Flags locationFlag)
+    private void StackAll (ServiceCall call, Flags locationFlag)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -709,7 +709,7 @@ public class BoundInventory : ClientBoundService
         }
     }
 
-    public PyDataType StackAll (CallInformation call, PyInteger locationFlag)
+    public PyDataType StackAll (ServiceCall call, PyInteger locationFlag)
     {
         if (this.mFlag != Flags.None)
             return null;
@@ -719,7 +719,7 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    public PyDataType StackAll (CallInformation call)
+    public PyDataType StackAll (ServiceCall call)
     {
         if (this.mFlag == Flags.None)
             return null;
@@ -731,8 +731,8 @@ public class BoundInventory : ClientBoundService
 
     public static PySubStruct BindInventory
     (
-        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory       item,                Flags   flag, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, BoundServiceManager boundServiceManager, Session session
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, Flags flag, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager boundServiceManager, Session session
     )
     {
         BoundService instance = new BoundInventory (
@@ -758,13 +758,13 @@ public class BoundInventory : ClientBoundService
         return new PySubStruct (new PySubStream (boundServiceInformation));
     }
 
-    public PyDataType BreakPlasticWrap (CallInformation call, PyInteger crateID)
+    public PyDataType BreakPlasticWrap (ServiceCall call, PyInteger crateID)
     {
         // TODO: ensure this item is a plastic wrap and mark the contract as void
         return null;
     }
 
-    public PyDataType DestroyFitting (CallInformation call, PyInteger itemID)
+    public PyDataType DestroyFitting (ServiceCall call, PyInteger itemID)
     {
         ItemEntity item = this.mInventory.Items [itemID];
 
@@ -787,12 +787,12 @@ public class BoundInventory : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         throw new NotImplementedException ();
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         throw new NotImplementedException ();
     }

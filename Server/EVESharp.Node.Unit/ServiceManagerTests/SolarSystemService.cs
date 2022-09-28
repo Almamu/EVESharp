@@ -1,4 +1,4 @@
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Unit.ServiceManagerTests;

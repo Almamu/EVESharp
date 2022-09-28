@@ -17,12 +17,12 @@ using EVESharp.EVE.Exceptions.marketProxy;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Market;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
@@ -92,7 +92,7 @@ public class marketProxy : Service
 
     public PyDataType CharGetNewTransactions
     (
-        CallInformation call,     PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
+        ServiceCall call,     PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
         PyInteger       quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger  minPrice
     )
     {
@@ -107,7 +107,7 @@ public class marketProxy : Service
     [MustHaveCorporationRole (MLS.UI_SHARED_WALLETHINT8, CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType CorpGetNewTransactions
     (
-        CallInformation call,     PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
+        ServiceCall call,     PyInteger  sellBuy,  PyInteger  typeID,   PyDataType clientID,
         PyInteger       quantity, PyDataType fromDate, PyDataType maxPrice, PyInteger  minPrice, PyInteger accountKey, PyInteger who
     )
     {
@@ -118,7 +118,7 @@ public class marketProxy : Service
         );
     }
 
-    public PyDataType GetMarketGroups (CallInformation call)
+    public PyDataType GetMarketGroups (ServiceCall call)
     {
         // check if the cache already exits
         if (CacheStorage.Exists ("marketProxy", "GetMarketGroups") == false)
@@ -132,28 +132,28 @@ public class marketProxy : Service
         return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("marketProxy", "GetMarketGroups"));
     }
 
-    public PyDataType GetCharOrders (CallInformation call)
+    public PyDataType GetCharOrders (ServiceCall call)
     {
         return DB.GetOrdersForOwner (call.Session.CharacterID);
     }
 
     [MustBeInStation]
-    public PyDataType GetStationAsks (CallInformation call)
+    public PyDataType GetStationAsks (ServiceCall call)
     {
         return DB.GetStationAsks (call.Session.StationID);
     }
 
-    public PyDataType GetSystemAsks (CallInformation call)
+    public PyDataType GetSystemAsks (ServiceCall call)
     {
         return DB.GetSystemAsks (call.Session.SolarSystemID2);
     }
 
-    public PyDataType GetRegionBest (CallInformation call)
+    public PyDataType GetRegionBest (ServiceCall call)
     {
         return DB.GetRegionBest (call.Session.RegionID);
     }
 
-    public PyDataType GetOrders (CallInformation call, PyInteger typeID)
+    public PyDataType GetOrders (ServiceCall call, PyInteger typeID)
     {
         // dirty little hack, but should do the trick
         CacheStorage.StoreCall (
@@ -168,7 +168,7 @@ public class marketProxy : Service
         return CachedMethodCallResult.FromCacheHint (cacheHint);
     }
 
-    public PyDataType StartupCheck (CallInformation call)
+    public PyDataType StartupCheck (ServiceCall call)
     {
         // this function is called when "buy this" is pressed in the market
         // seems to do some specific check on the market proxy status
@@ -176,12 +176,12 @@ public class marketProxy : Service
         return null;
     }
 
-    public PyDataType GetOldPriceHistory (CallInformation call, PyInteger typeID)
+    public PyDataType GetOldPriceHistory (ServiceCall call, PyInteger typeID)
     {
         return DB.GetOldPriceHistory (call.Session.RegionID, typeID);
     }
 
-    public PyDataType GetNewPriceHistory (CallInformation call, PyInteger typeID)
+    public PyDataType GetNewPriceHistory (ServiceCall call, PyInteger typeID)
     {
         return DB.GetNewPriceHistory (call.Session.RegionID, typeID);
     }
@@ -444,7 +444,7 @@ public class marketProxy : Service
 
     private void PlaceSellOrder
     (
-        CallInformation call, int itemID, Character character, int stationID, int quantity, int typeID, int duration,
+        ServiceCall call, int itemID, Character character, int stationID, int quantity, int typeID, int duration,
         double          price,
         int             range, double brokerCost, int ownerID, int accountKey
     )
@@ -528,7 +528,7 @@ public class marketProxy : Service
 
     private void PlaceImmediateBuyOrderChar
     (
-        CallInformation call, IDbConnection connection, IWallet wallet, int typeID, Character character, int stationID, int quantity,
+        ServiceCall call, IDbConnection connection, IWallet wallet, int typeID, Character character, int stationID, int quantity,
         double          price,
         int             range
     )
@@ -620,7 +620,7 @@ public class marketProxy : Service
 
     private void PlaceBuyOrder
     (
-        CallInformation call, int typeID, Character character, int stationID, int quantity, double price, int duration,
+        ServiceCall call, int typeID, Character character, int stationID, int quantity, double price, int duration,
         int             minVolume,
         int             range, double brokerCost, int ownerID, int accountKey
     )
@@ -668,7 +668,7 @@ public class marketProxy : Service
 
     public PyDataType PlaceCharOrder
     (
-        CallInformation call, PyInteger stationID, PyInteger  typeID, PyDecimal price,     PyInteger quantity,
+        ServiceCall call, PyInteger stationID, PyInteger  typeID, PyDecimal price,     PyInteger quantity,
         PyInteger       bid,  PyInteger range,     PyDataType itemID, PyInteger minVolume, PyInteger duration, PyInteger useCorp,
         PyDataType      located
     )
@@ -681,7 +681,7 @@ public class marketProxy : Service
 
     public PyDataType PlaceCharOrder
     (
-        CallInformation call, PyInteger stationID, PyInteger  typeID, PyDecimal price,     PyInteger quantity,
+        ServiceCall call, PyInteger stationID, PyInteger  typeID, PyDecimal price,     PyInteger quantity,
         PyInteger       bid,  PyInteger range,     PyDataType itemID, PyInteger minVolume, PyInteger duration, PyBool useCorp,
         PyDataType      located
     )
@@ -744,7 +744,7 @@ public class marketProxy : Service
         return null;
     }
 
-    public PyDataType CancelCharOrder (CallInformation call, PyInteger orderID, PyInteger regionID)
+    public PyDataType CancelCharOrder (ServiceCall call, PyInteger orderID, PyInteger regionID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -821,7 +821,7 @@ public class marketProxy : Service
 
     public PyDataType ModifyCharOrder
     (
-        CallInformation call, PyInteger orderID, PyDecimal newPrice, PyInteger bid, PyInteger stationID, PyInteger solarSystemID, PyDecimal price,
+        ServiceCall call, PyInteger orderID, PyDecimal newPrice, PyInteger bid, PyInteger stationID, PyInteger solarSystemID, PyDecimal price,
         PyInteger       volRemaining,
         PyInteger       issued
     )
@@ -1009,7 +1009,7 @@ public class marketProxy : Service
     }
 
     [MustHaveCorporationRole (MLS.UI_SHARED_WALLETHINT1, CorporationRole.Accountant)]
-    public PyDataType GetCorporationOrders (CallInformation call)
+    public PyDataType GetCorporationOrders (ServiceCall call)
     {
         return DB.GetOrdersForOwner (call.Session.CorporationID, true);
     }

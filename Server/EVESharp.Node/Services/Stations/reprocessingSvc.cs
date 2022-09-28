@@ -8,10 +8,10 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Exceptions.reprocessingSvc;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
@@ -57,7 +57,7 @@ public class reprocessingSvc : ClientBoundService
 
     public reprocessingSvc
     (
-        ReprocessingDB      reprocessingDb, StandingDB standingDb, IItems items, BoundServiceManager manager, IDogmaNotifications dogmaNotifications,
+        ReprocessingDB      reprocessingDb, StandingDB standingDb, IItems items, IBoundServiceManager manager, IDogmaNotifications dogmaNotifications,
         IDatabaseConnection database,
         ISolarSystems       solarSystems
     ) : base (manager)
@@ -72,8 +72,8 @@ public class reprocessingSvc : ClientBoundService
 
     protected reprocessingSvc
     (
-        ReprocessingDB      reprocessingDb, StandingDB          standingDb, Corporation corporation, Station station, ItemInventory inventory, IItems items,
-        BoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems
+        ReprocessingDB       reprocessingDb, StandingDB          standingDb, Corporation corporation, Station station, ItemInventory inventory, IItems items,
+        IBoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems
     ) : base (manager, session, inventory.ID)
     {
         ReprocessingDB     = reprocessingDb;
@@ -138,7 +138,7 @@ public class reprocessingSvc : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType GetReprocessingInfo (CallInformation call)
+    public PyDataType GetReprocessingInfo (ServiceCall call)
     {
         int       stationID = call.Session.StationID;
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
@@ -212,7 +212,7 @@ public class reprocessingSvc : ClientBoundService
         );
     }
 
-    public PyDataType GetQuotes (CallInformation call, PyList itemIDs)
+    public PyDataType GetQuotes (ServiceCall call, PyList itemIDs)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -258,7 +258,7 @@ public class reprocessingSvc : ClientBoundService
         }
     }
 
-    public PyDataType Reprocess (CallInformation call, PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks)
+    public PyDataType Reprocess (ServiceCall call, PyList itemIDs, PyInteger ownerID, PyInteger flag, PyBool unknown, PyList skipChecks)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -280,12 +280,12 @@ public class reprocessingSvc : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

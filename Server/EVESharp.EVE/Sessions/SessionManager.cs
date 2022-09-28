@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EVESharp.Types;
-using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Sessions;
 
@@ -15,29 +15,39 @@ public abstract class SessionManager : ISessionManager
     /// The real storage of sessions happens here
     /// </summary>
     private readonly Dictionary<int, Session> mSessions = new Dictionary<int,Session>();
+    public event Action <Session> OnSessionFreed;
 
     /// <summary>
     /// Registers a new session in the list
     /// </summary>
     /// <param name="source">The session to register</param>
-    protected void RegisterSession(Session source)
+    public void RegisterSession(Session source)
     {
-        this.mSessions.Add(source.UserID, source);
+        this.mSessions.TryAdd(source.UserID, source);
     }
 
+    /// <summary>
+    /// Initializes the given session so the cluster knows about it
+    /// </summary>
+    /// <param name="session"></param>
     public abstract void InitializeSession (Session   session);
+    /// <summary>
+    /// Updates the specified session with the new data
+    /// </summary>
+    /// <param name="idType"></param>
+    /// <param name="id"></param>
+    /// <param name="newValues"></param>
     public abstract void PerformSessionUpdate (string idType, int id, Session newValues);
-    void ISessionManager.FreeSession (Session         session)
-    {
-        this.FreeSession (session);
-    }
 
     /// <summary>
     /// Frees the given session from the list
     /// </summary>
     /// <param name="source">The session to free</param>
-    protected void FreeSession(Session source)
+    public void FreeSession(Session source)
     {
+        // fire the session free event
+        this.OnSessionFreed?.Invoke (source);
+        
         this.mSessions.Remove(source.UserID);
     }
 

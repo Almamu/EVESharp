@@ -7,11 +7,11 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.LSC;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Chat;
 using EVESharp.EVE.Packets.Exceptions;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Types;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Chat;
@@ -114,17 +114,17 @@ public class LSC : Service
         this.ParseChannelIdentifier (channel, out channelID, out channelType, out _);
     }
 
-    public PyDataType GetChannels (CallInformation call)
+    public PyDataType GetChannels (ServiceCall call)
     {
         return DB.GetChannelsForCharacter (call.Session.CharacterID, call.Session.CorporationID);
     }
 
-    public PyDataType GetChannels (CallInformation call, PyInteger reload)
+    public PyDataType GetChannels (ServiceCall call, PyInteger reload)
     {
         return this.GetChannels (call);
     }
 
-    public PyDataType GetMembers (CallInformation call, PyDataType channel)
+    public PyDataType GetMembers (ServiceCall call, PyDataType channel)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -147,7 +147,7 @@ public class LSC : Service
 
     private PyTuple GetChannelInformation
     (
-        string channelType, int channelID, int? entityID, int callerCharacterID, PyDataType channelIDExtended, CallInformation call
+        string channelType, int channelID, int? entityID, int callerCharacterID, PyDataType channelIDExtended, ServiceCall call
     )
     {
         Row info;
@@ -218,7 +218,7 @@ public class LSC : Service
         };
     }
 
-    public PyList <PyTuple> JoinChannels (CallInformation call, PyList channels, PyInteger role)
+    public PyList <PyTuple> JoinChannels (ServiceCall call, PyList channels, PyInteger role)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -297,17 +297,17 @@ public class LSC : Service
         return result;
     }
 
-    public PyDataType GetMyMessages (CallInformation call)
+    public PyDataType GetMyMessages (ServiceCall call)
     {
         return Database.EveMailGetHeaders (call.Session.CharacterID);
     }
 
-    public PyDataType GetRookieHelpChannel (CallInformation call)
+    public PyDataType GetRookieHelpChannel (ServiceCall call)
     {
         return ChatDB.CHANNEL_ROOKIECHANNELID;
     }
 
-    public PyDataType SendMessage (CallInformation call, PyDataType channel, PyString message)
+    public PyDataType SendMessage (ServiceCall call, PyDataType channel, PyString message)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -361,7 +361,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType LeaveChannels (CallInformation call, PyList channels, PyDataType boolUnsubscribe, PyInteger role)
+    public PyDataType LeaveChannels (ServiceCall call, PyList channels, PyDataType boolUnsubscribe, PyInteger role)
     {
         foreach (PyDataType channelInfo in channels)
         {
@@ -390,7 +390,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType LeaveChannel (CallInformation call, PyDataType channel, PyInteger announce)
+    public PyDataType LeaveChannel (ServiceCall call, PyDataType channel, PyInteger announce)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -430,7 +430,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType CreateChannel (CallInformation call, PyString name)
+    public PyDataType CreateChannel (ServiceCall call, PyString name)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -469,7 +469,7 @@ public class LSC : Service
         };
     }
 
-    public PyDataType DestroyChannel (CallInformation call, PyInteger channelID)
+    public PyDataType DestroyChannel (ServiceCall call, PyInteger channelID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -489,7 +489,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType AccessControl (CallInformation call, PyInteger channelID, PyInteger characterID, PyInteger accessLevel)
+    public PyDataType AccessControl (ServiceCall call, PyInteger channelID, PyInteger characterID, PyInteger accessLevel)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -520,7 +520,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType ForgetChannel (CallInformation call, PyInteger channelID)
+    public PyDataType ForgetChannel (ServiceCall call, PyInteger channelID)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -603,7 +603,7 @@ public class LSC : Service
         this.PacketCallHelper.SendException (call.OriginalCall, PyPacket.PacketType.CALL_REQ, new ChtCharNotReachable (call.ToCharacterID));
     }
 
-    public PyDataType Invite (CallInformation call, PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed)
+    public PyDataType Invite (ServiceCall call, PyInteger characterID, PyInteger channelID, PyString channelTitle, PyBool addAllowed)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -662,7 +662,7 @@ public class LSC : Service
         throw new ProvisionalResponse (new PyString ("OnDummy"), new PyTuple (0));
     }
 
-    public PyDataType Page (CallInformation call, PyList destinationMailboxes, PyString subject, PyString message)
+    public PyDataType Page (ServiceCall call, PyList destinationMailboxes, PyString subject, PyString message)
     {
         int callerCharacterID = call.Session.CharacterID;
 
@@ -674,7 +674,7 @@ public class LSC : Service
         return null;
     }
 
-    public PyDataType GetMessageDetails (CallInformation call, PyInteger channelID, PyInteger messageID)
+    public PyDataType GetMessageDetails (ServiceCall call, PyInteger channelID, PyInteger messageID)
     {
         // ensure the player is allowed to read messages off this mail list
         if (DB.IsPlayerAllowedToRead (channelID, call.Session.CharacterID) == false)
@@ -683,14 +683,14 @@ public class LSC : Service
         return Database.EveMailGetMessages (channelID, messageID);
     }
 
-    public PyDataType MarkMessagesRead (CallInformation call, PyList messageIDs)
+    public PyDataType MarkMessagesRead (ServiceCall call, PyList messageIDs)
     {
         Database.EveMailMarkMessagesRead (call.Session.CharacterID, messageIDs.GetEnumerable<PyInteger> ());
 
         return null;
     }
 
-    public PyDataType DeleteMessages (CallInformation call, PyInteger mailboxID, PyList messageIDs)
+    public PyDataType DeleteMessages (ServiceCall call, PyInteger mailboxID, PyList messageIDs)
     {
         Database.EveMailDeleteMessages (mailboxID, messageIDs.GetEnumerable<PyInteger> ());
 
@@ -699,7 +699,7 @@ public class LSC : Service
 
     private class InviteExtraInfo
     {
-        public CallInformation OriginalCall    { get; set; }
+        public ServiceCall OriginalCall    { get; set; }
         public int             FromCharacterID { get; set; }
         public int             ToCharacterID   { get; set; }
         public int             ChannelID       { get; set; }

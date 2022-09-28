@@ -1,4 +1,4 @@
-﻿namespace EVESharp.EVE.Services;
+﻿namespace EVESharp.EVE.Network.Services;
 
 public enum AccessLevel
 {

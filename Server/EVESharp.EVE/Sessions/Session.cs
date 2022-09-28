@@ -16,7 +16,7 @@ public class Session : PyDictionary <PyString, PyDataType>
     /// <summary>
     /// List of bound objects that are assigned to this session
     /// </summary>
-    public Dictionary <int, long> BoundObjects { get; } = new Dictionary <int, long> ();
+    public Dictionary <string, long> BoundObjects { get; } = new Dictionary <string, long> ();
 
     /// <summary>
     /// Creates a new session instance based off the given PyDictionary

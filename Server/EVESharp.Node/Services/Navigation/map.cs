@@ -2,16 +2,16 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Network.Caching;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Complex;
-using EVESharp.EVE.Services;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
-using Service = EVESharp.EVE.Services.Service;
+using Service = EVESharp.EVE.Network.Services.Service;
 
 namespace EVESharp.Node.Services.Navigation;
 
-public class map : Service
+public class map : EVE.Network.Services.Service
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
@@ -25,7 +25,7 @@ public class map : Service
         CacheStorage = cacheStorage;
     }
 
-    public PyTuple GetStationExtraInfo (CallInformation call)
+    public PyTuple GetStationExtraInfo (ServiceCall call)
     {
         Rowset stations = new Rowset (
             new PyList <PyString> (5)
@@ -93,7 +93,7 @@ public class map : Service
         };
     }
 
-    public PyDataType GetSolarSystemPseudoSecurities (CallInformation call)
+    public PyDataType GetSolarSystemPseudoSecurities (ServiceCall call)
     {
         CacheStorage.Load (
             "map",
@@ -108,7 +108,7 @@ public class map : Service
     }
 
     // TODO: PROPERLY IMPLEMENT THIS ONE
-    public PyDataType GetMyExtraMapInfoAgents (CallInformation call)
+    public PyDataType GetMyExtraMapInfoAgents (ServiceCall call)
     {
         return new Rowset (
             new PyList <PyString> (2)
@@ -119,12 +119,12 @@ public class map : Service
         );
     }
 
-    public PyDictionary GetStuckSystems (CallInformation call)
+    public PyDictionary GetStuckSystems (ServiceCall call)
     {
         return new PyDictionary ();
     }
 
-    public PyDataType GetHistory (CallInformation call, PyInteger historyType, PyInteger maximumJumpDistance)
+    public PyDataType GetHistory (ServiceCall call, PyInteger historyType, PyInteger maximumJumpDistance)
     {
         // TODO: IMPLEMENT THIS
         // this should return list of keyvals with information about the closest systems within the maximumJumpDistance

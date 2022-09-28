@@ -1,7 +1,7 @@
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Exceptions;
-using EVESharp.EVE.Services;
+using EVESharp.EVE.Network.Services;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Serilog;
@@ -22,38 +22,38 @@ public class config : Service
         Log        = log;
     }
 
-    public PyDataType GetMultiOwnersEx (CallInformation call, PyList ids)
+    public PyDataType GetMultiOwnersEx (ServiceCall call, PyList ids)
     {
         return DB.GetMultiOwnersEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiGraphicsEx (CallInformation call, PyList ids)
+    public PyDataType GetMultiGraphicsEx (ServiceCall call, PyList ids)
     {
         return DB.GetMultiGraphicsEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiLocationsEx (CallInformation call, PyList ids)
+    public PyDataType GetMultiLocationsEx (ServiceCall call, PyList ids)
     {
         return DB.GetMultiLocationsEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiAllianceShortNamesEx (CallInformation call, PyList ids)
+    public PyDataType GetMultiAllianceShortNamesEx (ServiceCall call, PyList ids)
     {
         return DB.GetMultiAllianceShortNamesEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMultiCorpTickerNamesEx (CallInformation call, PyList ids)
+    public PyDataType GetMultiCorpTickerNamesEx (ServiceCall call, PyList ids)
     {
         return DB.GetMultiCorpTickerNamesEx (ids.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetMap (CallInformation call, PyInteger solarSystemID)
+    public PyDataType GetMap (ServiceCall call, PyInteger solarSystemID)
     {
         return DB.GetMap (solarSystemID);
     }
 
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE, THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 1
-    public PyDataType GetMapObjects (CallInformation call, PyInteger locationID, PyInteger ignored1)
+    public PyDataType GetMapObjects (ServiceCall call, PyInteger locationID, PyInteger ignored1)
     {
         return DB.GetMapObjects (locationID);
     }
@@ -61,19 +61,19 @@ public class config : Service
     // THESE PARAMETERS AREN'T REALLY USED ANYMORE THIS FUNCTION IS USUALLY CALLED WITH LOCATIONID, 0, 0, 0, 1, 0
     public PyDataType GetMapObjects
     (
-        CallInformation call,        PyInteger locationID, PyInteger wantRegions, PyInteger wantConstellations,
+        ServiceCall call,        PyInteger locationID, PyInteger wantRegions, PyInteger wantConstellations,
         PyInteger       wantSystems, PyInteger wantItems,  PyInteger unknown
     )
     {
         return DB.GetMapObjects (locationID);
     }
 
-    public PyDataType GetMapOffices (CallInformation call, PyInteger solarSystemID)
+    public PyDataType GetMapOffices (ServiceCall call, PyInteger solarSystemID)
     {
         return DB.GetMapOffices (solarSystemID);
     }
 
-    public PyDataType GetCelestialStatistic (CallInformation call, PyInteger celestialID)
+    public PyDataType GetCelestialStatistic (ServiceCall call, PyInteger celestialID)
     {
         if (ItemRanges.IsCelestialID (celestialID) == false)
             throw new CustomError ($"Unexpected celestialID {celestialID}");
@@ -82,19 +82,19 @@ public class config : Service
         return DB.GetCelestialStatistic (celestialID);
     }
 
-    public PyDataType GetMultiInvTypesEx (CallInformation call, PyList typeIDs)
+    public PyDataType GetMultiInvTypesEx (ServiceCall call, PyList typeIDs)
     {
         return DB.GetMultiInvTypesEx (typeIDs.GetEnumerable <PyInteger> ());
     }
 
-    public PyDataType GetStationSolarSystemsByOwner (CallInformation call, PyInteger ownerID)
+    public PyDataType GetStationSolarSystemsByOwner (ServiceCall call, PyInteger ownerID)
     {
         return DB.GetStationSolarSystemsByOwner (ownerID);
     }
 
     public PyDataType GetMapConnections
     (
-        CallInformation call,          PyInteger  itemID,      PyDataType isRegion, PyDataType isConstellation,
+        ServiceCall call,          PyInteger  itemID,      PyDataType isRegion, PyDataType isConstellation,
         PyDataType      isSolarSystem, PyDataType isCelestial, PyInteger  unknown2 = null
     )
     {

@@ -1,4 +1,5 @@
 using EVESharp.EVE.Network;
+using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Services;
@@ -21,7 +22,7 @@ public class PacketCallHelper
     /// </summary>
     /// <param name="answerTo"></param>
     /// <param name="response"></param>
-    public void SendProvisionalResponse (CallInformation answerTo, ProvisionalResponse response)
+    public void SendProvisionalResponse (ServiceCall answerTo, ProvisionalResponse response)
     {
         // ensure destination has clientID in it
         PyAddressClient source = answerTo.Source as PyAddressClient;
@@ -55,7 +56,7 @@ public class PacketCallHelper
     /// <param name="answerTo"></param>
     /// <param name="content"></param>
     /// <param name="outOfBounds"></param>
-    public void SendCallResult (CallInformation answerTo, PyDataType content, PyDictionary outOfBounds = null)
+    public void SendCallResult (ServiceCall answerTo, PyDataType content, PyDictionary outOfBounds = null)
     {
         // ensure destination has clientID in it
         PyAddressClient originalSource = answerTo.Source as PyAddressClient;
@@ -81,7 +82,7 @@ public class PacketCallHelper
     /// <param name="answerTo"></param>
     /// <param name="packetType"></param>
     /// <param name="content"></param>
-    public void SendException (CallInformation answerTo, PyPacket.PacketType packetType, PyDataType content)
+    public void SendException (ServiceCall answerTo, PyPacket.PacketType packetType, PyDataType content)
     {
         // ensure destination has clientID in it
         PyAddressClient source = answerTo.Source as PyAddressClient;

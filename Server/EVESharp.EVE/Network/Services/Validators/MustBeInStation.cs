@@ -3,14 +3,14 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
-namespace EVESharp.EVE.Services.Validators;
+namespace EVESharp.EVE.Network.Services.Validators;
 
 [AttributeUsage (AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public class MustBeInStation : CallValidator
 {
     public MustBeInStation ()
     {
-        Exception = typeof (CanOnlyDoInStations);
+        this.Exception = typeof (CanOnlyDoInStations);
     }
     
     public override bool Validate (Session session)

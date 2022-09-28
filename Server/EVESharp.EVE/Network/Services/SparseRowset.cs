@@ -4,7 +4,7 @@ using EVESharp.EVE.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.EVE.Services;
+namespace EVESharp.EVE.Network.Services;
 
 /// <summary>
 /// Header for SparseRowset, which is a special object that acts as a bound service to return results 
@@ -35,9 +35,9 @@ public class SparseRowset
 
     public SparseRowset (int count, PyList <PyString> headers, FieldType [] fieldTypes)
     {
-        Count      = count;
-        Headers    = headers;
-        FieldTypes = fieldTypes;
+        this.Count      = count;
+        this.Headers    = headers;
+        this.FieldTypes = fieldTypes;
     }
 
     public static implicit operator PyDataType (SparseRowset rowsetHeader)
@@ -65,14 +65,14 @@ public class SparseRowset
 
         while (reader.Read ())
         {
-            PyDataType keyValue = reader.GetPyDataType(FieldTypes [pkFieldIndex], pkFieldIndex);
+            PyDataType keyValue = reader.GetPyDataType(this.FieldTypes [pkFieldIndex], pkFieldIndex);
 
             result.Add (
                 new PyTuple (3)
                 {
                     [0] = keyValue,
                     [1] = rowsIndex [keyValue],
-                    [2] = reader.Row (Headers, FieldTypes)
+                    [2] = reader.Row (this.Headers, this.FieldTypes)
                 }
             );
         }
@@ -92,13 +92,13 @@ public class SparseRowset
 
         while (reader.Read ())
         {
-            PyDataType keyValue = reader.GetPyDataType (FieldTypes [pkFieldIndex], pkFieldIndex);
+            PyDataType keyValue = reader.GetPyDataType (this.FieldTypes [pkFieldIndex], pkFieldIndex);
 
             result.Add (
                 new PyTuple (2)
                 {
                     [0] = keyValue,
-                    [1] = reader.Row (Headers, FieldTypes)
+                    [1] = reader.Row (this.Headers, this.FieldTypes)
                 }
             );
         }

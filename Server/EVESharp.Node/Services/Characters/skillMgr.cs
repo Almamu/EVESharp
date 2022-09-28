@@ -10,11 +10,11 @@ using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Exceptions.skillMgr;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Skills;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -42,8 +42,8 @@ public class skillMgr : ClientBoundService
 
     public skillMgr
     (
-        SkillDB             db,      IItems  items,  ITimers             timers,   IDogmaNotifications dogmaNotifications,
-        BoundServiceManager manager, ILogger logger, IDatabaseConnection database, ISolarSystems       solarSystems
+        SkillDB              db,      IItems  items,  ITimers             timers,   IDogmaNotifications dogmaNotifications,
+        IBoundServiceManager manager, ILogger logger, IDatabaseConnection database, ISolarSystems       solarSystems
     ) : base (manager)
     {
         DB                 = db;
@@ -57,8 +57,8 @@ public class skillMgr : ClientBoundService
 
     protected skillMgr
     (
-        SkillDB             db,      IItems  items,  ITimers timers,  IDogmaNotifications dogmaNotifications,
-        BoundServiceManager manager, ILogger logger, Session session, ISolarSystems       solarSystems
+        SkillDB              db,      IItems  items,  ITimers timers,  IDogmaNotifications dogmaNotifications,
+        IBoundServiceManager manager, ILogger logger, Session session, ISolarSystems       solarSystems
     ) : base (manager, session, session.CharacterID)
     {
         DB                 = db;
@@ -217,7 +217,7 @@ public class skillMgr : ClientBoundService
         Character.Persist ();
     }
 
-    public PyDataType GetSkillQueue (CallInformation call)
+    public PyDataType GetSkillQueue (ServiceCall call)
     {
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
@@ -231,12 +231,12 @@ public class skillMgr : ClientBoundService
         return skillQueueList;
     }
 
-    public PyDataType GetSkillHistory (CallInformation call)
+    public PyDataType GetSkillHistory (ServiceCall call)
     {
         return DB.GetSkillHistory (call.Session.CharacterID);
     }
 
-    public PyDataType InjectSkillIntoBrain (CallInformation call, PyList itemIDs)
+    public PyDataType InjectSkillIntoBrain (ServiceCall call, PyList itemIDs)
     {
         foreach (PyInteger item in itemIDs.GetEnumerable <PyInteger> ())
             try
@@ -304,7 +304,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType SaveSkillQueue (CallInformation call, PyList queue)
+    public PyDataType SaveSkillQueue (ServiceCall call, PyList queue)
     {
         if (Character.SkillQueue.Count > 0)
         {
@@ -419,7 +419,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType CharStartTrainingSkillByTypeID (CallInformation call, PyInteger typeID)
+    public PyDataType CharStartTrainingSkillByTypeID (ServiceCall call, PyInteger typeID)
     {
         // get the skill the player wants to train
         Skill skill = Character.InjectedSkills.First (x => x.Value.Type.ID == typeID).Value;
@@ -458,7 +458,7 @@ public class skillMgr : ClientBoundService
         return this.SaveSkillQueue (call, queue);
     }
 
-    public PyDataType GetEndOfTraining (CallInformation call)
+    public PyDataType GetEndOfTraining (ServiceCall call)
     {
         // do not allow the user to do that if the skill queue is empty
         if (Character.SkillQueue.Count == 0)
@@ -467,7 +467,7 @@ public class skillMgr : ClientBoundService
         return Character.SkillQueue [0].Skill.ExpiryTime;
     }
 
-    public PyDataType CharStopTrainingSkill (CallInformation call)
+    public PyDataType CharStopTrainingSkill (ServiceCall call)
     {
         // iterate the whole skill queue, stop it and recalculate points for the skills
         if (Character.SkillQueue.Count == 0)
@@ -510,7 +510,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType AddToEndOfSkillQueue (CallInformation call, PyInteger typeID, PyInteger level)
+    public PyDataType AddToEndOfSkillQueue (ServiceCall call, PyInteger typeID, PyInteger level)
     {
         // the skill queue must start only if it's empty OR there's something already in there
         bool shouldStart = true;
@@ -565,7 +565,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDictionary <PyString, PyInteger> GetRespecInfo (CallInformation call)
+    public PyDictionary <PyString, PyInteger> GetRespecInfo (ServiceCall call)
     {
         return new PyDictionary <PyString, PyInteger>
         {
@@ -574,7 +574,7 @@ public class skillMgr : ClientBoundService
         };
     }
 
-    public PyDataType GetCharacterAttributeModifiers (CallInformation call, PyInteger attributeID)
+    public PyDataType GetCharacterAttributeModifiers (ServiceCall call, PyInteger attributeID)
     {
         AttributeTypes attribute;
 
@@ -630,7 +630,7 @@ public class skillMgr : ClientBoundService
 
     public PyDataType RespecCharacter
     (
-        CallInformation call,       PyInteger charisma, PyInteger intelligence, PyInteger memory,
+        ServiceCall call,       PyInteger charisma, PyInteger intelligence, PyInteger memory,
         PyInteger       perception, PyInteger willpower
     )
     {
@@ -692,7 +692,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType CharAddImplant (CallInformation call, PyInteger itemID)
+    public PyDataType CharAddImplant (ServiceCall call, PyInteger itemID)
     {
         if (Character.SkillQueue.Count > 0)
             throw new FailedPlugInImplant ();
@@ -747,7 +747,7 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    public PyDataType RemoveImplantFromCharacter (CallInformation call, PyInteger itemID)
+    public PyDataType RemoveImplantFromCharacter (ServiceCall call, PyInteger itemID)
     {
         if (Character.Items.TryGetValue (itemID, out ItemEntity item) == false)
             throw new CustomError ("This implant is not in your brain!");
@@ -761,12 +761,12 @@ public class skillMgr : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("solarsystem", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

@@ -5,7 +5,7 @@ using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Sessions;
 
-namespace EVESharp.EVE.Services.Validators;
+namespace EVESharp.EVE.Network.Services.Validators;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public class MustHaveCorporationRole : CallValidator
@@ -14,9 +14,9 @@ public class MustHaveCorporationRole : CallValidator
     
     public MustHaveCorporationRole(long role)
     {
-        Roles               = new [] {role};
-        Exception           = typeof (CrpAccessDenied);
-        ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
+        this.Roles               = new [] {role};
+        this.Exception           = typeof (CrpAccessDenied);
+        this.ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
     }
 
     public MustHaveCorporationRole (CorporationRole role)
@@ -26,9 +26,9 @@ public class MustHaveCorporationRole : CallValidator
 
     public MustHaveCorporationRole (params long [] roles)
     {
-        Roles               = roles;
-        Exception           = typeof (CrpAccessDenied);
-        ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
+        this.Roles               = roles;
+        this.Exception           = typeof (CrpAccessDenied);
+        this.ExceptionParameters = new object [] {MLS.UI_GENERIC_ACCESSDENIED};
     }
 
     public MustHaveCorporationRole (params CorporationRole [] roles)
@@ -38,9 +38,9 @@ public class MustHaveCorporationRole : CallValidator
     
     public MustHaveCorporationRole(long role, Type exception)
     {
-        Roles               = new [] {role};
-        Exception           = exception;
-        ExceptionParameters = new object [] { };
+        this.Roles               = new [] {role};
+        this.Exception           = exception;
+        this.ExceptionParameters = new object [] { };
     }
 
     public MustHaveCorporationRole(CorporationRole role, Type exception)
@@ -50,9 +50,9 @@ public class MustHaveCorporationRole : CallValidator
 
     public MustHaveCorporationRole (long role, string message)
     {
-        Roles               = new [] {role};
-        Exception           = typeof (CrpAccessDenied);
-        ExceptionParameters = new object [] {message};
+        this.Roles               = new [] {role};
+        this.Exception           = typeof (CrpAccessDenied);
+        this.ExceptionParameters = new object [] {message};
     }
 
     public MustHaveCorporationRole (CorporationRole role, string message)
@@ -62,9 +62,9 @@ public class MustHaveCorporationRole : CallValidator
 
     public MustHaveCorporationRole (string message, params long[] roles)
     {
-        Roles               = roles;
-        Exception           = typeof (CrpAccessDenied);
-        ExceptionParameters = new object [] {message};
+        this.Roles               = roles;
+        this.Exception           = typeof (CrpAccessDenied);
+        this.ExceptionParameters = new object [] {message};
     }
 
     public MustHaveCorporationRole (string message, params CorporationRole [] roles)
@@ -74,9 +74,9 @@ public class MustHaveCorporationRole : CallValidator
 
     public MustHaveCorporationRole (Type exception, params long [] roles)
     {
-        Roles               = roles;
-        Exception           = exception;
-        ExceptionParameters = new object [] { };
+        this.Roles               = roles;
+        this.Exception           = exception;
+        this.ExceptionParameters = new object [] { };
     }
 
     public MustHaveCorporationRole (Type exception, params CorporationRole [] roles)
@@ -86,7 +86,7 @@ public class MustHaveCorporationRole : CallValidator
 
     public override bool Validate (Session session)
     {
-        foreach (long role in Roles)
+        foreach (long role in this.Roles)
         {
             if ((session.CorporationRole & role) == role)
                 return true;

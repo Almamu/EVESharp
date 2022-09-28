@@ -5,7 +5,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public abstract class MultiClientBoundService : BoundService
 {
@@ -27,19 +27,19 @@ public abstract class MultiClientBoundService : BoundService
     /// </summary>
     protected bool KeepAlive { get; init; }
 
-    public MultiClientBoundService (BoundServiceManager manager, bool keepAlive = false) : base (manager)
+    protected MultiClientBoundService (IBoundServiceManager manager, bool keepAlive = false) : base (manager)
     {
         this.mRegisteredServices = new Dictionary <int, MultiClientBoundService> ();
         KeepAlive                = keepAlive;
     }
 
-    public MultiClientBoundService (MultiClientBoundService parent, int objectID, bool keepAlive = false) : base (parent.BoundServiceManager, objectID)
+    protected MultiClientBoundService (MultiClientBoundService parent, int objectID, bool keepAlive = false) : base (parent.BoundServiceManager, objectID)
     {
         Parent    = parent;
         KeepAlive = keepAlive;
     }
 
-    public MultiClientBoundService (BoundServiceManager manager, int objectID, bool keepAlive = false) : base (manager, objectID)
+    protected MultiClientBoundService (IBoundServiceManager manager, int objectID, bool keepAlive = false) : base (manager, objectID)
     {
         KeepAlive = keepAlive;
     }
@@ -76,7 +76,7 @@ public abstract class MultiClientBoundService : BoundService
     /// <param name="callInfo">The information on the call</param>
     /// <param name="call">The call object with extra information</param>
     /// <returns></returns>
-    protected override PyDataType MachoBindObject (CallInformation call, ServiceBindParams bindParams, PyDataType callInfo)
+    protected override PyDataType MachoBindObject (ServiceCall call, ServiceBindParams bindParams, PyDataType callInfo)
     {
         MultiClientBoundService instance;
 
@@ -103,7 +103,7 @@ public abstract class MultiClientBoundService : BoundService
         BoundServiceInformation = new PyTuple (2)
         {
             [0] = instance.BoundString,
-            [1] = DateTime.UtcNow.Add (TimeSpan.FromDays (1)).ToFileTime ()
+            [1] = Guid.NewGuid ().ToString () // ReferenceID, this should be unique
         };
 
         // after the service is bound the call can be run (if required)
@@ -112,6 +112,9 @@ public abstract class MultiClientBoundService : BoundService
             [0] = new PySubStruct (new PySubStream (BoundServiceInformation)),
             [1] = null
         };
+        
+        // ensure the session is properly registered in the session manager
+        BoundServiceManager.MachoNet.SessionManager.RegisterSession (call.Session);
 
         if (callInfo is not null)
         {
@@ -120,7 +123,7 @@ public abstract class MultiClientBoundService : BoundService
             PyTuple      arguments      = data [1] as PyTuple;
             PyDictionary namedArguments = data [2] as PyDictionary;
 
-            CallInformation callInformation = new CallInformation
+            ServiceCall callInformation = new ServiceCall
             {
                 Session             = call.Session,
                 Payload             = arguments,
@@ -147,7 +150,7 @@ public abstract class MultiClientBoundService : BoundService
     /// <param name="bindParams">The information required for the instantiation</param>
     /// <returns>The new boudn service</returns>
     /// <exception cref="NotImplementedException">If this has not been implemented by the class</exception>
-    protected abstract MultiClientBoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams);
+    protected abstract MultiClientBoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams);
 
     protected virtual void OnClientDisconnected (Session session) { }
 

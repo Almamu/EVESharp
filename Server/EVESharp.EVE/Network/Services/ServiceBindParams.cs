@@ -2,7 +2,7 @@
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.Node.Services;
+namespace EVESharp.EVE.Network.Services;
 
 public class ServiceBindParams
 {

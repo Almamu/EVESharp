@@ -2,7 +2,7 @@
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
-namespace EVESharp.EVE.Services;
+namespace EVESharp.EVE.Network.Services;
 
 /// <summary>
 /// Stores information for the calls that are waiting an answer from a client/node

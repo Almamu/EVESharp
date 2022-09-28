@@ -9,10 +9,10 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Services;
+using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
-using EVESharp.EVE.Services;
-using EVESharp.EVE.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
@@ -41,9 +41,9 @@ public class repairSvc : ClientBoundService
 
     public repairSvc
     (
-        RepairDB      repairDb,     MarketDB            marketDb, InsuranceDB insuranceDb, INotificationSender notificationSender,
-        IItems        items,        BoundServiceManager manager,  IWallets    wallets,     IDogmaNotifications dogmaNotifications,
-        ISolarSystems solarSystems, IDatabaseConnection database
+        RepairDB      repairDb,     MarketDB             marketDb, InsuranceDB insuranceDb, INotificationSender notificationSender,
+        IItems        items,        IBoundServiceManager manager,  IWallets    wallets,     IDogmaNotifications dogmaNotifications,
+        ISolarSystems solarSystems, IDatabaseConnection  database
     ) : base (manager)
     {
         Items              = items;
@@ -59,8 +59,8 @@ public class repairSvc : ClientBoundService
 
     protected repairSvc
     (
-        RepairDB      repairDb,  MarketDB marketDb, InsuranceDB         insuranceDb, INotificationSender notificationSender,
-        ItemInventory inventory, IItems   items,    BoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session
+        RepairDB      repairDb,  MarketDB marketDb, InsuranceDB          insuranceDb, INotificationSender notificationSender,
+        ItemInventory inventory, IItems   items,    IBoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session
     ) : base (manager, session, inventory.ID)
     {
         this.mInventory         = inventory;
@@ -73,7 +73,7 @@ public class repairSvc : ClientBoundService
         this.DogmaNotifications = dogmaNotifications;
     }
 
-    public PyDataType GetDamageReports (CallInformation call, PyList itemIDs)
+    public PyDataType GetDamageReports (ServiceCall call, PyList itemIDs)
     {
         PyDictionary <PyInteger, PyDataType> response = new PyDictionary <PyInteger, PyDataType> ();
 
@@ -156,7 +156,7 @@ public class repairSvc : ClientBoundService
     }
 
     [MustBeInStation]
-    public PyDataType RepairItems (CallInformation call, PyList itemIDs, PyDecimal iskRepairValue)
+    public PyDataType RepairItems (ServiceCall call, PyList itemIDs, PyDecimal iskRepairValue)
     {
         // ensure the player has enough balance to do the fixing
         Station station = this.Items.GetStaticStation (call.Session.StationID);
@@ -240,7 +240,7 @@ public class repairSvc : ClientBoundService
         return null;
     }
 
-    public PyDataType UnasembleItems (CallInformation call, PyDictionary validIDsByStationID, PyList skipChecks)
+    public PyDataType UnasembleItems (ServiceCall call, PyDictionary validIDsByStationID, PyList skipChecks)
     {
         int                                characterID = call.Session.CharacterID;
         List <RepairDB.ItemRepackageEntry> entries     = new List <RepairDB.ItemRepackageEntry> ();
@@ -341,12 +341,12 @@ public class repairSvc : ClientBoundService
         return null;
     }
 
-    protected override long MachoResolveObject (CallInformation call, ServiceBindParams parameters)
+    protected override long MachoResolveObject (ServiceCall call, ServiceBindParams parameters)
     {
         return Database.CluResolveAddress ("station", parameters.ObjectID);
     }
 
-    protected override BoundService CreateBoundInstance (CallInformation call, ServiceBindParams bindParams)
+    protected override BoundService CreateBoundInstance (ServiceCall call, ServiceBindParams bindParams)
     {
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");

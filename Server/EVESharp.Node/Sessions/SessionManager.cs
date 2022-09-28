@@ -14,8 +14,11 @@ public class SessionManager : EVE.Sessions.SessionManager
 
     public SessionManager (ITransportManager transportManager, IMachoNet machoNet)
     {
-        TransportManager = transportManager;
-        MachoNet         = machoNet;
+        TransportManager        = transportManager;
+        MachoNet                = machoNet;
+        
+        // TODO: MOVE THIS SOMEWHERE ELSE
+        MachoNet.SessionManager = this;
 
         // register events
         TransportManager.TransportRemoved += this.OnTransportClosed;
@@ -128,11 +131,6 @@ public class SessionManager : EVE.Sessions.SessionManager
         // notify all proxies
         foreach ((long _, IMachoTransport transport) in MachoNet.TransportManager.ProxyTransports)
             transport.Socket.Send (packet);
-    }
-
-    public new void FreeSession (Session session)
-    {
-        base.FreeSession (session);
     }
 
     private void OnTransportClosed (IMachoTransport transport)
