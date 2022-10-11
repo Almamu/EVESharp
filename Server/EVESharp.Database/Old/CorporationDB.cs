@@ -1196,7 +1196,7 @@ public class CorporationDB : DatabaseAccessor
         );
     }
 
-    public void CreateMedal (int corporationID, int creatorID, string title, string description, PyList <PyList> parts)
+    public ulong CreateMedal (int corporationID, int creatorID, string title, string description, PyList <PyList> parts)
     {
         ulong medalID = this.Database.PrepareLID (
             "INSERT INTO crpMedals(corporationID, title, description, date, creatorID, noRecepients)VALUES(@corporationID, @title, @description, @date, @creatorID, @noRecepients)",
@@ -1236,6 +1236,8 @@ public class CorporationDB : DatabaseAccessor
                 command.ExecuteNonQuery ();
             }
         }
+
+        return medalID;
     }
 
     public void GrantMedal (int medalID, int ownerID, int issuerID, string reason, int status = 0)

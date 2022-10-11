@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.Database.Old;
@@ -8,10 +9,12 @@ using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corporationSvc;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Corporations;
+using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -28,11 +31,12 @@ public class corporationSvc : Service
     private         IConstants          Constants     { get; }
     private         IItems              Items         { get; }
     private         INotificationSender Notifications { get; }
+    private         ICacheStorage       CacheStorage  { get; }
 
     public corporationSvc
     (
         IDatabaseConnection databaseConnection, CorporationDB db, IConstants constants, IWallets wallets, IItems items,
-        INotificationSender notificationSender
+        INotificationSender notificationSender, ICacheStorage cacheStorage
     )
     {
         Database      = databaseConnection;
@@ -41,6 +45,7 @@ public class corporationSvc : Service
         this.Wallets  = wallets;
         this.Items    = items;
         Notifications = notificationSender;
+        CacheStorage  = cacheStorage;
     }
 
     public PyTuple GetFactionInfo (ServiceCall call)
@@ -108,18 +113,26 @@ public class corporationSvc : Service
         return DB.GetRecruitmentAds (regionID, skillPoints, typeMask, raceMask, isInAlliance, minMembers, maxMembers);
     }
 
-    public PyTuple GetAllCorpMedals (ServiceCall call, PyInteger corporationID)
+    public PyDataType GetAllCorpMedals (ServiceCall call, PyInteger corporationID)
     {
-        Dictionary <string, object> values = new Dictionary <string, object> {{"_corporationID", corporationID}};
-
-        // TODO: IMPLEMENT CACHING FOR THIS ANSWER (THE CLIENT SEEMS TO EXPECT IT, ALTHOUGH IT DOESN'T ENFORCE IT)
-        // TODO: THAT WILL REQUIRE TO SEND NOTIFICATIONS ON DATA CHANGES LIKE NEW MEDALS OR MEDALS BEING ISSUED
-        // TODO: OnCorporationMedalAdded, OnMedalIssued, OnMedalStatusChanged
-        return new PyTuple (2)
+        // check if the cache already exits
+        if (CacheStorage.Exists ("corporationSvc", "GetAllCorpMedals_" + corporationID) == false)
         {
-            [0] = Database.Rowset (CorporationDB.LIST_MEDALS, values),
-            [1] = Database.CRowset (CorporationDB.LIST_MEDALS_DETAILS, values)
-        };
+            Dictionary <string, object> values = new Dictionary <string, object> {{"_corporationID", corporationID}};
+            
+            CacheStorage.StoreCall (
+                "corporationSvc",
+                "GetAllCorpMedals_" + corporationID,
+                new PyTuple (2)
+                {
+                    [0] = Database.Rowset (CorporationDB.LIST_MEDALS, values),
+                    [1] = Database.CRowset (CorporationDB.LIST_MEDALS_DETAILS, values)
+                },
+                DateTime.UtcNow.ToFileTimeUtc ()
+            );
+        }
+
+        return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("corporationSvc", "GetAllCorpMedals_" + corporationID));
     }
 
     public PyDataType GetCorpInfo (ServiceCall call, PyInteger corporationID)
@@ -175,8 +188,11 @@ public class corporationSvc : Service
             wallet.CreateJournalRecord (MarketReference.MedalCreation, Constants.MedalTaxCorporation, null, -Constants.MedalCost);
         }
 
-        DB.CreateMedal (call.Session.CorporationID, characterID, title, description, parts.GetEnumerable <PyList> ());
+        int medalID = (int) DB.CreateMedal (call.Session.CorporationID, characterID, title, description, parts.GetEnumerable <PyList> ());
 
+        // notify everyone
+        Notifications.NotifyCorporation (call.Session.CorporationID, new OnCorporationMedalAdded (medalID));
+        
         return null;
     }
 

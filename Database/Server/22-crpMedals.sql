@@ -18,6 +18,6 @@ CREATE TABLE `crpMedalParts` (
 	`index` INT(11) NOT NULL,
 	`part` INT(11) NOT NULL,
 	`graphic` VARCHAR(50) NULL DEFAULT NULL,
-	`color` VARCHAR(50) NULL DEFAULT NULL,
+	`color` INT(11) NULL DEFAULT NULL,
 	PRIMARY KEY (`medalID`, `index`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
