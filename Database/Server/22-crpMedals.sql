@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS `crpMedals`;
 
 CREATE TABLE `crpMedals` (
-	`medalID` INT NOT NULL,
+	`medalID` INT NOT NULL AUTO_INCREMENT,
 	`corporationID` INT NOT NULL,
 	`title` VARCHAR(255) NULL,
 	`description` TEXT NULL,
