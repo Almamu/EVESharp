@@ -164,9 +164,7 @@ public class Unmarshal
                 return this.ProcessObject (opcode);
 
             case Opcode.SavedStreamElement:
-                return this.mSavedList [
-                    this.mSavedElementsMap [this.mReader.ReadSizeEx () - 1] - 1
-                ];
+                return this.mSavedList [this.mReader.ReadSizeEx () - 1];
 
             default:
                 throw new InvalidDataException ($"Unknown python type for opcode {opcode:X}");
