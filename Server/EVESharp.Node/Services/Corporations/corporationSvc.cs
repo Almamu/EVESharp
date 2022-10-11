@@ -201,6 +201,9 @@ public class corporationSvc : Service
 
         int medalID = (int) DB.CreateMedal (call.Session.CorporationID, characterID, title, description, parts.GetEnumerable <PyList> ());
 
+        // remove the cached data from memory
+        CacheStorage.Remove ("corporationSvc", "GetAllCorpMedals_" + call.Session.CorporationID);
+        
         // notify everyone
         Notifications.NotifyCorporation (call.Session.CorporationID, new OnCorporationMedalAdded (medalID));
         
@@ -275,6 +278,8 @@ public class corporationSvc : Service
 
         // notify all the characters
         Notifications.NotifyCharacters (characterIDs.GetEnumerable <PyInteger> (), new OnMedalIssued ());
+        // notify the corporation members so the window updates
+        Notifications.NotifyCorporation (call.Session.CorporationID, new OnCorporationMedalAdded (medalID));
 
         // increase recipients for medals
         DB.IncreaseRecepientsForMedal (medalID, characterIDs.Count);
@@ -310,6 +315,8 @@ public class corporationSvc : Service
         // tell the client to refresh the local cache
         Notifications.NotifyCharacter (characterID, new OnMedalStatusChanged());
         // TODO: CLEAR VALUES FROM CACHE STORAGE
+        CacheStorage.Remove ("corporationSvc", "GetMedalsReceived_" + characterID + "_0");
+        CacheStorage.Remove ("corporationSvc", "GetMedalsReceived_" + characterID + "_1");
         
         return null;
     }

@@ -102,4 +102,17 @@ public interface ICacheStorage
     /// <param name="types">How to store each of the cached objects</param>
     /// <exception cref="ArgumentOutOfRangeException">The number of queries, names and types do not match</exception>
     void Load (Dictionary <string, string> names, string [] queries, CacheObjectType [] types);
+
+    /// <summary>
+    /// Removes the given cached data from the cache storage
+    /// </summary>
+    /// <param name="name"></param>
+    void Remove (string name);
+
+    /// <summary>
+    /// Removes the given cached data for a service call from the cache storage
+    /// </summary>
+    /// <param name="service"></param>
+    /// <param name="method"></param>
+    void Remove (string service, string method);
 }

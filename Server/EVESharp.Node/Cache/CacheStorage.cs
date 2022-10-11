@@ -50,7 +50,7 @@ public class CacheStorage : DatabaseAccessor, ICacheStorage
     /// <summary>
     /// Hints for the EVE Client so it knows when to request cache data or use the one already stored
     /// </summary>
-    private readonly PyDictionary mCacheHints = new PyDictionary ();
+    private readonly Dictionary <string, PyDataType> mCacheHints = new Dictionary <string, PyDataType> ();
 
     private IMachoNet MachoNet { get; }
     private ILogger   Log      { get; }
@@ -290,7 +290,7 @@ public class CacheStorage : DatabaseAccessor, ICacheStorage
     public void Load (Dictionary <string, string> names, string [] queries, CacheObjectType [] types)
     {
         if (names.Count != queries.Length || names.Count != types.Length)
-            throw new ArgumentOutOfRangeException ("names", "names, queries and types do not match in size");
+            throw new ArgumentOutOfRangeException (nameof (names), "names, queries and types do not match in size");
 
         int i = 0;
 
@@ -299,5 +299,27 @@ public class CacheStorage : DatabaseAccessor, ICacheStorage
             this.Load (key, queries [i], types [i]);
             i++;
         }
+    }
+
+    /// <summary>
+    /// Removes the given cached data from the cache storage
+    /// </summary>
+    /// <param name="name"></param>
+    public void Remove (string name)
+    {
+        this.mCacheData.Remove (name);
+        this.mCacheHints.Remove (name);
+    }
+
+    /// <summary>
+    /// Removes the given cached data for a service call from the cache storage
+    /// </summary>
+    /// <param name="service"></param>
+    /// <param name="method"></param>
+    public void Remove (string service, string method)
+    {
+        string name = $"{service}::{method}";
+
+        this.Remove (name);
     }
 }

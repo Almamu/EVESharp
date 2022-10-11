@@ -31,6 +31,7 @@ using EVESharp.Node.Chat;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
+using Serilog;
 using OnCorporationChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationChanged;
 using OnCorporationMemberChanged = EVESharp.EVE.Notifications.Corporations.OnCorporationMemberChanged;
 
@@ -1868,6 +1869,119 @@ public class corpRegistry : MultiClientBoundService
         Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Director, newChange);
 
         return null;
+    }
+
+    private static string ValidateHeader (string header)
+    {
+        return header switch
+        {
+            "roles"          => "roles",
+            "grantableRoles" => "grantableRoles",
+            _ => "roles"
+        };
+    }
+
+    private static string ValidateTitlesHeader (string header)
+    {
+        return header switch
+        {
+            "roles"          => "titleRoles",
+            "grantableRoles" => "titleGrantableRoles",
+            _                => "titleRoles"
+        };
+    }
+
+    private static string ValidateCriteria (int value)
+    {
+        return value switch
+        {
+            2 => "AND",
+            1 => "OR",
+            _ => "AND"
+        };
+    }
+    
+    public PyDataType GetMemberIDsByQuery (ServiceCall call, PyList query, PyInteger includeImplied, PyInteger searchTitles)
+    {
+        // TODO: FIGURE OUT A BETTER WAY OF WRITING THIS MONSTER?
+        // TODO: OPTIMIZE THE WAY THAT THE CLAUSES ARE GENERATED TO NOT WRITE THE TITLES CLAUSE UNLESS NEEDED
+        
+        // TODO: LOOK FURTHER INTO HOW THE FILTERS WORK, DOES SEARCH TITLES LIMIT THE SEARCH EXCLUSIVELY TO THE TITLES OR DOES IT RETURN TITLES AND NORMAL ROLES?
+        string whereClause            = "";
+        string titlesClause           = "";
+        string excludeDirectorsAndCEO = "";
+        
+        foreach (PyList data in query.GetEnumerable <PyList> ())
+        {
+            string field          = "";
+            string titlesField    = "";
+            string criteria       = "";
+            long   value          = 0;
+            int    comparisonType = 0; // 7 => include, 8 => not include
+            
+            if (data.Count == 3)
+            {
+                field          = ValidateHeader (data [0] as PyString);
+                titlesField    = ValidateTitlesHeader (data [0] as PyString);
+                comparisonType = data [1] as PyInteger;
+                value          = data [2] as PyInteger;
+            }
+            else if (data.Count == 4)
+            {
+                criteria       = ValidateCriteria (data [0] as PyInteger);
+                field          = ValidateHeader (data [1] as PyString);
+                titlesField    = ValidateTitlesHeader (data [1] as PyString);
+                comparisonType = data [2] as PyInteger;
+                value          = data [3] as PyInteger;
+            }
+
+            if (string.IsNullOrEmpty (criteria) == true)
+            {
+                whereClause += $"{field} & {value} = {(comparisonType == 7 ? value : 0)}";
+                titlesClause += $"{titlesField} & {value} = {(comparisonType == 7 ? value : 0)}";
+            }
+            else
+            {
+                whereClause  += $"{criteria} {field} & {value} = {(comparisonType == 7 ? value : 0)}";
+                titlesClause += $"{titlesField} & {value} = {(comparisonType == 7 ? value : 0)}";
+            }
+        }
+
+        if (includeImplied == 0)
+        {
+            excludeDirectorsAndCEO = searchTitles == 1 ?
+                $" AND roles & {(long) CorporationRole.Director} = 0 AND titleRoles & {(long) CorporationRole.Director} = 0" :
+                $" AND roles & {(long) CorporationRole.Director} = 0";
+        }
+
+        if (searchTitles == 1)
+        {
+            return Database.PrepareList (
+                @"SELECT
+                        characterID,
+                        roles,
+                        titleMask,
+                        (SELECT COALESCE(SUM(roles), 0) AS roles FROM crpTitles WHERE corporationID = @corporationID AND titleID & titleMask = titleID) AS titleRoles,
+                        (SELECT COALESCE(SUM(grantableRoles), 0) AS roles FROM crpTitles WHERE corporationID = @corporationID AND titleID & titleMask = titleID) AS titleGrantableRoles
+                    FROM chrInformation
+                    WHERE corporationID = @corporationID
+                    HAVING ((" + whereClause + ") OR (" + titlesClause + "))" + excludeDirectorsAndCEO,
+                new Dictionary <string, object> ()
+                {
+                    {"@corporationID", call.Session.CorporationID}
+                }
+            );
+        }
+        else
+        {
+            return Database.PrepareList (
+                $"SELECT characterID FROM chrInformation WHERE corporationID = @corporationID AND ({whereClause})" + excludeDirectorsAndCEO,
+                new Dictionary <string, object> ()
+                {
+                    {"@corporationID", call.Session.CorporationID}
+                }
+            );
+        }
     }
 
     private void DeleteAllianceApplicationIfExists ()
