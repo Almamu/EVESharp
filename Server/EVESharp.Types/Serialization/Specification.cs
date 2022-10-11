@@ -1,6 +1,6 @@
 namespace EVESharp.Types.Serialization;
 
-internal static class Specification
+public static class Specification
 {
     /// <summary>
     /// Magic value used by the marshal package to identify valid marshal streams
