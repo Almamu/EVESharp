@@ -32,6 +32,7 @@ using EVESharp.Database;
 using EVESharp.Database.Old;
 using EVESharp.EVE;
 using EVESharp.EVE.Accounts;
+using EVESharp.EVE.Corporations;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Market;
@@ -50,6 +51,7 @@ using EVESharp.Node.Agents;
 using EVESharp.Node.Cache;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Configuration;
+using EVESharp.Node.Corporations;
 using EVESharp.Node.Data.Inventory;
 using EVESharp.Node.Dogma;
 using EVESharp.Node.Market;
@@ -234,6 +236,7 @@ internal class Program
         container.Register <IBloodlines, Bloodlines> (Lifestyle.Singleton);
         container.Register <IConstants, Constants> (Lifestyle.Singleton);
         container.Register <IDogmaNotifications, DogmaNotifications> (Lifestyle.Singleton);
+        container.Register <IAudit, Audit> (Lifestyle.Singleton);
 
         // register the database accessors dependencies
         container.Register <OldCharacterDB> (Lifestyle.Singleton);

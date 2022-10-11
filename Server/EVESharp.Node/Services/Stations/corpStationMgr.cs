@@ -60,7 +60,7 @@ public class corpStationMgr : ClientBoundService
     protected corpStationMgr
     (
         StationDB            stationDb, INotificationSender notificationSender, IItems  items,   IConstants constants,
-        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB
+        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB, IDatabaseConnection database
     ) : base (manager, session, 0)
     {
         StationDB     = stationDb;
@@ -69,6 +69,7 @@ public class corpStationMgr : ClientBoundService
         Constants     = constants;
         this.Wallets  = wallets;
         ItemDB        = itemDB;
+        Database      = database;
     }
 
     [MustBeInStation]
@@ -348,7 +349,7 @@ public class corpStationMgr : ClientBoundService
 
         return new corpStationMgr (
             StationDB, Notifications, this.Items, Constants, BoundServiceManager, this.Wallets,
-            call.Session, this.ItemDB
+            call.Session, this.ItemDB, this.Database
         );
     }
 }

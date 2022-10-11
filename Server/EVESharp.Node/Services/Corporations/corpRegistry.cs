@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
 using EVESharp.Database.Old;
+using EVESharp.EVE.Corporations;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Chat;
 using EVESharp.EVE.Data.Configuration;
@@ -58,6 +59,7 @@ public class corpRegistry : MultiClientBoundService
     private IConstants                 Constants           { get; }
     private ISessionManager            SessionManager      { get; }
     private IClusterManager            ClusterManager      { get; }
+    private IAudit                     Audit               { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
@@ -67,7 +69,7 @@ public class corpRegistry : MultiClientBoundService
     (
         CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets            wallets,            IItems items, IConstants constants, IBoundServiceManager manager,
-        IAncestries   ancestries,  ISessionManager     sessionManager,     IClusterManager clusterManager
+        IAncestries   ancestries,  ISessionManager     sessionManager,     IClusterManager clusterManager, IAudit audit
     ) : base (manager)
     {
         DB             = db;
@@ -82,6 +84,7 @@ public class corpRegistry : MultiClientBoundService
         Ancestries     = ancestries;
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
+        Audit          = audit;
 
         ClusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
@@ -90,9 +93,10 @@ public class corpRegistry : MultiClientBoundService
     (
         CorporationDB   db,             IDatabaseConnection databaseConnection, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager     mailManager,    IWallets            wallets,            IConstants constants, IItems items, IAncestries ancestries,
-        ISessionManager sessionManager, Corporation         corp,               int isMaster, corpRegistry parent
+        ISessionManager sessionManager, Corporation         corp,               int isMaster, corpRegistry parent, IAudit audit
     ) : base (parent, corp.ID)
     {
+        // TODO: USE THE PARENT TO GET ALL THE DEPENDENCIES?
         DB                                = db;
         Database                          = databaseConnection;
         ChatDB                            = chatDB;
@@ -108,6 +112,7 @@ public class corpRegistry : MultiClientBoundService
         CorporationAdvertisementFlatFee   = Constants.CorporationAdvertisementFlatFee;
         CorporationAdvertisementDailyRate = Constants.CorporationAdvertisementDailyRate;
         Ancestries                        = ancestries;
+        Audit                             = audit;
     }
 
     /// <summary>
@@ -549,13 +554,17 @@ public class corpRegistry : MultiClientBoundService
             {
                 // ensure there's enough balance
                 wallet.EnsureEnoughBalance (-corporationStartupCost);
-
+                
                 // create the corporation in the corporation table
                 int corporationID = DB.CreateCorporation (
                     corporationName, description, tickerName, url, taxRate, callerCharacterID,
                     stationID, maximumMembers, (int) call.Session.RaceID, allowedMemberRaceIDs,
                     shape1, shape2, shape3, color1, color2, color3, typeface as PyString
                 );
+
+                // record the leave event on the old corporation if needed
+                if (ItemRanges.IsNPCCorporationID (character.CorporationID) == false)
+                    Audit.RecordAudit (character.CorporationID, character.ID, CorporationLogEvent.LeftCorporation);
 
                 // create default titles
                 DB.CreateDefaultTitlesForCorporation (corporationID);
@@ -628,6 +637,10 @@ public class corpRegistry : MultiClientBoundService
 
                 // load the corporation item
                 this.Items.LoadItem <Corporation> (corporationID);
+                
+                // register audit stuff
+                Audit.RecordAudit (corporationID, callerCharacterID, CorporationLogEvent.CreatedCorporation);
+                Audit.RecordAudit (corporationID, callerCharacterID, CorporationLogEvent.BecameCEO);
             }
 
             return null;
@@ -1149,6 +1162,17 @@ public class corpRegistry : MultiClientBoundService
             grantableRoles, grantableRolesAtHQ, grantableRolesAtBase, grantableRolesAtOther, titleMask ?? 0
         );
 
+        // create a new audit record for the role changes if required
+        if (currentRoles != roles)
+        {
+            Audit.RecordRoleChange (callerCharacterID, characterID, call.Session.CorporationID, currentRoles, roles, false);
+        }
+        
+        if (currentGrantableRoles != grantableRoles)
+        {
+            Audit.RecordRoleChange (callerCharacterID, characterID, call.Session.CorporationID, currentGrantableRoles, grantableRoles, true);
+        }
+        
         // let the sparse rowset know that a change was done, this should refresh the character information
         if (MembersSparseRowset is not null)
         {
@@ -1457,7 +1481,7 @@ public class corpRegistry : MultiClientBoundService
 
         return new corpRegistry (
             DB, Database, ChatDB, CharacterDB, Notifications, MailManager, this.Wallets, Constants,
-            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this
+            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this, this.Audit
         );
     }
 
@@ -1532,6 +1556,8 @@ public class corpRegistry : MultiClientBoundService
 
         Notifications.NotifyCorporationByRole (corporationID, CorporationRole.PersonnelManager, change);
         Notifications.NotifyCharacter (characterID, change);
+        
+        Audit.RecordAudit (corporationID, characterID, CorporationLogEvent.AppliedForMembership);
 
         return null;
     }
@@ -1633,6 +1659,8 @@ public class corpRegistry : MultiClientBoundService
                 if (oldCorporationNodeID != newCorporationNodeID && oldCorporationNodeID != characterNodeID)
                     Notifications.NotifyNode (oldCorporationNodeID, nodeNotification);
             }
+            
+            Audit.RecordAudit (corporationID, characterID, CorporationLogEvent.JoinedCorporation);
 
             // this one is a bit harder as this character might not be in the same node as this service
             // take care of the proper 

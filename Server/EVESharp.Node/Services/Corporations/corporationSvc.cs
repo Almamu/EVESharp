@@ -68,18 +68,29 @@ public class corporationSvc : Service
         return Database.Rowset (CorporationDB.LIST_NPC_DIVISIONS);
     }
 
-    public PyTuple GetMedalsReceived (ServiceCall call, PyInteger characterID)
+    public PyDataType GetMedalsReceived (ServiceCall call, PyInteger characterID)
     {
         // TODO: CACHE THIS ANSWER TOO
         int callerCharacterID = call.Session.CharacterID;
 
         bool publicOnly = callerCharacterID != characterID;
 
-        return new PyTuple (2)
+        // check if the cache already exits
+        if (CacheStorage.Exists ("corporationSvc", "GetMedalsReceived_" + characterID + "_" + publicOnly) == false)
         {
-            [0] = DB.GetMedalsReceived (characterID, publicOnly),
-            [1] = DB.GetMedalsReceivedDetails (characterID, publicOnly)
-        };
+            CacheStorage.StoreCall (
+                "corporationSvc",
+                "GetMedalsReceived_" + characterID + "_" + publicOnly,
+                new PyTuple (2)
+                {
+                    [0] = DB.GetMedalsReceived (characterID, publicOnly),
+                    [1] = DB.GetMedalsReceivedDetails (characterID, publicOnly)
+                },
+                DateTime.UtcNow.ToFileTimeUtc ()
+            );
+        }
+
+        return CachedMethodCallResult.FromCacheHint (CacheStorage.GetHint ("corporationSvc", "GetMedalsReceived_" + characterID + "_" + publicOnly));
     }
 
     public PyDataType GetEmploymentRecord (ServiceCall call, PyInteger characterID)
@@ -243,7 +254,7 @@ public class corporationSvc : Service
     [MustHaveCorporationRole (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
     public PyDataType GiveMedalToCharacters (ServiceCall call, PyInteger medalID, PyList characterIDs, PyString reason)
     {
-        throw new ConfirmCreatingMedal (Constants.MedalCost);
+        throw new ConfirmGivingMedal (Constants.MedalCost);
     }
 
     [MustHaveCorporationRole (MLS.UI_CORP_NEED_ROLE_PERS_MAN_OR_DIRECT, CorporationRole.PersonnelManager, CorporationRole.Director)]
@@ -274,18 +285,32 @@ public class corporationSvc : Service
 
     public PyDataType SetMedalStatus (ServiceCall call, PyDictionary newStatuses)
     {
-        int characterID = call.Session.CharacterID;
+        int  characterID   = call.Session.CharacterID;
+        bool wasAnyDeleted = false;
 
         PyDictionary <PyInteger, PyInteger> newStatus = newStatuses.GetEnumerable <PyInteger, PyInteger> ();
 
         foreach ((PyInteger medalID, PyInteger status) in newStatus)
+        {
             // MEDAL DELETION
             if (status == 1)
-                DB.RemoveMedalFromCharacter (medalID, characterID);
+            {
+                // TODO: VALIDATE THAT THE MEDAL HAS TO ACTUALLY BE REMOVED FROM THE CHARACTER
+                // TODO: AS MAYBE CCP WASN'T REMOVING IT FROM THE DATABASE, JUST HIDING IT IN THE CHARACTER INFO
+                wasAnyDeleted = true;
+                DB.RemoveMedalFromCharacter (medalID, characterID);                
+            }
             else
+            {
                 // set whatever status was requested by the user
-                DB.UpdateMedalForCharacter (medalID, characterID, status);
+                DB.UpdateMedalForCharacter (medalID, characterID, status);    
+            }
+        }
 
+        // tell the client to refresh the local cache
+        Notifications.NotifyCharacter (characterID, new OnMedalStatusChanged());
+        // TODO: CLEAR VALUES FROM CACHE STORAGE
+        
         return null;
     }
 

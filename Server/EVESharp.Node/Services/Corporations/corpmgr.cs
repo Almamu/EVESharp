@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.Database;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network.Caching;
@@ -14,14 +15,16 @@ namespace EVESharp.Node.Services.Corporations;
 [MustBeCharacter]
 public class corpmgr : Service
 {
-    public override AccessLevel   AccessLevel  => AccessLevel.None;
-    private         CorporationDB DB           { get; }
-    private         ICacheStorage CacheStorage { get; }
+    public override AccessLevel         AccessLevel  => AccessLevel.None;
+    private         CorporationDB       DB           { get; }
+    private         ICacheStorage       CacheStorage { get; }
+    private         IDatabaseConnection Database     { get; }
 
-    public corpmgr (CorporationDB db, ICacheStorage cacheStorage)
+    public corpmgr (CorporationDB db, ICacheStorage cacheStorage, IDatabaseConnection database)
     {
         DB           = db;
         CacheStorage = cacheStorage;
+        Database     = database;
     }
 
     public PyDataType GetPublicInfo (ServiceCall call, PyInteger corporationID)
@@ -90,5 +93,17 @@ public class corpmgr : Service
     public PyDataType GetItemsRented (ServiceCall call)
     {
         return DB.GetItemsRented (call.Session.CorporationID);
+    }
+
+    public PyTuple AuditMember (ServiceCall call, PyInteger memberID, PyInteger fromDate, PyInteger toDate, PyInteger rowsPerPage)
+    {
+        if (toDate % TimeSpan.TicksPerDay == 0)
+            toDate += TimeSpan.TicksPerDay;
+        
+        return new PyTuple (2)
+        {
+            [0] = Database.CrpGetAuditLog (call.Session.CorporationID, memberID, fromDate, toDate, rowsPerPage),
+            [1] = Database.CrpGetAuditRole (call.Session.CorporationID, memberID, fromDate, toDate, rowsPerPage)
+        };
     }
 }

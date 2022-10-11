@@ -145,12 +145,13 @@ public class Marshal
     private void Process (BinaryWriter writer, PyDataType data)
     {
         long opcodePosition = writer.BaseStream.Position;
-        int  hash           = data?.GetHashCode () ?? PyNone.HASH_VALUE;
-        bool canBeSaved     = CanBeSaved (data);
+        bool canBeSaved     = CanBeSaved (data) && false;
 
         // ignore specific values as they're not really worth it
         if (canBeSaved)
         {
+            int hash = data?.GetHashCode () ?? PyNone.HASH_VALUE;
+            
             // check if the object was already saved and write it as such
             if (this.mHashToPosition.TryGetValue (hash, out long position))
             {
