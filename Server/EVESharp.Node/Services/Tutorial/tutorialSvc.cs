@@ -1,4 +1,5 @@
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Complex;

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -53,12 +56,12 @@ public class reprocessingSvc : ClientBoundService
     private StandingDB          StandingDB         { get; }
     private ReprocessingDB      ReprocessingDB     { get; }
     private IDogmaNotifications DogmaNotifications { get; }
-    private IDatabaseConnection Database           { get; }
+    private IDatabase Database           { get; }
 
     public reprocessingSvc
     (
         ReprocessingDB      reprocessingDb, StandingDB standingDb, IItems items, IBoundServiceManager manager, IDogmaNotifications dogmaNotifications,
-        IDatabaseConnection database,
+        IDatabase database,
         ISolarSystems       solarSystems
     ) : base (manager)
     {

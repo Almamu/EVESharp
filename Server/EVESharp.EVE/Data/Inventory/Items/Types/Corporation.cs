@@ -1,3 +1,4 @@
+using EVESharp.Database.Types;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -6,7 +7,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class Corporation : ItemInventory
 {
-    public Information.Corporation CorporationInformation { get; }
+    public Database.Inventory.Types.Information.Corporation CorporationInformation { get; }
 
     public string Description
     {
@@ -230,7 +231,7 @@ public class Corporation : ItemInventory
         }
     }
 
-    public Corporation (Information.Corporation info) : base (info.Information)
+    public Corporation (Database.Inventory.Types.Information.Corporation info) : base (info.Information)
     {
         this.CorporationInformation = info;
     }

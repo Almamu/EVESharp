@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Data.Certificates;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -23,9 +24,9 @@ public class certificateMgr : Service
     private         ICacheStorage                         CacheStorage             { get; }
     private         Dictionary <int, List <Relationship>> CertificateRelationships { get; }
     private         IDogmaNotifications                   DogmaNotifications       { get; }
-    private         IDatabaseConnection                   Database                 { get; }
+    private         IDatabase                   Database                 { get; }
 
-    public certificateMgr (IItems items, ICacheStorage cacheStorage, IDogmaNotifications dogmaNotifications, IDatabaseConnection database)
+    public certificateMgr (IItems items, ICacheStorage cacheStorage, IDogmaNotifications dogmaNotifications, IDatabase database)
     {
         Database                = database;
         this.Items              = items;

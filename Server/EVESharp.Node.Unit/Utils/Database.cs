@@ -6,36 +6,45 @@ namespace EVESharp.Node.Unit.Utils;
 
 public static class Database
 {
-    delegate void GetLockCallback (ref IDbConnection connection, string _);
+    delegate DbLock GetLockCallback (string name);
     
     /// <summary>
     /// Sets up a mock for database locking
     /// </summary>
     /// <returns></returns>
-    public static Mock <IDatabaseConnection> DatabaseLockMocked ()
+    public static Mock <IDatabase> DatabaseLockMocked ()
     {
-        Mock <IDatabaseConnection> databaseMock   = new Mock <IDatabaseConnection> ();
-        Mock <IDbConnection>       connectionMock = new Mock <IDbConnection> ();
+        Mock <IDatabase> databaseMock = new Mock <IDatabase> ();
         
         databaseMock
             .Setup (
                 x => x.GetLock (
-                    ref It.Ref <IDbConnection>.IsAny,
                     It.IsAny <string> ()
                 )
             )
-            .Callback (new GetLockCallback((ref IDbConnection db, string _) => db = connectionMock.Object))
+            .Returns ((string name) => new DbLock () { Connection = DbConnectionMocked ().Object, Creator = databaseMock.Object, Name = name})
             .Verifiable();
 
         databaseMock
             .Setup (
                 x => x.ReleaseLock (
-                    It.IsAny <IDbConnection> (),
-                    It.IsAny <string> ()
+                    It.IsAny <DbLock> ()
                 )
             )
             .Verifiable();
 
         return databaseMock;
+    }
+
+    private static Mock <IDbConnection> DbConnectionMocked ()
+    {
+        Mock <IDbConnection> connectionMock = new Mock <IDbConnection> ();
+        
+        // setup connection state
+        connectionMock
+            .SetupGet (x => x.State)
+            .Returns (ConnectionState.Open);
+
+        return connectionMock;
     }
 }

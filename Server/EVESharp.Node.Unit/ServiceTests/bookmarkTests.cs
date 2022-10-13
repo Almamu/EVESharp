@@ -1,5 +1,7 @@
 using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -32,7 +34,7 @@ public class bookmarkTests
 
     private bookmark mBookmarkSvc;
     private ItemEntity mItem = new Item (
-        new EVE.Data.Inventory.Items.Types.Information.Item ()
+        new Database.Inventory.Types.Information.Item ()
         {
             ID         = ITEMID,
             Type       = Inventory.NewType (TYPEID),
@@ -46,11 +48,11 @@ public class bookmarkTests
     private Harmony mHarmony = new Harmony("BookmarkTest");
     
     Mock <IItems>                mItemsMock                = new Mock <IItems> ();
-    Mock <IDatabaseConnection>   mDatabaseMock             = new Mock <IDatabaseConnection> ();
+    Mock <IDatabase>   mDatabaseMock             = new Mock <IDatabase> ();
     Mock <IRemoteServiceManager> mRemoteServiceManagerMock = new Mock <IRemoteServiceManager> ();
     
     [HarmonyPatch(typeof(BookmarkDB), nameof(BookmarkDB.ChrBookmarksCreate))]
-    static bool ChrBookmarksCreate (IDatabaseConnection Database, int    ownerID, int itemID,     int       typeID, string memo, string comment, double x,
+    static bool ChrBookmarksCreate (IDatabase Database, int    ownerID, int itemID,     int       typeID, string memo, string comment, double x,
                                     double              y,        double z,       int locationID, ref ulong __result)
     {
         Assert.AreEqual (Utils.Sessions.CHARACTERID, ownerID);
@@ -69,7 +71,7 @@ public class bookmarkTests
     }
 
     [HarmonyPatch(typeof(BookmarkDB), nameof(BookmarkDB.ChrBookmarksDelete))]
-    static bool ChrBookmarksDelete (IDatabaseConnection Database, int ownerID, PyList <PyInteger> bookmarkIDs)
+    static bool ChrBookmarksDelete (IDatabase Database, int ownerID, PyList <PyInteger> bookmarkIDs)
     {
         Assert.AreEqual (1,                          bookmarkIDs.Count);
         Assert.IsTrue (bookmarkIDs [0] == BOOKMARKID);

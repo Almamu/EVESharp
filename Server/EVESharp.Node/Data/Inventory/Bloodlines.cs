@@ -24,7 +24,8 @@
 
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -35,7 +36,7 @@ public class Bloodlines : IBloodlines
 
     public Bloodline this [int id] => this.mBloodlines [id];
 
-    public Bloodlines (IDatabaseConnection Database, ITypes types)
+    public Bloodlines (IDatabase Database, ITypes types)
     {
         this.mBloodlines = Database.ChrLoadBloodlines (types);
     }

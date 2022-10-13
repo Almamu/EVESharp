@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Network;
@@ -20,13 +21,13 @@ public class RemoteServiceManager : IRemoteServiceManager
 
     private ITimers             Timers   { get; }
     private IMachoNet           MachoNet { get; }
-    private IDatabaseConnection Database { get; }
+    private IDatabase Database { get; }
 
-    public RemoteServiceManager (IMachoNet machoNet, ITimers timers, IDatabaseConnection databaseConnection)
+    public RemoteServiceManager (IMachoNet machoNet, ITimers timers, IDatabase database)
     {
         Timers   = timers;
         MachoNet = machoNet;
-        Database = databaseConnection;
+        Database = database;
     }
 
     /// <summary>

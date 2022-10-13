@@ -4,7 +4,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class EVESystem : ItemInventory
 {
-    public EVESystem (Information.Item info) : base (info) { }
+    public EVESystem (Database.Inventory.Types.Information.Item info) : base (info) { }
 
     public EVESystem (ItemEntity from) : base (from) { }
 

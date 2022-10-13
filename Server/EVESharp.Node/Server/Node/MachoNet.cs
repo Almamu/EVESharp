@@ -1,4 +1,5 @@
 ﻿using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;
@@ -16,15 +17,15 @@ namespace EVESharp.Node.Server.Node;
 public class MachoNet : IMachoNet
 {
     private General             Configuration { get; }
-    private IDatabaseConnection Database      { get; }
+    private IDatabase Database      { get; }
 
     public MachoNet
     (
-        IDatabaseConnection databaseConnection, ITransportManager transportManager, IQueueProcessor <LoginQueueEntry> loginQueue,
+        IDatabase database, ITransportManager transportManager, IQueueProcessor <LoginQueueEntry> loginQueue,
         General             configuration, ILogger           logger
     )
     {
-        Database         = databaseConnection;
+        Database         = database;
         LoginProcessor   = loginQueue;
         TransportManager = transportManager;
         Configuration    = configuration;

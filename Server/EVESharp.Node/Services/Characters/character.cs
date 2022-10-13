@@ -26,7 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -44,7 +47,7 @@ using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Serilog;
-using Type = EVESharp.EVE.Data.Inventory.Type;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.Node.Services.Characters;
 
@@ -65,14 +68,14 @@ public class character : Service
     private IBloodlines         Bloodlines     { get; }
     private ISessionManager     SessionManager { get; }
     private ILogger             Log            { get; }
-    private IDatabaseConnection Database       { get; }
+    private IDatabase Database       { get; }
 
     public character
     (
         ICacheStorage       cacheStorage,       OldCharacterDB db,      ChatDB      chatDB, CorporationDB corporationDB,
         IItems              items,              ILogger     logger,  Configuration.Character   configuration,
         INotificationSender notificationSender, IWallets    wallets, IAncestries ancestries, IBloodlines bloodlines,
-        ISessionManager     sessionManager, IDatabaseConnection database
+        ISessionManager     sessionManager, IDatabase database
     )
     {
         Log                 = logger;

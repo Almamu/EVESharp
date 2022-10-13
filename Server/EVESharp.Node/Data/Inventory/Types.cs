@@ -25,7 +25,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -35,7 +36,7 @@ public class Types : ITypes
     private readonly Dictionary <int, Type> mTypes;
     public Type this [TypeID id] => this [(int) id];
 
-    public Types (IDatabaseConnection Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressionManager)
+    public Types (IDatabase Database, IAttributes attributes, IDefaultAttributes defaultAttributes, IGroups groups, IExpressions expressionManager)
     {
         this.mTypes = Database.InvLoadItemTypes (attributes, defaultAttributes, groups, expressionManager);
     }

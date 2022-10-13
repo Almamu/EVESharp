@@ -760,9 +760,9 @@ public static class PyAssert
         PyObjectData keyval = Type <PyObjectData> (data);
         PyDictionary dict   = null;
         
-        Assert.DoesNotThrow (() => dict = EVESharp.EVE.Types.KeyVal.ToDictionary (keyval));
+        Assert.DoesNotThrow (() => dict = EVESharp.Database.Types.KeyVal.ToDictionary (keyval));
 
-        return EVESharp.EVE.Types.KeyVal.ToDictionary (keyval);
+        return EVESharp.Database.Types.KeyVal.ToDictionary (keyval);
     }
 
     /// <summary>

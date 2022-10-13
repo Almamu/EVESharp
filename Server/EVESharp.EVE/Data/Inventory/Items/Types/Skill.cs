@@ -35,7 +35,7 @@ public class Skill : ItemEntity
         set => this.Attributes [AttributeTypes.expiryTime].Integer = value;
     }
 
-    public Skill (Information.Item info, double skillPointMultiplier) : base (info)
+    public Skill (Database.Inventory.Types.Information.Item info, double skillPointMultiplier) : base (info)
     {
         this.mSkillPointMultiplier = skillPointMultiplier;
     }

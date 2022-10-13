@@ -2,5 +2,5 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class Clone : ItemInventory
 {
-    public Clone (Information.Item info) : base (info) { }
+    public Clone (Database.Inventory.Types.Information.Item info) : base (info) { }
 }

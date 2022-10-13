@@ -4,7 +4,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class Implant : ItemEntity
 {
-    public Implant (Information.Item info) : base (info) { }
+    public Implant (Database.Inventory.Types.Information.Item info) : base (info) { }
 
     // check prerequirements for this item
     public override void CheckPrerequisites (Character character)

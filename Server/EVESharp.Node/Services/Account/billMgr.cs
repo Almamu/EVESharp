@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -24,16 +26,16 @@ public class billMgr : Service
     private         CorporationDB       CorporationDB { get; }
     private         IItems              Items         { get; }
     private         INotificationSender Notifications { get; }
-    private         IDatabaseConnection Database      { get; }
+    private         IDatabase Database      { get; }
 
     public billMgr
     (
-        ICacheStorage       cacheStorage,       IDatabaseConnection databaseConnection, CorporationDB corporationDb, IItems items,
+        ICacheStorage       cacheStorage,       IDatabase database, CorporationDB corporationDb, IItems items,
         INotificationSender notificationSender, IClusterManager     clusterManager
     )
     {
         CacheStorage  = cacheStorage;
-        Database      = databaseConnection;
+        Database      = database;
         CorporationDB = corporationDb;
         this.Items    = items;
         Notifications = notificationSender;

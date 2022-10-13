@@ -1,5 +1,6 @@
 ﻿using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Notifications;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -8,10 +9,10 @@ namespace EVESharp.Node.Chat;
 
 public class MailManager
 {
-    private IDatabaseConnection Database      { get; }
+    private IDatabase Database      { get; }
     private INotificationSender Notifications { get; }
 
-    public MailManager (IDatabaseConnection database, INotificationSender notificationSender)
+    public MailManager (IDatabase database, INotificationSender notificationSender)
     {
         Database      = database;
         Notifications = notificationSender;

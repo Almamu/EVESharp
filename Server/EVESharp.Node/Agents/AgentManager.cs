@@ -1,4 +1,6 @@
 ﻿using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -7,9 +9,9 @@ namespace EVESharp.Node.Agents;
 
 public class AgentManager
 {
-    private IDatabaseConnection DB { get; }
+    private IDatabase DB { get; }
 
-    public AgentManager (IDatabaseConnection db)
+    public AgentManager (IDatabase db)
     {
         DB = db;
     }

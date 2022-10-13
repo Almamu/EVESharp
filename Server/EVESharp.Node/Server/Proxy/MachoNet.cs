@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;
@@ -19,19 +20,19 @@ namespace EVESharp.Node.Server.Proxy;
 public class MachoNet : IMachoNet
 {
     private General              Configuration { get; }
-    private IDatabaseConnection  Database      { get; }
+    private IDatabase  Database      { get; }
 
     public MachoNet
     (
         ITransportManager   transportManager, IQueueProcessor <LoginQueueEntry> loginQueue, General configuration, ILogger logger,
-        IDatabaseConnection databaseConnection
+        IDatabase database
     )
     {
         LoginProcessor   = loginQueue;
         TransportManager = transportManager;
         Configuration    = configuration;
         Log              = logger;
-        Database         = databaseConnection;
+        Database         = database;
     }
 
     public long                              NodeID           { get; set; }

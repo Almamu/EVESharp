@@ -10,14 +10,14 @@ namespace EVESharp.Orchestrator.Controllers;
 [Route ("[controller]")]
 public class NodesController : ControllerBase
 {
-    private IDatabaseConnection      DB                  { get; }
+    private IDatabase      DB                  { get; }
     private ILogger<NodesController> Logger              { get; }
     private IConfiguration           Configuration       { get; }
     private IStartupInfoProvider     StartupInfoProvider { get; }
     private IClusterRepository       ClusterRepository   { get; }
 
     public NodesController (
-        IDatabaseConnection  db,
+        IDatabase  db,
         ILogger<NodesController>      logger,
         IStartupInfoProvider startupInfoProvider,
         IConfiguration       configuration,

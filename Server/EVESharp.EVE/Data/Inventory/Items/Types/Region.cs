@@ -28,7 +28,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class Region : ItemInventory
 {
-    public Information.Region RegionInformation { get; }
+    public Database.Inventory.Types.Information.Region RegionInformation { get; }
 
     public double XMin      => this.RegionInformation.XMin;
     public double YMin      => this.RegionInformation.YMin;
@@ -39,7 +39,7 @@ public class Region : ItemInventory
     public int?   FactionID => this.RegionInformation.FactionID;
     public double Radius    => this.RegionInformation.Radius;
 
-    public Region (Information.Region region) : base (region.Information)
+    public Region (Database.Inventory.Types.Information.Region region) : base (region.Information)
     {
         this.RegionInformation = region;
     }

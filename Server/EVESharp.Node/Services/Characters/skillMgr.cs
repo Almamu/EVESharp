@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
 using EVESharp.EVE;
 using EVESharp.EVE.Data.Inventory;
@@ -38,12 +39,12 @@ public class skillMgr : ClientBoundService
     private         IDogmaNotifications DogmaNotifications { get; }
     private         Timer <int>         NextSkillTimer     { get; set; }
     private         Timer <int>         ReSpecTimer        { get; set; }
-    private         IDatabaseConnection Database           { get; }
+    private         IDatabase Database           { get; }
 
     public skillMgr
     (
         SkillDB              db,      IItems  items,  ITimers             timers,   IDogmaNotifications dogmaNotifications,
-        IBoundServiceManager manager, ILogger logger, IDatabaseConnection database, ISolarSystems       solarSystems
+        IBoundServiceManager manager, ILogger logger, IDatabase database, ISolarSystems       solarSystems
     ) : base (manager)
     {
         DB                 = db;

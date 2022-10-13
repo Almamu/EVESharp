@@ -1,3 +1,4 @@
+using EVESharp.Database.Types;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;

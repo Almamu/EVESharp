@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
@@ -9,7 +10,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class Station : ItemInventory
 {
-    public Information.Station StationInformation { get; }
+    public Database.Inventory.Types.Information.Station StationInformation { get; }
 
     public Operation                   Operations               => this.StationInformation.Operations;
     public Inventory.Station.Type      StationType              => this.StationInformation.Type;
@@ -25,7 +26,7 @@ public class Station : ItemInventory
     public double                      ReprocessingStationsTake => this.StationInformation.ReprocessingStationsTake;
     public int                         ReprocessingHangarFlag   => this.StationInformation.ReprocessingHangarFlag;
 
-    public Station (Information.Station info) : base (info.Information)
+    public Station (Database.Inventory.Types.Information.Station info) : base (info.Information)
     {
         this.StationInformation = info;
     }

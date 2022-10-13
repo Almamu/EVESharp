@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Attributes;

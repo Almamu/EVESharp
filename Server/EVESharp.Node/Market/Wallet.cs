@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
@@ -12,17 +13,17 @@ namespace EVESharp.Node.Market;
 
 public class Wallet : IWallet
 {
-    private IDbConnection       Connection;
+    private DbLock              Lock            { get; init; }
     public  int                 OwnerID         { get; }
     public  int                 WalletKey       { get; }
     public  double              Balance         { get; set; }
     public  double              OriginalBalance { get; }
-    public  IDatabaseConnection Database        { get; }
+    public  IDatabase Database        { get; }
     public  INotificationSender Notifications   { get; }
     public  bool                ForCorporation  { get; }
     public  IWallets            Wallets         { get; }
 
-    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabaseConnection database, INotificationSender notificationSender, IWallets wallets)
+    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabase database, INotificationSender notificationSender, IWallets wallets)
     {
         // set some data first
         this.OwnerID        = ownerID;
@@ -33,9 +34,9 @@ public class Wallet : IWallet
         this.Wallets        = wallets;
 
         // obtain exclusive control over the wallet
-        Database.GetLock (ref this.Connection, this.GenerateLockName ());
+        this.Lock = Database.GetLock (this.GenerateLockName ());
         // also fetch the balance
-        this.Balance = this.OriginalBalance = Database.MktWalletGetBalance (ref this.Connection, WalletKey, OwnerID);
+        this.Balance = this.OriginalBalance = Lock.MktWalletGetBalance (WalletKey, OwnerID);
     }
 
     /// <summary>
@@ -52,7 +53,7 @@ public class Wallet : IWallet
         // if the balance changed, update the record in the database
         if (Math.Abs (Balance - OriginalBalance) > 0.01)
         {
-            Database.MktWalletSetBalance (ref this.Connection, Balance, OwnerID, WalletKey);
+            Lock.MktWalletSetBalance (Balance, OwnerID, WalletKey);
 
             if (ForCorporation == false)
             {
@@ -85,8 +86,8 @@ public class Wallet : IWallet
             }
         }
 
-        Database.ReleaseLock (this.Connection, this.GenerateLockName ());
-        this.Connection?.Dispose ();
+        // ensure the database lock is disposed too
+        Lock.Dispose ();
     }
 
     /// <summary>

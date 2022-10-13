@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Data;
 using System.Data.Common;
+using EVESharp.Database.MySql;
 
 namespace EVESharp.Database;
 
@@ -160,5 +161,10 @@ public class WrappedDbDataReader : DbDataReader
     public override IEnumerator GetEnumerator ()
     {
         return this.mReader.GetEnumerator ();
+    }
+
+    public IDataReader Unwrap ()
+    {
+        return this.mReader;
     }
 }

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.EVE.Data.Inventory;
 

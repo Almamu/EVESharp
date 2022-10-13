@@ -1,5 +1,7 @@
 using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -30,11 +32,11 @@ public class dogmaIM : ClientBoundService
     private ISolarSystems       SolarSystems      { get; }
     private INotificationSender Notifications     { get; }
     private EffectsManager      EffectsManager    { get; }
-    private IDatabaseConnection Database          { get; }
+    private IDatabase Database          { get; }
 
     public dogmaIM
     (
-        EffectsManager effectsManager, IItems items, INotificationSender notificationSender, IBoundServiceManager manager, IDatabaseConnection database,
+        EffectsManager effectsManager, IItems items, INotificationSender notificationSender, IBoundServiceManager manager, IDatabase database,
         ISolarSystems  solarSystems
     ) : base (manager)
     {

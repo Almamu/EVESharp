@@ -24,7 +24,7 @@
 
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -35,7 +35,7 @@ public class Categories : ICategories
 
     public Category this [int id] => this.mCategories [id];
 
-    public Categories (IDatabaseConnection Database)
+    public Categories (IDatabase Database)
     {
         this.mCategories = Database.InvLoadItemCategories ();
     }

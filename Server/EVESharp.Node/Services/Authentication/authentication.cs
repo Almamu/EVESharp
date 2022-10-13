@@ -22,6 +22,7 @@
     Creator: Almamu
 */
 
+using EVESharp.Database.Types;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Configuration;

@@ -1,4 +1,5 @@
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -32,12 +33,12 @@ public class invbroker : ClientBoundService
     private INotificationSender Notifications      { get; }
     private IDogmaNotifications DogmaNotifications { get; }
     private EffectsManager      EffectsManager     { get; }
-    private IDatabaseConnection Database           { get; }
+    private IDatabase Database           { get; }
 
     public invbroker
     (
         ItemDB              itemDB,             EffectsManager       effectsManager, IItems items, INotificationSender notificationSender,
-        IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        IDatabaseConnection database, ISolarSystems       solarSystems
+        IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        IDatabase database, ISolarSystems       solarSystems
     ) : base (manager)
     {
         EffectsManager     = effectsManager;

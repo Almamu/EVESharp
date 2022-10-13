@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory.Attributes;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
@@ -21,7 +22,7 @@ public class Character : ItemInventory
     /// </summary>
     public CharacterSkillQueueLoadEventHandler OnSkillQueueLoad;
 
-    public Information.Character CharacterInformation { get; }
+    public Database.Inventory.Types.Information.Character CharacterInformation { get; }
 
     public int AccountID => this.CharacterInformation.AccountID;
 
@@ -338,7 +339,7 @@ public class Character : ItemInventory
             .Where (x => x.Value.Flag == Flags.Implant && x.Value is Implant)
             .ToDictionary (dict => dict.Key, dict => dict.Value as Implant);
 
-    public Character (Information.Character info) : base (info.Information)
+    public Character (Database.Inventory.Types.Information.Character info) : base (info.Information)
     {
         this.CharacterInformation = info;
     }

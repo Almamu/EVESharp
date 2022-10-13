@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -25,7 +27,7 @@ namespace EVESharp.Node.Services.Corporations;
 public class corporationSvc : Service
 {
     public override AccessLevel         AccessLevel   => AccessLevel.None;
-    private         IDatabaseConnection Database      { get; }
+    private         IDatabase Database      { get; }
     private         CorporationDB       DB            { get; }
     private         IWallets            Wallets       { get; }
     private         IConstants          Constants     { get; }
@@ -35,11 +37,11 @@ public class corporationSvc : Service
 
     public corporationSvc
     (
-        IDatabaseConnection databaseConnection, CorporationDB db, IConstants constants, IWallets wallets, IItems items,
+        IDatabase database, CorporationDB db, IConstants constants, IWallets wallets, IItems items,
         INotificationSender notificationSender, ICacheStorage cacheStorage
     )
     {
-        Database      = databaseConnection;
+        Database      = database;
         DB            = db;
         Constants     = constants;
         this.Wallets  = wallets;

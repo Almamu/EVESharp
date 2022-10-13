@@ -24,7 +24,7 @@
 
 using System.Collections.ObjectModel;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -33,5 +33,5 @@ public class Attributes : ReadOnlyDictionary <int, AttributeType>, IAttributes
 {
     public AttributeType this [AttributeTypes id] => this [(int) id];
 
-    public Attributes (IDatabaseConnection Database) : base (Database.InvDgmLoadAttributes ()) { }
+    public Attributes (IDatabase Database) : base (Database.InvDgmLoadAttributes ()) { }
 }

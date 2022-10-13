@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
@@ -22,7 +25,7 @@ using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using ItemDB = EVESharp.Database.Old.ItemDB;
-using Type = EVESharp.EVE.Data.Inventory.Type;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.Node.Services.Stations;
 
@@ -38,12 +41,12 @@ public class corpStationMgr : ClientBoundService
     private         IWallets            Wallets       { get; }
     private         IConstants          Constants     { get; }
     private         INotificationSender Notifications { get; }
-    private         IDatabaseConnection Database      { get; }
+    private         IDatabase Database      { get; }
 
     public corpStationMgr
     (
         StationDB            stationDb, INotificationSender notificationSender, IItems              items,    IConstants constants,
-        IBoundServiceManager manager,   ISolarSystems solarSystems, IWallets            wallets,            IDatabaseConnection database, ItemDB     itemDB
+        IBoundServiceManager manager,   ISolarSystems solarSystems, IWallets            wallets,            IDatabase database, ItemDB     itemDB
     ) : base (manager)
     {
         StationDB     = stationDb;
@@ -60,7 +63,7 @@ public class corpStationMgr : ClientBoundService
     protected corpStationMgr
     (
         StationDB            stationDb, INotificationSender notificationSender, IItems  items,   IConstants constants,
-        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB, IDatabaseConnection database
+        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB, IDatabase database
     ) : base (manager, session, 0)
     {
         StationDB     = stationDb;

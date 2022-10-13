@@ -1,5 +1,5 @@
 ﻿using System;
-using Type = EVESharp.EVE.Data.Inventory.Type;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.EVE.Exceptions.Internal;
 

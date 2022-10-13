@@ -24,7 +24,7 @@
 
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -35,7 +35,7 @@ public class Groups : IGroups
 
     public Group this [int id] => this.mGroups [id];
 
-    public Groups (IDatabaseConnection Database, ICategories categories)
+    public Groups (IDatabase Database, ICategories categories)
     {
         this.mGroups = Database.InvLoadItemGroups (categories);
     }

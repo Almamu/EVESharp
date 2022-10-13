@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Inventory.Station;
@@ -14,7 +14,7 @@ public class Stations : Dictionary <int, Station>, IStations
     public Dictionary <int, Type>      StationTypes { get; }
     public Dictionary <int, string>    Services     { get; }
 
-    public Stations (IDatabaseConnection Database)
+    public Stations (IDatabase Database)
     {
         this.Operations   = Database.StaLoadOperations ();
         this.StationTypes = Database.StaLoadStationTypes ();

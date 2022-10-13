@@ -1,5 +1,6 @@
 using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Corporations;
 using EVESharp.EVE.Data.Corporation;
 
@@ -7,11 +8,11 @@ namespace EVESharp.Node.Corporations;
 
 public class Audit : IAudit
 {
-    private IDatabaseConnection DB { get; }
+    private IDatabase DB { get; }
     
-    public Audit (IDatabaseConnection databaseConnection)
+    public Audit (IDatabase database)
     {
-        this.DB = databaseConnection;
+        this.DB = database;
     }
     
     public void RecordAudit (int corporationID, int characterID, DateTime dateTime, CorporationLogEvent eventType)

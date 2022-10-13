@@ -26,7 +26,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Inventory;
@@ -37,9 +39,9 @@ using EVESharp.EVE.Notifications;
 using EVESharp.Node.Data.Inventory.Exceptions;
 using Serilog;
 using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;
-using Item = EVESharp.EVE.Data.Inventory.Items.Types.Information.Item;
+using Item = EVESharp.Database.Inventory.Types.Information.Item;
 using ItemDB = EVESharp.Database.Old.ItemDB;
-using Type = EVESharp.EVE.Data.Inventory.Type;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.Node.Data.Inventory;
 
@@ -77,11 +79,11 @@ public class Items : IItems
     public EVESystem  LocationTemp     { get; private set; }
     public ItemEntity OwnerSCC         { get; private set; }
 
-    protected IDatabaseConnection Database { get; }
+    protected IDatabase Database { get; }
 
     public Items
     (
-        ILogger      logger,      IMachoNet     machoNet,     IDatabaseConnection databaseConnection, IConstants constants, IMetaInventories metaInventories,
+        ILogger      logger,      IMachoNet     machoNet,     IDatabase database, IConstants constants, IMetaInventories metaInventories,
         IExpressions expressions, ItemDB        itemDB,       OldCharacterDB characterDB, InsuranceDB insuranceDB, SkillDB skillDB, CorporationDB corporationDB,
         IAttributes  attributes,  IGroups       groups,       ICategories categories, ITypes types, IAncestries ancestries, IBloodlines bloodlines,
         IStations    stations,    ISolarSystems solarSystems, IFactions factions, IDefaultAttributes defaultAttributes, IDogmaNotifications dogmaNotifications
@@ -89,7 +91,7 @@ public class Items : IItems
     {
         this.Log = logger;
 
-        this.Database                               =  databaseConnection;
+        this.Database                               =  database;
         this.MachoNet                               =  machoNet;
         this.Constants                              =  constants;
         this.MetaInventories                        =  metaInventories;
@@ -688,7 +690,7 @@ public class Items : IItems
             this.DestroyItems (inventory.Items);
 
         // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT NEED EXTRA CLEANUP
-        Database.InvDestroyItem (item);
+        Database.InvDestroyItem (item.ID);
     }
 
     private void OnItemPersisted (ItemEntity item)
@@ -696,7 +698,11 @@ public class Items : IItems
         // TODO: ADD SPECIAL HANDLING FOR ITEMS THAT HAVE EXTRA DATA
         if (item.Information.New || item.Information.Dirty)
         {
-            Database.InvPersistItem (item);
+            Database.InvPersistItem (
+                (ulong) item.ID, item.Name, item.Type, item.OwnerID, item.LocationID,
+                item.Flag, item.Contraband, item.Singleton, item.Quantity,
+                item.X, item.Y, item.Z, item.CustomInfo, item.HadName, item.HadPosition
+            );
 
             switch (item)
             {
@@ -728,7 +734,7 @@ public class Items : IItems
                 inventoryItem.Persist ();
 
         // persist the attributes too
-        this.Database.InvDgmPersistEntityAttributes (item);
+        this.Database.InvDgmPersistEntityAttributes (item.ID, item.Attributes);
     }
 
     private void OnItemDisposed (ItemEntity item)

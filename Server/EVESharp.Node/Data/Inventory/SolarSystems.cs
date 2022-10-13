@@ -27,6 +27,8 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Network;
@@ -38,7 +40,7 @@ namespace EVESharp.Node.Data.Inventory;
 public class SolarSystems : Dictionary <int, SolarSystem>, ISolarSystems
 {
     private readonly Dictionary <int, long> mSolarsystemToNodeID = new Dictionary <int, long> ();
-    private          IDatabaseConnection    Database       { get; }
+    private          IDatabase    Database       { get; }
     private          IStations              Stations       { get; }
     private          IMachoNet              MachoNet       { get; }
     private          HttpClient             HttpClient     { get; }
@@ -50,11 +52,11 @@ public class SolarSystems : Dictionary <int, SolarSystem>, ISolarSystems
         set => this [(int) id] = value;
     }
 
-    public SolarSystems (HttpClient httpClient, IStations stations, IClusterManager clusterManager, IDatabaseConnection databaseConnection, IMachoNet machoNet)
+    public SolarSystems (HttpClient httpClient, IStations stations, IClusterManager clusterManager, IDatabase database, IMachoNet machoNet)
     {
         this.HttpClient     = httpClient;
         this.MachoNet       = machoNet;
-        this.Database       = databaseConnection;
+        this.Database       = database;
         this.Stations       = stations;
         this.ClusterManager = clusterManager;
     }

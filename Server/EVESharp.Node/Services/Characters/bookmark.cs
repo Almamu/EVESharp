@@ -1,5 +1,7 @@
 using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Exceptions;
@@ -15,11 +17,11 @@ namespace EVESharp.Node.Services.Characters;
 public class bookmark : Service
 {
     public override AccessLevel          AccessLevel          => AccessLevel.None;
-    private         IDatabaseConnection  Database             { get; }
+    private         IDatabase  Database             { get; }
     private         IItems               Items                { get; }
     private         IRemoteServiceManager RemoteServiceManager { get; }
 
-    public bookmark (IDatabaseConnection connection, IItems items, IRemoteServiceManager remoteServiceManager)
+    public bookmark (IDatabase connection, IItems items, IRemoteServiceManager remoteServiceManager)
     {
         Database             = connection;
         this.Items           = items;

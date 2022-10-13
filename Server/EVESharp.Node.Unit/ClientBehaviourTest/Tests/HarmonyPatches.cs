@@ -1,4 +1,5 @@
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Data.Account;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -9,31 +10,44 @@ namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
 public class HarmonyPatches
 {
     [HarmonyPatch (typeof (ItemDB), nameof(ItemDB.InvClearNodeAssociation))]
-    public static bool InvClearNodeAssociation (IDatabaseConnection Database)
+    public static bool InvClearNodeAssociation (IDatabase Database)
     {
         return false;
     }
 
     [HarmonyPatch (typeof (AccountDB), nameof(AccountDB.CluResetClientAddresses))]
-    public static bool CluResetClientAddresses (IDatabaseConnection Database)
+    public static bool CluResetClientAddresses (IDatabase Database)
     {
         return false;
     }
 
     [HarmonyPatch (typeof (ClusterDB), nameof(ClusterDB.CluCleanup))]
-    public static bool CluCleanup (IDatabaseConnection Database)
+    public static bool CluCleanup (IDatabase Database)
     {
         return false;
     }
 
     [HarmonyPatch (typeof (ClusterDB), nameof(ClusterDB.CluRegisterSingleNode))]
-    public static bool CluRegisterSingleNode (IDatabaseConnection Database, long nodeID)
+    public static bool CluRegisterSingleNode (IDatabase Database, long nodeID)
     {
         return false;
     }
 
+    [HarmonyPatch (typeof (AccountDB), nameof (AccountDB.ActExists))]
+    public static bool ActExists (IDatabase Database, string username, ref bool __result)
+    {
+        __result = username switch
+        {
+            "Almamu" => true,
+            "Kira"   => true,
+            "Banned" => true
+        };
+        
+        return false;
+    }
+
     [HarmonyPatch (typeof (AccountDB), nameof (AccountDB.ActLogin))]
-    public static bool ActLogin (IDatabaseConnection Database, string username, string password, out int? accountID, out ulong? role, out bool? banned, ref bool __result)
+    public static bool ActLogin (IDatabase Database, string username, string password, out int? accountID, out ulong? role, out bool? banned, ref bool __result)
     {
         // provide some valid logins
         if (username == "Almamu" && password == "Password")
@@ -74,7 +88,7 @@ public class HarmonyPatches
     }
 
     [HarmonyPatch (typeof (SettingsDB), nameof(SettingsDB.EveFetchLiveUpdates))]
-    public static bool EveFetchLiveUpdtes (IDatabaseConnection Database, ref PyList <PyObjectData> __result)
+    public static bool EveFetchLiveUpdtes (IDatabase Database, ref PyList <PyObjectData> __result)
     {
         __result = new PyList <PyObjectData> ();
         return false;

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Corporations;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Chat;
@@ -49,7 +52,7 @@ public class corpRegistry : MultiClientBoundService
     private CorporationDB              DB                  { get; }
     private ChatDB                     ChatDB              { get; }
     private OldCharacterDB             CharacterDB         { get; }
-    private IDatabaseConnection        Database            { get; }
+    private IDatabase        Database            { get; }
     private IItems                     Items               { get; }
     private IWallets                   Wallets             { get; }
     private INotificationSender        Notifications       { get; }
@@ -68,13 +71,13 @@ public class corpRegistry : MultiClientBoundService
 
     public corpRegistry
     (
-        CorporationDB db,          IDatabaseConnection databaseConnection, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
+        CorporationDB db,          IDatabase database, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets            wallets,            IItems items, IConstants constants, IBoundServiceManager manager,
         IAncestries   ancestries,  ISessionManager     sessionManager,     IClusterManager clusterManager, IAudit audit
     ) : base (manager)
     {
         DB             = db;
-        Database       = databaseConnection;
+        Database       = database;
         ChatDB         = chatDB;
         CharacterDB    = characterDB;
         Notifications  = notificationSender;
@@ -92,14 +95,14 @@ public class corpRegistry : MultiClientBoundService
 
     protected corpRegistry
     (
-        CorporationDB   db,             IDatabaseConnection databaseConnection, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
+        CorporationDB   db,             IDatabase database, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager     mailManager,    IWallets            wallets,            IConstants constants, IItems items, IAncestries ancestries,
         ISessionManager sessionManager, Corporation         corp,               int isMaster, corpRegistry parent, IAudit audit
     ) : base (parent, corp.ID)
     {
         // TODO: USE THE PARENT TO GET ALL THE DEPENDENCIES?
         DB                                = db;
-        Database                          = databaseConnection;
+        Database                          = database;
         ChatDB                            = chatDB;
         CharacterDB                       = characterDB;
         Notifications                     = notificationSender;

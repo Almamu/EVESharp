@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Alliances;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
-using EVESharp.EVE.Database;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.allianceRegistry;
 using EVESharp.EVE.Exceptions.corpRegistry;
@@ -28,7 +28,7 @@ public class allianceRegistry : MultiClientBoundService
 {
     public override AccessLevel AccessLevel => AccessLevel.None;
 
-    private IDatabaseConnection Database       { get; }
+    private IDatabase Database       { get; }
     private CorporationDB       CorporationDB  { get; }
     private ChatDB              ChatDB         { get; }
     private INotificationSender Notifications  { get; }
@@ -39,11 +39,11 @@ public class allianceRegistry : MultiClientBoundService
 
     public allianceRegistry
     (
-        IDatabaseConnection databaseConnection, CorporationDB   corporationDB,  ChatDB          chatDB, IItems items, INotificationSender notificationSender,
+        IDatabase database, CorporationDB   corporationDB,  ChatDB          chatDB, IItems items, INotificationSender notificationSender,
         IBoundServiceManager manager,            ISessionManager sessionManager, IClusterManager clusterManager
     ) : base (manager)
     {
-        Database       = databaseConnection;
+        Database       = database;
         CorporationDB  = corporationDB;
         ChatDB         = chatDB;
         Notifications  = notificationSender;
@@ -56,11 +56,11 @@ public class allianceRegistry : MultiClientBoundService
 
     private allianceRegistry
     (
-        Alliance        alliance, IDatabaseConnection databaseConnection, CorporationDB corporationDB, IItems items, INotificationSender notificationSender,
+        Alliance        alliance, IDatabase database, CorporationDB corporationDB, IItems items, INotificationSender notificationSender,
         ISessionManager sessionManager, MultiClientBoundService parent
     ) : base (parent, alliance.ID)
     {
-        Database       = databaseConnection;
+        Database       = database;
         CorporationDB  = corporationDB;
         Notifications  = notificationSender;
         this.Items     = items;
@@ -71,15 +71,11 @@ public class allianceRegistry : MultiClientBoundService
     private IEnumerable <ApplicationEntry> GetAcceptedAlliances (long minimumTime)
     {
         // TODO: THIS ONE MIGHT HAVE A BETTER PLACE SOMEWHERE, BUT FOR NOW IT'LL LIVE HERE
-        IDbConnection connection = null;
-
         DbDataReader reader = Database.Select (
-            ref connection,
             $"SELECT corporationID, allianceID, executorCorpID FROM crpApplications LEFT JOIN crpAlliances USING(allianceID) WHERE `state` = {(int) ApplicationStatus.Accepted} AND applicationUpdateTime < @limit",
             new Dictionary <string, object> {{"@limit", minimumTime}}
         );
 
-        using (connection)
         using (reader)
         {
             while (reader.Read ())

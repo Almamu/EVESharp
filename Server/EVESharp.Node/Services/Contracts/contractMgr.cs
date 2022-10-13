@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using EVESharp.Database;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -128,7 +131,7 @@ public class contractMgr : Service
 
     private void PrepareItemsForCourierOrAuctionContract
     (
-        IDbConnection   connection, ulong   contractID,
+        DbLock dbLock, ulong   contractID,
         PyList <PyList> itemList,   Station station, int ownerID, int shipID
     )
     {
@@ -139,7 +142,7 @@ public class contractMgr : Service
         ) as Container;
 
         Dictionary <int, ContractDB.ItemQuantityEntry> items =
-            DB.PrepareItemsForContract (connection, contractID, itemList, station, ownerID, container.ID, shipID);
+            DB.PrepareItemsForContract (dbLock, contractID, itemList, station, ownerID, container.ID, shipID);
 
         double volume = 0;
 
@@ -176,7 +179,7 @@ public class contractMgr : Service
             Notifications.NotifyNode (stationNode, changes);
 
         // update the contract with the crate and the new volume
-        DB.UpdateContractCrateAndVolume (ref connection, contractID, container.ID, volume);
+        DB.UpdateContractCrateAndVolume (dbLock, contractID, container.ID, volume);
     }
 
     public PyDataType CreateContract
@@ -218,59 +221,52 @@ public class contractMgr : Service
 
         Station station = this.Items.GetStaticStation (startStationID);
 
-        using IDbConnection connection = MarketDB.AcquireMarketLock ();
-
-        try
+        using DbLock dbLock = MarketDB.AcquireMarketLock ();
+        
+        // take reward from the character
+        if (reward > 0)
         {
-            // take reward from the character
-            if (reward > 0)
+            using IWallet wallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
+
             {
-                using IWallet wallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
-
-                {
-                    wallet.EnsureEnoughBalance (reward);
-                    wallet.CreateJournalRecord (MarketReference.ContractRewardAdded, null, null, -reward);
-                }
+                wallet.EnsureEnoughBalance (reward);
+                wallet.CreateJournalRecord (MarketReference.ContractRewardAdded, null, null, -reward);
             }
-
-            // named payload contains itemList, flag, requestItemTypeList and forCorp
-            ulong contractID = DB.CreateContract (
-                connection, call.Session.CharacterID,
-                call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
-                assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
-                reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN
-            );
-
-            // TODO: take broker's tax, deposit and sales tax
-
-            switch ((int) contractType)
-            {
-                case (int) ContractTypes.ItemExchange:
-                case (int) ContractTypes.Auction:
-                case (int) ContractTypes.Courier:
-                    this.PrepareItemsForCourierOrAuctionContract (
-                        connection,
-                        contractID,
-                        (call.NamedPayload ["itemList"] as PyList).GetEnumerable <PyList> (),
-                        station,
-                        callerCharacterID,
-                        (int) call.Session.ShipID
-                    );
-                    break;
-
-                case (int) ContractTypes.Loan: break;
-                default:                       throw new CustomError ("Unknown contract type");
-            }
-
-            if (contractType == (int) ContractTypes.ItemExchange)
-                DB.PrepareRequestedItems (connection, contractID, (call.NamedPayload ["requestItemTypeList"] as PyList).GetEnumerable <PyList> ());
-
-            return contractID;
         }
-        finally
+
+        // named payload contains itemList, flag, requestItemTypeList and forCorp
+        ulong contractID = DB.CreateContract (
+            dbLock, call.Session.CharacterID,
+            call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
+            assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
+            reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN
+        );
+
+        // TODO: take broker's tax, deposit and sales tax
+
+        switch ((int) contractType)
         {
-            MarketDB.ReleaseMarketLock (connection);
+            case (int) ContractTypes.ItemExchange:
+            case (int) ContractTypes.Auction:
+            case (int) ContractTypes.Courier:
+                this.PrepareItemsForCourierOrAuctionContract (
+                    dbLock,
+                    contractID,
+                    (call.NamedPayload ["itemList"] as PyList).GetEnumerable <PyList> (),
+                    station,
+                    callerCharacterID,
+                    (int) call.Session.ShipID
+                );
+                break;
+
+            case (int) ContractTypes.Loan: break;
+            default:                       throw new CustomError ("Unknown contract type");
         }
+
+        if (contractType == (int) ContractTypes.ItemExchange)
+            DB.PrepareRequestedItems (dbLock, contractID, (call.NamedPayload ["requestItemTypeList"] as PyList).GetEnumerable <PyList> ());
+
+        return contractID;
     }
 
     public PyDataType GetContractList (ServiceCall call, PyObjectData filtersKeyval)
@@ -350,20 +346,13 @@ public class contractMgr : Service
 
     public PyDataType DeleteContract (ServiceCall call, PyInteger contractID, PyObjectData keyVal)
     {
-        using IDbConnection connection = MarketDB.AcquireMarketLock ();
+        using DbLock dbLock = MarketDB.AcquireMarketLock ();
 
-        try
-        {
-            // get contract type and status
+        // get contract type and status
 
-            // get the items back to where they belong (if any)
+        // get the items back to where they belong (if any)
 
-            // 
-        }
-        finally
-        {
-            MarketDB.ReleaseMarketLock (connection);
-        }
+        // 
 
         return null;
     }
@@ -470,84 +459,77 @@ public class contractMgr : Service
 
     public PyDataType PlaceBid (ServiceCall call, PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData)
     {
-        using IDbConnection connection = MarketDB.AcquireMarketLock ();
+        using DbLock dbLock = MarketDB.AcquireMarketLock ();
+    
+        // TODO: SUPPORT PROPER CORP WALLET
+        int bidderID = call.Session.CharacterID;
 
-        try
+        if (forCorp == true)
         {
-            // TODO: SUPPORT PROPER CORP WALLET
-            int bidderID = call.Session.CharacterID;
+            bidderID = call.Session.CorporationID;
 
-            if (forCorp == true)
-            {
-                bidderID = call.Session.CorporationID;
-
-                throw new UserError ("Corp bidding is not supported for now!");
-            }
-
-            ContractDB.Contract contract = DB.GetContract (connection, contractID);
-
-            // ensure the contract is still in progress
-            if (contract.Status != ContractStatus.Outstanding)
-                throw new ConAuctionAlreadyClaimed ();
-
-            DB.GetMaximumBid (connection, contractID, out int maximumBidderID, out int maximumBid);
-
-            // calculate next bid slot
-            int nextMinimumBid = maximumBid + (int) Math.Max (0.1 * (double) contract.Price, 1000);
-
-            if (quantity < nextMinimumBid)
-                throw new ConBidTooLow (quantity, nextMinimumBid);
-
-            // take the bid's money off the wallet
-            using IWallet bidderWallet = this.Wallets.AcquireWallet (bidderID, WalletKeys.MAIN);
-
-            {
-                bidderWallet.EnsureEnoughBalance (quantity);
-                bidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBid, null, null, -quantity);
-            }
-
-            // check who we'd outbid and notify them
-            DB.GetOutbids (connection, contractID, quantity, out List <int> characterIDs, out List <int> corporationIDs);
-
-            OnContractOutbid notification = new OnContractOutbid (contractID);
-
-            foreach (int corporationID in corporationIDs)
-                if (corporationID != bidderID)
-                    Notifications.NotifyCorporation (corporationID, notification);
-
-            foreach (int characterID in characterIDs)
-                if (characterID != bidderID)
-                    Notifications.NotifyCharacter (characterID, notification);
-
-            // finally place the bid
-            ulong bidID = DB.PlaceBid (connection, contractID, quantity, bidderID, forCorp);
-
-            // return the money for the player that was the highest bidder
-            using IWallet maximumBidderWallet = this.Wallets.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
-
-            {
-                maximumBidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBidRefund, null, null, maximumBid);
-            }
-
-            return bidID;
+            throw new UserError ("Corp bidding is not supported for now!");
         }
-        finally
+
+        ContractDB.Contract contract = DB.GetContract (dbLock, contractID);
+
+        // ensure the contract is still in progress
+        if (contract.Status != ContractStatus.Outstanding)
+            throw new ConAuctionAlreadyClaimed ();
+
+        DB.GetMaximumBid (dbLock, contractID, out int maximumBidderID, out int maximumBid);
+
+        // calculate next bid slot
+        int nextMinimumBid = maximumBid + (int) Math.Max (0.1 * (double) contract.Price, 1000);
+
+        if (quantity < nextMinimumBid)
+            throw new ConBidTooLow (quantity, nextMinimumBid);
+
+        // take the bid's money off the wallet
+        using IWallet bidderWallet = this.Wallets.AcquireWallet (bidderID, WalletKeys.MAIN);
+
         {
-            MarketDB.ReleaseMarketLock (connection);
+            bidderWallet.EnsureEnoughBalance (quantity);
+            bidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBid, null, null, -quantity);
         }
+
+        // check who we'd outbid and notify them
+        DB.GetOutbids (dbLock, contractID, quantity, out List <int> characterIDs, out List <int> corporationIDs);
+
+        OnContractOutbid notification = new OnContractOutbid (contractID);
+
+        foreach (int corporationID in corporationIDs)
+            if (corporationID != bidderID)
+                Notifications.NotifyCorporation (corporationID, notification);
+
+        foreach (int characterID in characterIDs)
+            if (characterID != bidderID)
+                Notifications.NotifyCharacter (characterID, notification);
+
+        // finally place the bid
+        ulong bidID = DB.PlaceBid (dbLock, contractID, quantity, bidderID, forCorp);
+
+        // return the money for the player that was the highest bidder
+        using IWallet maximumBidderWallet = this.Wallets.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
+
+        {
+            maximumBidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBidRefund, null, null, maximumBid);
+        }
+
+        return bidID;
     }
 
     private void AcceptItemExchangeContract
     (
-        IDbConnection connection, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar
+        DbLock dbLock, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar
     )
     {
-        List <ContractDB.ItemQuantityEntry> offeredItems = DB.GetOfferedItems (connection, contract.ID);
-        Dictionary <int, int>               itemsToCheck = DB.GetRequiredItemTypeIDs (connection, contract.ID);
-        List <ContractDB.ItemQuantityEntry> changedItems = DB.CheckRequiredItemsAtStation (connection, station, ownerID, contract.IssuerID, flag, itemsToCheck);
+        List <ContractDB.ItemQuantityEntry> offeredItems = DB.GetOfferedItems (dbLock, contract.ID);
+        Dictionary <int, int>               itemsToCheck = DB.GetRequiredItemTypeIDs (dbLock, contract.ID);
+        List <ContractDB.ItemQuantityEntry> changedItems = DB.CheckRequiredItemsAtStation (dbLock, station, ownerID, contract.IssuerID, flag, itemsToCheck);
 
         // extract the crate
-        DB.ExtractCrate (connection, contract.CrateID, station.ID, ownerID);
+        DB.ExtractCrate (dbLock, contract.CrateID, station.ID, ownerID);
 
         long stationNode = this.SolarSystems.GetNodeStationBelongsTo (station.ID);
 
@@ -646,10 +628,10 @@ public class contractMgr : Service
         }
 
         // the contract was properly accepted, update it's status
-        DB.UpdateContractStatus (ref connection, contract.ID, ContractStatus.Finished);
-        DB.UpdateAcceptorID (ref connection, contract.ID, ownerID);
-        DB.UpdateAcceptedDate (ref connection, contract.ID);
-        DB.UpdateCompletedDate (ref connection, contract.ID);
+        DB.UpdateContractStatus (dbLock, contract.ID, ContractStatus.Finished);
+        DB.UpdateAcceptorID (dbLock, contract.ID, ownerID);
+        DB.UpdateAcceptedDate (dbLock, contract.ID);
+        DB.UpdateCompletedDate (dbLock, contract.ID);
 
         // notify the contract as being accepted
         if (contract.ForCorp == false)
@@ -663,42 +645,35 @@ public class contractMgr : Service
         if (forCorp == true)
             throw new UserError ("Cannot accept contracts for corporation yet");
 
-        using IDbConnection connection = MarketDB.AcquireMarketLock ();
+        using DbLock dbLock = MarketDB.AcquireMarketLock ();
+        
+        int callerCharacterID = call.Session.CharacterID;
 
-        try
+        // TODO: SUPPORT forCorp
+        ContractDB.Contract contract = DB.GetContract (dbLock, contractID);
+
+        if (contract.Status != ContractStatus.Outstanding)
+            throw new ConContractNotOutstanding ();
+
+        if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc ())
+            throw new ConContractExpired ();
+
+        Station station = this.Items.GetStaticStation (contract.StationID);
+
+        // TODO: CHECK REWARD/PRICE
+        switch (contract.Type)
         {
-            int callerCharacterID = call.Session.CharacterID;
+            case ContractTypes.ItemExchange:
+                this.AcceptItemExchangeContract (dbLock, call.Session, contract, station, callerCharacterID);
+                break;
 
-            // TODO: SUPPORT forCorp
-            ContractDB.Contract contract = DB.GetContract (connection, contractID);
-
-            if (contract.Status != ContractStatus.Outstanding)
-                throw new ConContractNotOutstanding ();
-
-            if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc ())
-                throw new ConContractExpired ();
-
-            Station station = this.Items.GetStaticStation (contract.StationID);
-
-            // TODO: CHECK REWARD/PRICE
-            switch (contract.Type)
-            {
-                case ContractTypes.ItemExchange:
-                    this.AcceptItemExchangeContract (connection, call.Session, contract, station, callerCharacterID);
-                    break;
-
-                case ContractTypes.Auction:  throw new CustomError ("Auctions cannot be accepted!");
-                case ContractTypes.Courier:  throw new CustomError ("Courier contracts not supported yet!");
-                case ContractTypes.Loan:     throw new CustomError ("Loan contracts not supported yet!");
-                case ContractTypes.Freeform: throw new CustomError ("Freeform contracts not supported yet!");
-                default:                     throw new CustomError ("Unknown contract type to accept!");
-            }
+            case ContractTypes.Auction:  throw new CustomError ("Auctions cannot be accepted!");
+            case ContractTypes.Courier:  throw new CustomError ("Courier contracts not supported yet!");
+            case ContractTypes.Loan:     throw new CustomError ("Loan contracts not supported yet!");
+            case ContractTypes.Freeform: throw new CustomError ("Freeform contracts not supported yet!");
+            default:                     throw new CustomError ("Unknown contract type to accept!");
         }
-        finally
-        {
-            MarketDB.ReleaseMarketLock (connection);
-        }
-
+        
         return null;
     }
 

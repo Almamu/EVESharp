@@ -22,7 +22,7 @@ namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
 
 public class SingleInstance
 {
-    private readonly Mock <IDatabaseConnection>           mDatabase           = new Mock <IDatabaseConnection> ();
+    private readonly Mock <IDatabase>           mDatabase           = new Mock <IDatabase> ();
     private readonly Mock <Authentication>                mAuthenticationMock = new Mock <Authentication> ();
     private readonly Mock <General>                       mGeneralMock        = new Mock <General> ();
     private readonly Mock <Common.Configuration.MachoNet> mMachoNetMock       = new Mock <Common.Configuration.MachoNet> ();

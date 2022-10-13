@@ -10,7 +10,7 @@ public class ShipModule : ItemEntity
     public GodmaShipEffectsList Effects     { get; }
     public ItemEffects          ItemEffects { get; set; }
 
-    public ShipModule (Information.Item info) : base (info)
+    public ShipModule (Database.Inventory.Types.Information.Item info) : base (info)
     {
         this.Effects = new GodmaShipEffectsList ();
     }

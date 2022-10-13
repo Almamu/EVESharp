@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -37,13 +40,13 @@ public class repairSvc : ClientBoundService
     private          INotificationSender Notifications      { get; }
     private          IWallets            Wallets            { get; }
     private          IDogmaNotifications DogmaNotifications { get; }
-    private          IDatabaseConnection Database           { get; }
+    private          IDatabase Database           { get; }
 
     public repairSvc
     (
         RepairDB      repairDb,     MarketDB             marketDb, InsuranceDB insuranceDb, INotificationSender notificationSender,
         IItems        items,        IBoundServiceManager manager,  IWallets    wallets,     IDogmaNotifications dogmaNotifications,
-        ISolarSystems solarSystems, IDatabaseConnection  database
+        ISolarSystems solarSystems, IDatabase  database
     ) : base (manager)
     {
         Items              = items;

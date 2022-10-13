@@ -30,7 +30,7 @@ public class Ship : ItemInventory
             .Where (x => x.Value.Flag.IsLowModule ())
             .ToDictionary (x => x.Value.Flag, x => x.Value);
 
-    public Ship (Information.Item info) : base (info) { }
+    public Ship (Database.Inventory.Types.Information.Item info) : base (info) { }
 
     protected override void LoadContents (Flags ignoreFlags = Flags.None)
     {

@@ -1,14 +1,15 @@
 using System.Data.Common;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Orchestrator.Models;
 
 namespace EVESharp.Orchestrator.Repositories;
 
 public class ClusterRepository : IClusterRepository
 {
-    private IDatabaseConnection DB { get; }
+    private IDatabase DB { get; }
 
-    public ClusterRepository (IDatabaseConnection db, IConfiguration configuration, ILogger<ClusterRepository> logger)
+    public ClusterRepository (IDatabase db, IConfiguration configuration, ILogger<ClusterRepository> logger)
     {
         this.DB = db;
         
@@ -151,7 +152,7 @@ public class ClusterRepository : IClusterRepository
         long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
         Guid address     = Guid.NewGuid ();
         
-        ulong nodeId = this.DB.PrepareLID (
+        ulong nodeId = this.DB.Insert (
             "INSERT INTO cluster(id, ip, address, port, role, lastHeartBeat)VALUES(NULL, @ip, @address, @port, @role, @lastHeartBeat);",
             new Dictionary <string, object> ()
             {

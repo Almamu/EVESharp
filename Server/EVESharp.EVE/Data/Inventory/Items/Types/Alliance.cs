@@ -2,7 +2,7 @@
 
 public class Alliance : ItemEntity
 {
-    private Information.Alliance AllianceInformation { get; }
+    private Database.Inventory.Types.Information.Alliance AllianceInformation { get; }
 
     public string ShortName => this.AllianceInformation.ShortName;
     public string Description
@@ -39,7 +39,7 @@ public class Alliance : ItemEntity
     public int  CreatorCharID => this.AllianceInformation.CreatorCharID;
     public bool Dictatorial   => this.AllianceInformation.Dictatorial;
 
-    public Alliance (Information.Alliance allianceInformation) : base (allianceInformation.Information)
+    public Alliance (Database.Inventory.Types.Information.Alliance allianceInformation) : base (allianceInformation.Information)
     {
         this.AllianceInformation = allianceInformation;
     }

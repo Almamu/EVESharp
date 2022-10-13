@@ -1,4 +1,5 @@
 using System;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -7,7 +8,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class Faction : ItemEntity
 {
-    public Information.Faction FactionInformation { get; init; }
+    public Database.Inventory.Types.Information.Faction FactionInformation { get; init; }
 
     public string Description          => this.FactionInformation.Description;
     public int    RaceIDs              => this.FactionInformation.RaceIDs;
@@ -18,7 +19,7 @@ public class Faction : ItemEntity
     public int    StationSystemCount   => this.FactionInformation.StationSystemCount;
     public int    MilitiaCorporationId => this.FactionInformation.MilitiaCorporationID;
 
-    public Faction (Information.Faction info) : base (info.Information)
+    public Faction (Database.Inventory.Types.Information.Faction info) : base (info.Information)
     {
         this.FactionInformation = info;
     }

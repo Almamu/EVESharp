@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using EVESharp.Common.Configuration;
 using EVESharp.Common.Logging;
 using EVESharp.Database;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.EVE;
 using EVESharp.EVE.Accounts;
@@ -208,7 +209,7 @@ internal class Program
         
         // register all the dependencies we have available
         container.RegisterInstance (new HttpClient ());
-        container.Register <IDatabaseConnection, DatabaseConnection> (Lifestyle.Singleton);
+        container.Register <IDatabase, Database.Database> (Lifestyle.Singleton);
         container.Register <ISessionManager, SessionManager> (Lifestyle.Singleton);
         container.Register <ICacheStorage, CacheStorage> (Lifestyle.Singleton);
         container.Register <IMetaInventories, MetaInventories> (Lifestyle.Singleton);

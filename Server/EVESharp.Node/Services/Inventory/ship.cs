@@ -1,4 +1,6 @@
 ﻿using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -24,11 +26,11 @@ public class ship : ClientBoundService
     private         ISolarSystems       SolarSystems       { get; }
     private         ISessionManager     SessionManager     { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
-    private         IDatabaseConnection Database           { get; }
+    private         IDatabase Database           { get; }
 
     public ship
     (
-        IItems        items, IBoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabaseConnection database,
+        IItems        items, IBoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabase database,
         ISolarSystems solarSystems
     ) : base (manager)
     {

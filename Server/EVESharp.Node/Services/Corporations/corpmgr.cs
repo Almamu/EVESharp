@@ -1,5 +1,6 @@
 ﻿using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network.Caching;
@@ -18,9 +19,9 @@ public class corpmgr : Service
     public override AccessLevel         AccessLevel  => AccessLevel.None;
     private         CorporationDB       DB           { get; }
     private         ICacheStorage       CacheStorage { get; }
-    private         IDatabaseConnection Database     { get; }
+    private         IDatabase Database     { get; }
 
-    public corpmgr (CorporationDB db, ICacheStorage cacheStorage, IDatabaseConnection database)
+    public corpmgr (CorporationDB db, ICacheStorage cacheStorage, IDatabase database)
     {
         DB           = db;
         CacheStorage = cacheStorage;

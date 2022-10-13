@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Configuration;
 using EVESharp.EVE.Data.Corporation;
@@ -39,7 +41,7 @@ public class marketProxy : Service
     private ICacheStorage       CacheStorage       { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
-    private IDatabaseConnection Database           { get; }
+    private IDatabase Database           { get; }
     private IConstants          Constants          { get; }
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
@@ -48,7 +50,7 @@ public class marketProxy : Service
 
     public marketProxy
     (
-        MarketDB db, OldCharacterDB characterDB, IDatabaseConnection database, IItems items, ICacheStorage cacheStorage,
+        MarketDB db, OldCharacterDB characterDB, IDatabase database, IItems items, ICacheStorage cacheStorage,
         IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
         ISolarSystems solarSystems
     )
@@ -282,14 +284,14 @@ public class marketProxy : Service
 
     private void PlaceImmediateSellOrderChar
     (
-        IDbConnection connection, IWallet wallet, Character character, int itemID, int typeID, int stationID, int quantity,
+        DbLock dbLock, IWallet wallet, Character character, int itemID, int typeID, int stationID, int quantity,
         double        price,      Session session
     )
     {
         int solarSystemID = this.Items.GetStaticStation (stationID).SolarSystemID;
 
         // look for matching buy orders
-        MarketOrder [] orders = DB.FindMatchingOrders (connection, price, typeID, character.ID, solarSystemID, TransactionType.Buy);
+        MarketOrder [] orders = DB.FindMatchingOrders (dbLock, price, typeID, character.ID, solarSystemID, TransactionType.Buy);
 
         // ensure there's at least some that match
         this.CheckMatchingBuyOrders (orders, quantity, stationID);
@@ -326,7 +328,7 @@ public class marketProxy : Service
 
                 // this order is fully satisfiable, so do that
                 // remove the order off the database if it's fully satisfied
-                DB.RemoveOrder (connection, order.OrderID);
+                DB.RemoveOrder (dbLock, order.OrderID);
 
                 quantityToSell =  order.UnitsLeft;
                 quantity       -= order.UnitsLeft;
@@ -334,7 +336,7 @@ public class marketProxy : Service
             else if (order.MinimumUnits <= quantity)
             {
                 // we can satisfy SOME of the order
-                DB.UpdateOrderRemainingQuantity (connection, order.OrderID, order.UnitsLeft - quantity, quantity * price);
+                DB.UpdateOrderRemainingQuantity (dbLock, order.OrderID, order.UnitsLeft - quantity, quantity * price);
                 // the quantity we're selling is already depleted if the code got here
                 quantityToSell = quantity;
                 quantity       = 0;
@@ -386,7 +388,7 @@ public class marketProxy : Service
         }
     }
 
-    private void PlaceSellOrderCharUpdateItems (IDbConnection connection, Session session, int stationID, int typeID, int quantity)
+    private void PlaceSellOrderCharUpdateItems (DbLock dbLock, Session session, int stationID, int typeID, int quantity)
     {
         Dictionary <int, MarketDB.ItemQuantityEntry> items             = null;
         int                                          callerCharacterID = session.CharacterID;
@@ -394,10 +396,10 @@ public class marketProxy : Service
         // depending on where the character that is placing the order, the way to detect the items should be different
         if (stationID == session.StationID)
             items = DB.PrepareItemForOrder (
-                connection, typeID, stationID, session.ShipID ?? -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole
+                dbLock, typeID, stationID, session.ShipID ?? -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole
             );
         else
-            items = DB.PrepareItemForOrder (connection, typeID, stationID, -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole);
+            items = DB.PrepareItemForOrder (dbLock, typeID, stationID, -1, quantity, session.CharacterID, session.CorporationID, session.CorporationRole);
 
         if (items is null)
             throw new NotEnoughQuantity (this.Types [typeID]);
@@ -455,55 +457,48 @@ public class marketProxy : Service
 
         // obtain wallet lock too
         // everything is checked already, perform table locking and do all the job here
-        using IWallet       wallet     = this.Wallets.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
-        using IDbConnection connection = DB.AcquireMarketLock ();
+        using IWallet wallet = this.Wallets.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
+        using DbLock  dbLock = DB.AcquireMarketLock ();
 
-        try
+        // check if the item is singleton and throw a exception about it
         {
-            // check if the item is singleton and throw a exception about it
-            {
-                bool singleton = false;
+            bool singleton = false;
 
-                DB.CheckRepackagedItem (connection, itemID, out singleton);
+            DB.CheckRepackagedItem (dbLock, itemID, out singleton);
 
-                if (singleton)
-                    throw new RepackageBeforeSelling (this.Types [typeID]);
-            }
-
-            if (duration == 0)
-            {
-                // move the items to update
-                this.PlaceSellOrderCharUpdateItems (connection, call.Session, stationID, typeID, quantity);
-
-                // finally create the records in the market database
-                this.PlaceImmediateSellOrderChar (
-                    connection, wallet, character, itemID, typeID, stationID, quantity, price,
-                    call.Session
-                );
-            }
-            else
-            {
-                // ensure the player can pay taxes and broker
-                wallet.EnsureEnoughBalance (brokerCost);
-                // do broker fee first
-                wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
-                // move the items to update
-                this.PlaceSellOrderCharUpdateItems (connection, call.Session, stationID, typeID, quantity);
-
-                // finally place the order
-                DB.PlaceSellOrder (
-                    connection, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity,
-                    accountKey, duration, ownerID == character.CorporationID
-                );
-            }
-
-            // send a OnOwnOrderChange notification
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnOwnOrderChanged (typeID, "Add"));
+            if (singleton)
+                throw new RepackageBeforeSelling (this.Types [typeID]);
         }
-        finally
+
+        if (duration == 0)
         {
-            DB.ReleaseMarketLock (connection);
+            // move the items to update
+            this.PlaceSellOrderCharUpdateItems (dbLock, call.Session, stationID, typeID, quantity);
+
+            // finally create the records in the market database
+            this.PlaceImmediateSellOrderChar (
+                dbLock, wallet, character, itemID, typeID, stationID, quantity, price,
+                call.Session
+            );
         }
+        else
+        {
+            // ensure the player can pay taxes and broker
+            wallet.EnsureEnoughBalance (brokerCost);
+            // do broker fee first
+            wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
+            // move the items to update
+            this.PlaceSellOrderCharUpdateItems (dbLock, call.Session, stationID, typeID, quantity);
+
+            // finally place the order
+            DB.PlaceSellOrder (
+                dbLock, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity,
+                accountKey, duration, ownerID == character.CorporationID
+            );
+        }
+
+        // send a OnOwnOrderChange notification
+        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, new OnOwnOrderChanged (typeID, "Add"));
     }
 
     private void CheckMatchingSellOrders (MarketOrder [] orders, int quantity, int stationID)
@@ -528,7 +523,7 @@ public class marketProxy : Service
 
     private void PlaceImmediateBuyOrderChar
     (
-        ServiceCall call, IDbConnection connection, IWallet wallet, int typeID, Character character, int stationID, int quantity,
+        ServiceCall call, DbLock dbLock, IWallet wallet, int typeID, Character character, int stationID, int quantity,
         double          price,
         int             range
     )
@@ -536,7 +531,7 @@ public class marketProxy : Service
         int solarSystemID = this.Items.GetStaticStation (stationID).SolarSystemID;
 
         // look for matching sell orders
-        MarketOrder [] orders = DB.FindMatchingOrders (connection, price, typeID, character.ID, solarSystemID, TransactionType.Sell);
+        MarketOrder [] orders = DB.FindMatchingOrders (dbLock, price, typeID, character.ID, solarSystemID, TransactionType.Sell);
 
         // ensure there's at least some that match
         this.CheckMatchingSellOrders (orders, quantity, solarSystemID);
@@ -556,7 +551,7 @@ public class marketProxy : Service
             if (order.UnitsLeft <= quantity)
             {
                 // the order was completed, remove it from the database
-                DB.RemoveOrder (connection, order.OrderID);
+                DB.RemoveOrder (dbLock, order.OrderID);
 
                 // increase the amount of bought items
                 quantityToBuy =  order.UnitsLeft;
@@ -565,7 +560,7 @@ public class marketProxy : Service
             else
             {
                 // part of the sell order was satisfied
-                DB.UpdateOrderRemainingQuantity (connection, order.OrderID, order.UnitsLeft - quantity, 0);
+                DB.UpdateOrderRemainingQuantity (dbLock, order.OrderID, order.UnitsLeft - quantity, 0);
 
                 quantityToBuy = quantity;
                 quantity      = 0;
@@ -628,42 +623,35 @@ public class marketProxy : Service
         // ensure the character can place the order where he's trying to
         this.CheckBuyOrderDistancePermissions (character, stationID, duration);
 
-        using IWallet       wallet     = this.Wallets.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
-        using IDbConnection connection = DB.AcquireMarketLock ();
+        using IWallet wallet = this.Wallets.AcquireWallet (ownerID, accountKey, ownerID == call.Session.CorporationID);
+        using DbLock  dbLock = DB.AcquireMarketLock ();
 
-        try
+        // make sure the character can pay the escrow and the broker
+        wallet.EnsureEnoughBalance (quantity * price + brokerCost);
+        // do the escrow after
+        wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, -quantity * price);
+
+        if (duration == 0)
         {
-            // make sure the character can pay the escrow and the broker
-            wallet.EnsureEnoughBalance (quantity * price + brokerCost);
-            // do the escrow after
-            wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, -quantity * price);
-
-            if (duration == 0)
-            {
-                this.PlaceImmediateBuyOrderChar (
-                    call, connection, wallet, typeID, character, stationID, quantity, price,
-                    range
-                );
-            }
-            else
-            {
-                // do broker fee first
-                wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
-
-                // place the buy order
-                DB.PlaceBuyOrder (
-                    connection, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity,
-                    minVolume, accountKey, duration, ownerID == character.CorporationID
-                );
-            }
-
-            // send a OnOwnOrderChange notification
-            this.DogmaNotifications.QueueMultiEvent (character.ID, new OnOwnOrderChanged (typeID, "Add"));
+            this.PlaceImmediateBuyOrderChar (
+                call, dbLock, wallet, typeID, character, stationID, quantity, price,
+                range
+            );
         }
-        finally
+        else
         {
-            DB.ReleaseMarketLock (connection);
+            // do broker fee first
+            wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
+
+            // place the buy order
+            DB.PlaceBuyOrder (
+                dbLock, typeID, character.ID, call.Session.CorporationID, stationID, range, price, quantity,
+                minVolume, accountKey, duration, ownerID == character.CorporationID
+            );
         }
+
+        // send a OnOwnOrderChange notification
+        this.DogmaNotifications.QueueMultiEvent (character.ID, new OnOwnOrderChanged (typeID, "Add"));
     }
 
     public PyDataType PlaceCharOrder
@@ -750,71 +738,63 @@ public class marketProxy : Service
 
         Character character = this.Items.GetItem <Character> (callerCharacterID);
 
-        using IDbConnection connection = DB.AcquireMarketLock ();
+        using DbLock dbLock = DB.AcquireMarketLock ();
 
-        try
+        MarketOrder order = DB.GetOrderById (dbLock, orderID);
+
+        if (order.CharacterID != callerCharacterID)
+            throw new MktOrderDidNotMatch ();
+
+        long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
+
+        // check for timers, no changes in less than 5 minutes
+        if (currentTime < order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay)
+            throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay - currentTime);
+
+        int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
+
+        // check for escrow
+        if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
         {
-            MarketOrder order = DB.GetOrderById (connection, orderID);
-
-            if (order.CharacterID != callerCharacterID)
-                throw new MktOrderDidNotMatch ();
-
-            long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
-
-            // check for timers, no changes in less than 5 minutes
-            if (currentTime < order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay)
-                throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay - currentTime);
-
-            int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
-
-            // check for escrow
-            if (order.Escrow > 0.0 && order.Bid == TransactionType.Buy)
+            using (IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp))
             {
-                using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
-
-                {
-                    wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, order.Escrow);
-                }
+                wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, order.Escrow);
             }
+        }
 
-            if (order.Bid == TransactionType.Sell)
-            {
-                // create the new item that will be used by the player
-                ItemEntity item = this.Items.CreateSimpleItem (
-                    this.Types [order.TypeID], orderOwnerID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
-                );
+        if (order.Bid == TransactionType.Sell)
+        {
+            // create the new item that will be used by the player
+            ItemEntity item = this.Items.CreateSimpleItem (
+                this.Types [order.TypeID], orderOwnerID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
+            );
 
-                // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                this.Items.UnloadItem (item);
+            // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
+            this.Items.UnloadItem (item);
 
-                // check what node this item should be loaded at
-                long stationNode = this.SolarSystems.GetNodeStationBelongsTo (order.LocationID);
+            // check what node this item should be loaded at
+            long stationNode = this.SolarSystems.GetNodeStationBelongsTo (order.LocationID);
 
-                if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (order.LocationID))
-                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
-                else
-                    Notifications.NotifyNode (
-                        stationNode,
-                        Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, order.LocationID)
-                    );
-            }
-
-            // finally remove the order
-            DB.RemoveOrder (connection, order.OrderID);
-
-            OnOwnOrderChanged notification = new OnOwnOrderChanged (order.TypeID, "Removed");
-
-            if (order.IsCorp)
-                // send a notification to the owner
-                Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
+            if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (order.LocationID))
+                Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
             else
-                // send a OnOwnOrderChange notification
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, notification);
+                Notifications.NotifyNode (
+                    stationNode,
+                    Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, order.LocationID)
+                );
         }
-        finally
-        {
-            DB.ReleaseMarketLock (connection);
-        }
+
+        // finally remove the order
+        DB.RemoveOrder (dbLock, order.OrderID);
+
+        OnOwnOrderChanged notification = new OnOwnOrderChanged (order.TypeID, "Removed");
+
+        if (order.IsCorp)
+            // send a notification to the owner
+            Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
+        else
+            // send a OnOwnOrderChange notification
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, notification);
 
         return null;
     }
@@ -830,73 +810,66 @@ public class marketProxy : Service
 
         Character character = this.Items.GetItem <Character> (callerCharacterID);
 
-        using IDbConnection connection = DB.AcquireMarketLock ();
+        using DbLock dbLock = DB.AcquireMarketLock ();
 
-        try
+        MarketOrder order = DB.GetOrderById (dbLock, orderID);
+
+        if (order.CharacterID != callerCharacterID)
+            throw new MktOrderDidNotMatch ();
+
+        long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
+
+        // check for timers, no changes in less than 5 minutes
+        if (currentTime < order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay)
+            throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay - currentTime);
+
+        // ensure the order hasn't been modified since the user saw it on the screen
+        if ((int) order.Bid != bid || order.LocationID != stationID || order.Price != price ||
+            order.UnitsLeft != volRemaining || order.Issued != issued)
+            throw new MktOrderDidNotMatch ();
+
+        // get the modification broker's fee
+        double brokerCost = 0.0;
+        double newEscrow  = 0.0;
+
+        this.CalculateBrokerCost (character.GetSkillLevel (TypeID.BrokerRelations), volRemaining, newPrice - price, out brokerCost);
+
+        int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
+
+        using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
+
         {
-            MarketOrder order = DB.GetOrderById (connection, orderID);
-
-            if (order.CharacterID != callerCharacterID)
-                throw new MktOrderDidNotMatch ();
-
-            long currentTime = DateTime.UtcNow.ToFileTimeUtc ();
-
-            // check for timers, no changes in less than 5 minutes
-            if (currentTime < order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay)
-                throw new MktOrderDelay (order.Issued + TimeSpan.TicksPerSecond * Constants.MarketModificationDelay - currentTime);
-
-            // ensure the order hasn't been modified since the user saw it on the screen
-            if ((int) order.Bid != bid || order.LocationID != stationID || order.Price != price ||
-                order.UnitsLeft != volRemaining || order.Issued != issued)
-                throw new MktOrderDidNotMatch ();
-
-            // get the modification broker's fee
-            double brokerCost = 0.0;
-            double newEscrow  = 0.0;
-
-            this.CalculateBrokerCost (character.GetSkillLevel (TypeID.BrokerRelations), volRemaining, newPrice - price, out brokerCost);
-
-            int orderOwnerID = order.IsCorp ? order.CorporationID : order.CharacterID;
-
-            using IWallet wallet = this.Wallets.AcquireWallet (orderOwnerID, order.AccountID, order.IsCorp);
-
+            if (order.Bid == TransactionType.Buy)
             {
-                if (order.Bid == TransactionType.Buy)
-                {
-                    // calculate the difference in escrow
-                    newEscrow = volRemaining * newPrice;
-                    double escrowDiff = order.Escrow - newEscrow;
+                // calculate the difference in escrow
+                newEscrow = volRemaining * newPrice;
+                double escrowDiff = order.Escrow - newEscrow;
 
-                    // ensure enough balances
-                    wallet.EnsureEnoughBalance (escrowDiff + brokerCost);
-                    // take the difference in escrow
-                    wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, escrowDiff);
-                }
-                else
-                {
-                    wallet.EnsureEnoughBalance (brokerCost);
-                }
-
-                // pay the broker fee once again
-                wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
+                // ensure enough balances
+                wallet.EnsureEnoughBalance (escrowDiff + brokerCost);
+                // take the difference in escrow
+                wallet.CreateJournalRecord (MarketReference.MarketEscrow, null, null, escrowDiff);
+            }
+            else
+            {
+                wallet.EnsureEnoughBalance (brokerCost);
             }
 
-            // everything looks okay, update the price of the order
-            DB.UpdatePrice (connection, order.OrderID, newPrice, newEscrow);
-
-            OnOwnOrderChanged notification = new OnOwnOrderChanged (order.TypeID, "Modified");
-
-            if (order.IsCorp)
-                // send a notification to the owner
-                Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
-            else
-                // send a OnOwnOrderChange notification
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, notification);
+            // pay the broker fee once again
+            wallet.CreateJournalRecord (MarketReference.Brokerfee, null, null, -brokerCost);
         }
-        finally
-        {
-            DB.ReleaseMarketLock (connection);
-        }
+
+        // everything looks okay, update the price of the order
+        DB.UpdatePrice (dbLock, order.OrderID, newPrice, newEscrow);
+
+        OnOwnOrderChanged notification = new OnOwnOrderChanged (order.TypeID, "Modified");
+
+        if (order.IsCorp)
+            // send a notification to the owner
+            Notifications.NotifyCorporationByRole (call.Session.CorporationID, CorporationRole.Trader, notification);
+        else
+            // send a OnOwnOrderChange notification
+            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, notification);
 
         return null;
     }
@@ -926,12 +899,12 @@ public class marketProxy : Service
     /// <summary>
     /// Removes an expired buy order from the database and returns the leftover escrow back into the player's wallet
     /// </summary>
-    /// <param name="connection">The database connection that acquired the lock</param>
+    /// <param name="dbLock">The database connection that acquired the lock</param>
     /// <param name="order">The order to mark as expired</param>
-    private void BuyOrderExpired (IDbConnection connection, MarketOrder order)
+    private void BuyOrderExpired (DbLock dbLock, MarketOrder order)
     {
         // remove order
-        DB.RemoveOrder (connection, order.OrderID);
+        DB.RemoveOrder (dbLock, order.OrderID);
 
         // give back the escrow paid by the player
         using IWallet wallet = this.Wallets.AcquireWallet (order.IsCorp ? order.CorporationID : order.CharacterID, order.AccountID, order.IsCorp);
@@ -947,12 +920,12 @@ public class marketProxy : Service
     /// <summary>
     /// Removes an expired sell order from the database and returns the leftover items back to the player's hangar
     /// </summary>
-    /// <param name="connection">The database connection that acquired the lock</param>
+    /// <param name="dbLock">The database connection that acquired the lock</param>
     /// <param name="order">The order to mark as expired</param>
-    private void SellOrderExpired (IDbConnection connection, MarketOrder order)
+    private void SellOrderExpired (DbLock dbLock, MarketOrder order)
     {
         // remove order
-        DB.RemoveOrder (connection, order.OrderID);
+        DB.RemoveOrder (dbLock, order.OrderID);
         // create the item back into the player's hanger
 
         // create the new item that will be used by the player
@@ -982,30 +955,22 @@ public class marketProxy : Service
     /// </summary>
     public void PerformTimedEvents (object sender, EventArgs args)
     {
-        using IDbConnection connection = DB.AcquireMarketLock ();
+        using DbLock dbLock = DB.AcquireMarketLock ();
+        List <MarketOrder> orders = DB.GetExpiredOrders (dbLock);
 
-        try
-        {
-            List <MarketOrder> orders = DB.GetExpiredOrders (connection);
+        foreach (MarketOrder order in orders)
+            switch (order.Bid)
+            {
+                case TransactionType.Buy:
+                    // buy orders need to return the escrow
+                    this.BuyOrderExpired (dbLock, order);
+                    break;
 
-            foreach (MarketOrder order in orders)
-                switch (order.Bid)
-                {
-                    case TransactionType.Buy:
-                        // buy orders need to return the escrow
-                        this.BuyOrderExpired (connection, order);
-                        break;
-
-                    case TransactionType.Sell:
-                        // sell orders are a bit harder, the items have to go back to the player's hangar
-                        this.SellOrderExpired (connection, order);
-                        break;
-                }
-        }
-        finally
-        {
-            DB.ReleaseMarketLock (connection);
-        }
+                case TransactionType.Sell:
+                    // sell orders are a bit harder, the items have to go back to the player's hangar
+                    this.SellOrderExpired (dbLock, order);
+                    break;
+            }
     }
 
     [MustHaveCorporationRole (MLS.UI_SHARED_WALLETHINT1, CorporationRole.Accountant)]

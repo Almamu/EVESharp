@@ -1,5 +1,6 @@
 ﻿using System;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -29,12 +30,12 @@ public class insuranceSvc : ClientBoundService
     private          ISolarSystems       SolarSystems { get; }
     private          IWallets            Wallets      { get; }
     private          MailManager         MailManager  { get; }
-    private          IDatabaseConnection Database     { get; }
+    private          IDatabase Database     { get; }
 
     public insuranceSvc
     (
         IClusterManager clusterManager, IItems items, InsuranceDB db, MarketDB marketDB, IWallets wallets, MailManager mailManager, IBoundServiceManager manager,
-        IDatabaseConnection database,
+        IDatabase database,
         ISolarSystems solarSystems
     ) : base (manager)
     {

@@ -32,7 +32,8 @@ using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Exceptions.ship;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
-using Item = EVESharp.EVE.Data.Inventory.Items.Types.Information.Item;
+using Item = EVESharp.Database.Inventory.Types.Information.Item;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.EVE.Data.Inventory.Items;
 

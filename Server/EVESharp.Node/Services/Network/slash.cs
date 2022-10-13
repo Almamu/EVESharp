@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
@@ -17,7 +18,7 @@ using EVESharp.EVE.Notifications.Skills;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 using Serilog;
-using Type = EVESharp.EVE.Data.Inventory.Type;
+using Type = EVESharp.Database.Inventory.Types.Type;
 
 namespace EVESharp.Node.Services.Network;
 

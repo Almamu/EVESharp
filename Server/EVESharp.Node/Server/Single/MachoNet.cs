@@ -2,6 +2,7 @@
 using System.Linq;
 using EVESharp.Common.Constants;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;
@@ -20,15 +21,15 @@ namespace EVESharp.Node.Server.Single;
 public class MachoNet : IMachoNet
 {
     private General             Configuration { get; }
-    private IDatabaseConnection Database      { get; }
+    private IDatabase Database      { get; }
 
     public MachoNet
     (
-        IDatabaseConnection databaseConnection, ITransportManager transportManager, IQueueProcessor <LoginQueueEntry> loginProcessor,
+        IDatabase database, ITransportManager transportManager, IQueueProcessor <LoginQueueEntry> loginProcessor,
         General             configuration,      ILogger           logger
     )
     {
-        Database         = databaseConnection;
+        Database         = database;
         LoginProcessor   = loginProcessor;
         TransportManager = transportManager;
         Configuration    = configuration;

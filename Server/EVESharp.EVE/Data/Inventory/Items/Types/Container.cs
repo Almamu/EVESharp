@@ -2,5 +2,5 @@
 
 public class Container : ItemInventory
 {
-    public Container (Information.Item item) : base (item) { }
+    public Container (Database.Inventory.Types.Information.Item item) : base (item) { }
 }

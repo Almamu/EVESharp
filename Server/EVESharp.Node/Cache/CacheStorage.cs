@@ -27,7 +27,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Database;
-using EVESharp.EVE.Database;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Packets.Complex;
@@ -55,7 +54,7 @@ public class CacheStorage : DatabaseAccessor, ICacheStorage
     private IMachoNet MachoNet { get; }
     private ILogger   Log      { get; }
 
-    public CacheStorage (IMachoNet machoNet, IDatabaseConnection db, ILogger logger) : base (db)
+    public CacheStorage (IMachoNet machoNet, IDatabase db, ILogger logger) : base (db)
     {
         Log      = logger;
         MachoNet = machoNet;
@@ -204,11 +203,7 @@ public class CacheStorage : DatabaseAccessor, ICacheStorage
     /// <returns>The final object to be used by the cache</returns>
     private PyDataType QueryCacheObject (string query, CacheObjectType type)
     {
-        IDbConnection connection = null;
-        DbDataReader  reader     = Database.Select (ref connection, query);
-
-        using (connection)
-        using (reader)
+        using (DbDataReader reader = Database.Select (query))
         {
             return type switch
             {

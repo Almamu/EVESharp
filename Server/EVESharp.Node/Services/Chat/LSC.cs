@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Chat;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -39,13 +41,13 @@ public class LSC : Service
     private MailManager           MailManager          { get; }
     private IRemoteServiceManager RemoteServiceManager { get; }
     private PacketCallHelper      PacketCallHelper     { get; }
-    private IDatabaseConnection   Database             { get; }
+    private IDatabase   Database             { get; }
 
     public LSC
     (
         ChatDB              db,  OldCharacterDB          characterDB,          IItems           items, ILogger logger,
         INotificationSender notificationSender, MailManager mailManager, IRemoteServiceManager remoteServiceManager, PacketCallHelper packetCallHelper,
-        IDatabaseConnection database
+        IDatabase database
     )
     {
         DB                   = db;

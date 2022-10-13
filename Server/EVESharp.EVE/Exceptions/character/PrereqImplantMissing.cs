@@ -1,3 +1,4 @@
+using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.Types.Collections;
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
@@ -21,11 +22,11 @@ public class account : Service
     private         OldCharacterDB      DB           { get; }
     private         IWallets            Wallets      { get; }
     private         ICacheStorage       CacheStorage { get; }
-    private         IDatabaseConnection Database     { get; }
+    private         IDatabase Database     { get; }
 
-    public account (IDatabaseConnection databaseConnection, OldCharacterDB db, IWallets wallets, ICacheStorage cacheStorage)
+    public account (IDatabase database, OldCharacterDB db, IWallets wallets, ICacheStorage cacheStorage)
     {
-        Database     = databaseConnection;
+        Database     = database;
         DB           = db;
         Wallets      = wallets;
         CacheStorage = cacheStorage;

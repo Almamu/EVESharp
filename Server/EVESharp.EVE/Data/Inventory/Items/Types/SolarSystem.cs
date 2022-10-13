@@ -23,6 +23,7 @@
 */
 
 using System;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -31,7 +32,7 @@ namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
 public class SolarSystem : ItemInventory
 {
-    public Information.SolarSystem SolarSystemInformation { get; }
+    public Database.Inventory.Types.Information.SolarSystem SolarSystemInformation { get; }
 
     public int    RegionId        => this.SolarSystemInformation.RegionId;
     public int    ConstellationId => this.SolarSystemInformation.ConstellationId;
@@ -59,7 +60,7 @@ public class SolarSystem : ItemInventory
     public string SecurityClass   => this.SolarSystemInformation.SecurityClass;
     public bool   BelongsToUs     { get; set; }
 
-    public SolarSystem (Information.SolarSystem info) : base (info.Information)
+    public SolarSystem (Database.Inventory.Types.Information.SolarSystem info) : base (info.Information)
     {
         this.SolarSystemInformation = info;
         this.BelongsToUs            = false;

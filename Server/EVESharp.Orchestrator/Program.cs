@@ -3,6 +3,7 @@ using EVESharp.Database;
 using EVESharp.Orchestrator.Providers;
 using EVESharp.Orchestrator.Repositories;
 using Serilog;
+using Database = EVESharp.Database.Database;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder (args);
 
@@ -16,9 +17,9 @@ builder.Host.UseSerilog ();
 // add controllers
 builder.Services.AddControllers ();
 builder.Services.AddSingleton (Log.Logger);
-builder.Services.AddSingleton <Database, DatabaseConfiguration> ();
+builder.Services.AddSingleton <EVESharp.Common.Configuration.Database, DatabaseConfiguration> ();
 builder.Services.AddSingleton <IStartupInfoProvider, StartupInfoProvider> ();
-builder.Services.AddSingleton <IDatabaseConnection, DatabaseConnection> ();
+builder.Services.AddSingleton <IDatabase, Database> ();
 builder.Services.AddSingleton <IClusterRepository, ClusterRepository> ();
 
 WebApplication app = builder.Build ();

@@ -1,4 +1,5 @@
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -17,9 +18,9 @@ public class charmgr : Service
     private         MarketDB            MarketDB    { get; }
     private         IItems              Items       { get; }
     private         IWallets            Wallets     { get; }
-    private         IDatabaseConnection Database    { get; }
+    private         IDatabase Database    { get; }
 
-    public charmgr (IDatabaseConnection database, OldCharacterDB db, MarketDB marketDB, IItems items, IWallets wallets)
+    public charmgr (IDatabase database, OldCharacterDB db, MarketDB marketDB, IItems items, IWallets wallets)
     {
         Database     = database;
         DB           = db;

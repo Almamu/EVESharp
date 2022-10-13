@@ -1,4 +1,5 @@
 ﻿using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Notifications;
@@ -8,9 +9,9 @@ namespace EVESharp.Node.Market;
 public class Wallets : IWallets
 {
     private INotificationSender Notifications { get; }
-    private IDatabaseConnection Database      { get; }
+    private IDatabase Database      { get; }
 
-    public Wallets (IDatabaseConnection database, INotificationSender notificationSender)
+    public Wallets (IDatabase database, INotificationSender notificationSender)
     {
         Database      = database;
         Notifications = notificationSender;

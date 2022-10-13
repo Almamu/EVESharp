@@ -23,6 +23,7 @@
 */
 
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Messages.Queue;
 using EVESharp.Node.Configuration;
@@ -33,13 +34,13 @@ namespace EVESharp.Node.Accounts;
 public class LoginQueue : MessageQueue <LoginQueueEntry>
 {
     private Authentication      Configuration { get; }
-    private IDatabaseConnection Database      { get; }
+    private IDatabase Database      { get; }
     private ILogger             Log           { get; }
 
-    public LoginQueue (IDatabaseConnection databaseConnection, Authentication configuration, ILogger logger)
+    public LoginQueue (IDatabase database, Authentication configuration, ILogger logger)
     {
         // login should not be using too many processes
-        this.Database      = databaseConnection;
+        this.Database      = database;
         this.Configuration = configuration;
         this.Log           = logger;
     }

@@ -1,5 +1,8 @@
 ﻿using EVESharp.Database;
+using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
+using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -31,12 +34,12 @@ public class jumpCloneSvc : ClientBoundService
     private ISolarSystems       SolarSystems  { get; }
     private INotificationSender Notifications { get; }
     private IWallets            Wallets       { get; }
-    private IDatabaseConnection Database      { get; }
+    private IDatabase Database      { get; }
 
     public jumpCloneSvc
     (
         ItemDB        itemDB,       MarketDB marketDB, IItems              items,
-        ISolarSystems solarSystems, IWallets wallets,  INotificationSender notificationSender, IBoundServiceManager manager, IDatabaseConnection database
+        ISolarSystems solarSystems, IWallets wallets,  INotificationSender notificationSender, IBoundServiceManager manager, IDatabase database
     ) : base (manager)
     {
         ItemDB            = itemDB;

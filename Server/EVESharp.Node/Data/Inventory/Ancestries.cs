@@ -24,7 +24,7 @@
 
 using System.Collections.Generic;
 using EVESharp.Database;
-using EVESharp.Database.Inventory;
+using EVESharp.Database.Extensions.Inventory;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;
@@ -35,7 +35,7 @@ public class Ancestries : IAncestries
 
     public Ancestry this [int id] => this.mAncestries [id];
 
-    public Ancestries (IDatabaseConnection Database, IBloodlines bloodlines)
+    public Ancestries (IDatabase Database, IBloodlines bloodlines)
     {
         this.mAncestries = Database.ChrLoadAncestries (bloodlines);
     }

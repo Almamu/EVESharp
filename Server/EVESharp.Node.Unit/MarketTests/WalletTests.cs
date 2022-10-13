@@ -1,5 +1,6 @@
 using System.Data;
 using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
@@ -17,7 +18,7 @@ namespace EVESharp.Node.Unit.MarketTests;
 [TestFixture]
 public class WalletTests
 {
-    private Mock <IDatabaseConnection> mDatabaseMock           = Utils.Database.DatabaseLockMocked ();
+    private Mock <IDatabase> mDatabaseMock           = Utils.Database.DatabaseLockMocked ();
     private Mock <INotificationSender> mNotificationSenderMock = new Mock <INotificationSender> ();
 
     private Wallets mWallets;
@@ -29,7 +30,7 @@ public class WalletTests
     private static int    sCurrentWalletKey;
     
     [HarmonyPatch(typeof(WalletDB), nameof(WalletDB.MktWalletGetBalance))]
-    static bool MktWalletGetBalance (IDatabaseConnection Database, ref IDbConnection connection, int walletKey, int ownerID, ref double __result)
+    static bool MktWalletGetBalance (DbLock DbLock, int walletKey, int ownerID, ref double __result)
     {
         __result = sCurrentBalance;
 
@@ -40,7 +41,7 @@ public class WalletTests
     }
 
     [HarmonyPatch(typeof(WalletDB), nameof(WalletDB.MktWalletSetBalance))]
-    static bool MktWalletSetBalance (IDatabaseConnection Database, ref IDbConnection connection, double balance, int ownerID, int walletKey)
+    static bool MktWalletSetBalance (DbLock DbLock, double balance, int ownerID, int walletKey)
     {
         Assert.AreEqual (sCurrentWalletKey, walletKey);
         Assert.AreEqual (sCurrentOwnerID,   ownerID);
@@ -52,7 +53,7 @@ public class WalletTests
     [HarmonyPatch(typeof(WalletDB), nameof(WalletDB.MktRecordTransaction))]
     static bool MktRecordTransaction
     (
-        IDatabaseConnection Database, int ownerID,   TransactionType type, int characterID, int otherID, int typeID, int quantity,
+        IDatabase Database, int ownerID,   TransactionType type, int characterID, int otherID, int typeID, int quantity,
         double                   amount,   int stationID, int             walletKey
     )
     {
@@ -62,7 +63,7 @@ public class WalletTests
     [HarmonyPatch(typeof(WalletDB), nameof(WalletDB.MktCreateJournalEntry))]
     static bool MktCreateJournalEntry
     (
-        IDatabaseConnection Database,     MarketReference reference, int characterID, int ownerID1, int? ownerID2, int? referenceID, double amount,
+        IDatabase Database,     MarketReference reference, int characterID, int ownerID1, int? ownerID2, int? referenceID, double amount,
         double                   finalBalance, string          reason,    int walletKey
     )
     {
