@@ -127,7 +127,7 @@ public static class ConnectionExtensions
     {
         return Database.Select (procedureName, values).Dictionary<PyDataType, PyDataType> ();
     }
-    public static PyList PrepareList<T> (this IDatabase Database, string procedureName, Dictionary <string, object> values = null) where T : PyDataType
+    public static PyList <T> PrepareList<T> (this IDatabase Database, string procedureName, Dictionary <string, object> values = null) where T : PyDataType
     {
         return Database.Select (procedureName, values).List <T> ();
     }

@@ -667,6 +667,9 @@ public static class ReaderExtensions
     {
         using (reader)
         {
+            if (reader.Read () == false)
+                throw new InvalidDataException ("No data returned");
+            
             PyList <PyString> header = new PyList <PyString> (reader.FieldCount);
             PyList            row    = new PyList (reader.FieldCount);
 

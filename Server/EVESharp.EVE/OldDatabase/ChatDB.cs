@@ -205,37 +205,7 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public Rowset GetChannelsForCharacter (int characterID, int corporationID)
     {
-        Rowset firstQuery = this.Database.PrepareRowset (
-            "SELECT" +
-            " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
-            " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
-            " FROM lscPrivateChannels" +
-            " LEFT JOIN lscChannelPermissions ON lscPrivateChannels.channelID = -lscChannelPermissions.channelID" +
-            " WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID < 0 ",
-            new Dictionary <string, object> {{"@characterID", characterID}}
-        );
-
-        Rowset secondQuery = this.Database.PrepareRowset (
-            "SELECT" +
-            " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
-            " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
-            " FROM lscGeneralChannels" +
-            " LEFT JOIN lscChannelPermissions ON lscGeneralChannels.channelID = lscChannelPermissions.channelID" +
-            $" WHERE accessor = @characterID AND `mode` > 0 AND lscChannelPermissions.channelID > 0 AND ((lscChannelPermissions.channelID < {MIN_CHANNEL_ENTITY_ID} AND lscChannelPermissions.channelID != @characterID) OR lscChannelPermissions.channelID = @corporationID)",
-            new Dictionary <string, object>
-            {
-                {"@characterID", characterID},
-                {"@corporationID", corporationID}
-            }
-        );
-
-        secondQuery.Rows.AddRange (firstQuery.Rows);
-
-        return secondQuery;
-        /*
-         * This is a more elegant solution, but the charset-guessing code goes nuts with the UNIONS as the tables are different
-         * and as such it's impossible to know what table it comes from
-        return Database.PrepareRowsetQuery(
+        return Database.PrepareRowset (
             "SELECT" + 
             " lscChannelPermissions.channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," + 
             " mailingList, cspa, temporary, 1 AS subscribed, estimatedMemberCount " +
@@ -255,7 +225,6 @@ public class ChatDB : DatabaseAccessor
                 {"@corporationID", corporationID}
             }
         );
-        */
     }
 
     /// <summary>
@@ -286,7 +255,7 @@ public class ChatDB : DatabaseAccessor
                 " LEFT JOIN lscChannelPermissions USING (channelID)" +
                 " WHERE lscChannelPermissions.accessor = @characterID AND channelID = @channelID";
 
-        DbDataReader reader = this.Database.Select (
+        return Database.PrepareRow (
             query,
             new Dictionary <string, object>
             {
@@ -294,14 +263,6 @@ public class ChatDB : DatabaseAccessor
                 {"@channelID", channelID}
             }
         );
-
-        using (reader)
-        {
-            if (reader.Read () == false)
-                throw new Exception ($"Cannot find channel information for channelID {channelID} and characterID {characterID}");
-
-            return reader.Row();
-        }
     }
 
     /// <summary>
@@ -314,7 +275,7 @@ public class ChatDB : DatabaseAccessor
     /// <exception cref="Exception"></exception>
     public Row GetChannelInfoByRelatedEntity (int relatedEntityID, int characterID, bool maillist = false)
     {
-        DbDataReader reader = this.Database.Select (
+        return Database.PrepareRow (
             "SELECT" +
             " channelID, ownerID, displayName, motd, comparisonKey, memberless, !ISNULL(password) AS password," +
             " mailingList, cspa, temporary, !ISNULL(lscChannelPermissions.accessor) AS subscribed, 0 AS languageRestriction " +
@@ -328,14 +289,6 @@ public class ChatDB : DatabaseAccessor
                 {"@mailingList", maillist}
             }
         );
-
-        using (reader)
-        {
-            if (reader.Read () == false)
-                throw new Exception ($"Cannot find channel information for channel related to the entity {relatedEntityID} and characterID {characterID}");
-
-            return reader.Row();
-        }
     }
 
     /// <summary>
@@ -396,18 +349,10 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public Row GetExtraInfo (int characterID)
     {
-        DbDataReader reader = this.Database.Select (
+        return Database.PrepareRow (
             "SELECT itemID AS ownerID, itemName AS ownerName, typeID FROM eveNames WHERE itemID = @characterID",
             new Dictionary <string, object> {{"@characterID", characterID}}
         );
-
-        using (reader)
-        {
-            if (reader.Read () == false)
-                return null;
-
-            return reader.Row();
-        }
     }
 
     /// <summary>
@@ -417,20 +362,10 @@ public class ChatDB : DatabaseAccessor
     /// <returns></returns>
     public PyList <PyInteger> GetOnlineCharsOnChannel (int channelID)
     {
-        DbDataReader reader = this.Database.Select (
+        return Database.PrepareList <PyInteger> (
             "SELECT accessor FROM lscChannelPermissions LEFT JOIN chrInformation ON accessor = characterID WHERE channelID = @channelID AND online = 1 AND `mode` > 0",
             new Dictionary <string, object> {{"@channelID", channelID}}
         );
-
-        using (reader)
-        {
-            PyList <PyInteger> result = new PyList <PyInteger> ();
-
-            while (reader.Read ())
-                result.Add (reader.GetInt32 (0));
-
-            return result;
-        }
     }
 
     /// <summary>
