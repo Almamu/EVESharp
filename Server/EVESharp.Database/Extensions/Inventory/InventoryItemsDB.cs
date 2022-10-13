@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using EVESharp.Database.Dogma;
+using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Categories;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Inventory.Types;
-using EVESharp.EVE.Data.Dogma;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
 
 namespace EVESharp.Database.Extensions.Inventory;
 

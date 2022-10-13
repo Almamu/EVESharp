@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Dogma;
 using EVESharp.Database.Extensions.Inventory;
-using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
 using Serilog;
 

@@ -1,12 +1,13 @@
 ﻿using EVESharp.Database;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Inventory.Types;
+using EVESharp.Database.Market;
 using EVESharp.Database.Old;
 using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Market;

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Database.Corporations;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;

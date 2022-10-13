@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace EVESharp.EVE.Data.Inventory.Station;
+namespace EVESharp.Database.Inventory.Stations;
 
 public class Operation
 {

@@ -1,5 +1,5 @@
 using System;
-using EVESharp.EVE.Data.Market;
+using EVESharp.Database.Market;
 using EVESharp.EVE.Exceptions;
 
 namespace EVESharp.EVE.Market;

@@ -1,4 +1,4 @@
-using EVESharp.EVE.Data.Configuration;
+using EVESharp.Database.Configuration;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Sessions;

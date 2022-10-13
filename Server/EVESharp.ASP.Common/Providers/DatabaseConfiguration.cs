@@ -1,9 +1,10 @@
 using System.Reflection;
+using EVESharp.Common.Configuration;
 using EVESharp.Common.Configuration.Attributes;
 
-namespace EVESharp.Orchestrator.Providers;
+namespace EVESharp.ASP.Common.Providers;
 
-public class DatabaseConfiguration : Common.Configuration.Database
+public class DatabaseConfiguration : Database
 {
     public DatabaseConfiguration (IConfiguration configuration)
     {

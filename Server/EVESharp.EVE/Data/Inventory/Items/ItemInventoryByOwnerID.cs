@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.Database.Inventory;
 
 namespace EVESharp.EVE.Data.Inventory.Items;
 

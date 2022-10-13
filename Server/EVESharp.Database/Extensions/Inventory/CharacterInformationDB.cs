@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using EVESharp.Database.Inventory.Characters;
 using EVESharp.Database.Inventory.Types;
-using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Database.Extensions.Inventory;
 

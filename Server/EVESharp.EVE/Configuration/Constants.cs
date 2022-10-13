@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Configuration;
 using EVESharp.Database.Extensions;
-using EVESharp.EVE.Data.Configuration;
 
-namespace EVESharp.Node.Configuration;
+namespace EVESharp.EVE.Configuration;
 
 /// <summary>
 /// List of constants for the EVE Server

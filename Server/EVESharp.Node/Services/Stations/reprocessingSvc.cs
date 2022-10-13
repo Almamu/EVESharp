@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.Database.Types;
@@ -19,7 +20,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
-using Service = EVESharp.EVE.Data.Inventory.Station.Service;
+using Service = EVESharp.Database.Inventory.Stations.Service;
 
 namespace EVESharp.Node.Services.Stations;
 

@@ -26,10 +26,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using EVESharp.EVE.Data.Dogma;
+using EVESharp.Database.Dogma;
 using EVESharp.Types;
 
-namespace EVESharp.EVE.Data.Inventory.Attributes;
+namespace EVESharp.Database.Inventory.Attributes;
 
 public class Attribute
 {

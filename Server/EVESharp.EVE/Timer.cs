@@ -16,7 +16,7 @@ public class Timer<T> : IDisposable
         this.Callback         =  callback;
         this.State            =  state;
         this.Log              =  logger;
-        this.mTimer           =  new Timer (time.ToFileTimeUtc () - DateTime.Now.ToFileTimeUtc());
+        this.mTimer           =  new Timer ((time - DateTime.Now).TotalMilliseconds);
         this.mTimer.Elapsed   += this.OnTimerFired;
         this.mTimer.AutoReset =  false;
         this.mTimer.Enabled   =  true;

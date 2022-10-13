@@ -1,4 +1,4 @@
-using EVESharp.EVE.Data.Market;
+using EVESharp.Database.Market;
 using EVESharp.EVE.Sessions;
 
 namespace EVESharp.EVE.Market;

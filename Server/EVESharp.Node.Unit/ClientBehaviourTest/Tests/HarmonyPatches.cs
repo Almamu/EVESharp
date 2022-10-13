@@ -1,6 +1,6 @@
 using EVESharp.Database;
+using EVESharp.Database.Account;
 using EVESharp.Database.Extensions;
-using EVESharp.EVE.Data.Account;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using HarmonyLib;

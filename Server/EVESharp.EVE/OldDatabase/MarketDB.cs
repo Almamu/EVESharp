@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.Database.Inventory.Types;
+using EVESharp.Database.Market;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Corporation;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions.marketProxy;
 using EVESharp.Types;
 using EVESharp.Types.Collections;

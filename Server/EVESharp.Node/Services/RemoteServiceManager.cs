@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Account;
 using EVESharp.Database.Extensions;
 using EVESharp.EVE;
-using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Sessions;

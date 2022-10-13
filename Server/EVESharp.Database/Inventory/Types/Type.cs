@@ -24,9 +24,9 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using EVESharp.EVE.Data.Dogma;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
+using EVESharp.Database.Dogma;
+using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Groups;
 
 namespace EVESharp.Database.Inventory.Types;
 

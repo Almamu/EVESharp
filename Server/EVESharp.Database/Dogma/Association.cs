@@ -1,4 +1,4 @@
-﻿namespace EVESharp.EVE.Data.Dogma;
+﻿namespace EVESharp.Database.Dogma;
 
 public enum Association
 {

@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.Database.Inventory.Types;
-using EVESharp.EVE.Data.Inventory.Attributes;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Exceptions.Internal;
@@ -367,21 +368,18 @@ public class Character : ItemInventory
 
     public double GetSkillPointsPerMinute (Skill skill)
     {
-        Attribute primarySpPerMin   = this.Attributes [skill.PrimaryAttribute.Integer];
-        Attribute secondarySpPerMin = this.Attributes [skill.SecondaryAttribute.Integer];
-
         long skillLearningLevel = 0;
 
         if (this.InjectedSkillsByTypeID.TryGetValue ((int) TypeID.Learning, out Skill learningSkill))
             skillLearningLevel = learningSkill.Level;
 
-        double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
-        spPerMin = spPerMin * (1.0f + 0.02f * skillLearningLevel);
 
-        if (this.mSkillPoints < 1600000.0f)
-            spPerMin = spPerMin * 2.0f;
-
-        return spPerMin;
+        return Database.EVEMath.Skills.GetSkillPointsPerMinute (
+            this.Attributes [skill.PrimaryAttribute.Integer],
+            this.Attributes [skill.SecondaryAttribute.Integer],
+            (int) skillLearningLevel,
+            this.mSkillPoints
+        );
     }
 
     public long GetSkillLevel (TypeID skillTypeID)

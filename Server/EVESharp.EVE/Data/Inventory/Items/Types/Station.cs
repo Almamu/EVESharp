@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
+using EVESharp.Database.Inventory.Stations;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
+using Type = EVESharp.Database.Inventory.Stations.Type;
 
 namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
@@ -13,7 +14,7 @@ public class Station : ItemInventory
     public Database.Inventory.Types.Information.Station StationInformation { get; }
 
     public Operation                   Operations               => this.StationInformation.Operations;
-    public Inventory.Station.Type      StationType              => this.StationInformation.Type;
+    public Type      StationType              => this.StationInformation.Type;
     public Dictionary <int, Character> Guests                   { get; } = new Dictionary <int, Character> ();
     public int                         Security                 => this.StationInformation.Security;
     public double                      DockingCostPerVolume     => this.StationInformation.DockingCostPerVolume;

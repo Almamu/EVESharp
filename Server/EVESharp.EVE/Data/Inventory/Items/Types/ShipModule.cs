@@ -1,4 +1,4 @@
-﻿using EVESharp.EVE.Data.Dogma;
+﻿using EVESharp.Database.Dogma;
 using EVESharp.EVE.Data.Inventory.Items.Dogma;
 using EVESharp.EVE.Dogma;
 using EVESharp.Types.Collections;

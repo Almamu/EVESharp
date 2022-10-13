@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using EVESharp.Database.Certificates;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Certificates;
 
 namespace EVESharp.Database.Extensions;
 

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Stations;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Data.Inventory.Station;
-using Type = EVESharp.EVE.Data.Inventory.Station.Type;
+using Type = EVESharp.Database.Inventory.Stations.Type;
 
 namespace EVESharp.Node.Data.Inventory;
 

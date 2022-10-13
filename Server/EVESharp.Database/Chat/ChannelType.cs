@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Chat;
+namespace EVESharp.Database.Chat;
 
 public class ChannelType 
 {

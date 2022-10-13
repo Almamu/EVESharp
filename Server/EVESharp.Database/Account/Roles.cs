@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EVESharp.EVE.Data.Account;
+namespace EVESharp.Database.Account;
 
 [Flags]
 public enum Roles : ulong

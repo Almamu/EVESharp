@@ -1,10 +1,10 @@
-﻿using EVESharp.EVE.Data.Inventory.Station;
+﻿using EVESharp.Database.Inventory.Stations;
 
 namespace EVESharp.Database.Inventory.Types.Information;
 
 public class Station
 {
-    public EVE.Data.Inventory.Station.Type      Type                     { get; init; }
+    public Stations.Type      Type                     { get; init; }
     public Operation Operations               { get; init; }
     public int       Security                 { get; init; }
     public double    DockingCostPerVolume     { get; init; }

@@ -1,6 +1,6 @@
-﻿using EVESharp.EVE.Data.Dogma;
+﻿using EVESharp.Database.Dogma;
 
-namespace EVESharp.EVE.Data.Inventory.Attributes;
+namespace EVESharp.Database.Inventory.Attributes;
 
 public class Modifier
 {

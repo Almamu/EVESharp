@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Inventory;
+namespace EVESharp.Database.Inventory.Categories;
 
 /// <summary>
 /// Extracted from the eve online official dump

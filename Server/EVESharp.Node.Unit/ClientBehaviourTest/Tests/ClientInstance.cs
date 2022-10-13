@@ -1,4 +1,4 @@
-using EVESharp.EVE.Data.Account;
+using EVESharp.Database.Account;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Packets;
 using EVESharp.EVE.Types.Network;

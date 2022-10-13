@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using EVESharp.Database.Dogma;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.Database.Inventory.Types;
-using EVESharp.EVE.Data.Dogma;
 using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
 
 namespace EVESharp.Node.Unit.Utils;
 

@@ -1,5 +1,4 @@
-﻿using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
+﻿using EVESharp.Database.Inventory.Attributes;
 
 namespace EVESharp.Database.Inventory.Types.Information;
 

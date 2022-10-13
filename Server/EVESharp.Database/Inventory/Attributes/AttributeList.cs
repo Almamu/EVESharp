@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Types.Collections;
 
-namespace EVESharp.EVE.Data.Inventory.Attributes;
+namespace EVESharp.Database.Inventory.Attributes;
 
 public class AttributeList : IEnumerable
 {

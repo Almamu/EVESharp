@@ -8,13 +8,13 @@ namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;
 
 public class OpcodeDEFENVIDX : Opcode
 {
-    public Data.Dogma.Environment Environment { get; private set; }
+    public Database.Dogma.Environment Environment { get; private set; }
 
     public OpcodeDEFENVIDX (Interpreter interpreter) : base (interpreter) { }
 
     public override Opcode LoadOpcode (BinaryReader reader)
     {
-        if (Enum.TryParse (reader.ReadString (), out Data.Dogma.Environment environment) == false)
+        if (Enum.TryParse (reader.ReadString (), out Database.Dogma.Environment environment) == false)
             throw new DogmaMachineException ("Cannot determine environment id");
 
         this.Environment = environment;
@@ -28,22 +28,22 @@ public class OpcodeDEFENVIDX : Opcode
 
         switch (this.Environment)
         {
-            case Data.Dogma.Environment.Self:
+            case Database.Dogma.Environment.Self:
                 item = this.Interpreter.Environment.Self;
                 break;
 
-            case Data.Dogma.Environment.Char:
+            case Database.Dogma.Environment.Char:
                 item = this.Interpreter.Environment.Character;
                 break;
 
-            case Data.Dogma.Environment.Ship:
+            case Database.Dogma.Environment.Ship:
                 item = this.Interpreter.Environment.Ship;
                 break;
 
-            case Data.Dogma.Environment.Target:
-            case Data.Dogma.Environment.Area:
-            case Data.Dogma.Environment.Other:
-            case Data.Dogma.Environment.Charge:
+            case Database.Dogma.Environment.Target:
+            case Database.Dogma.Environment.Area:
+            case Database.Dogma.Environment.Other:
+            case Database.Dogma.Environment.Charge:
             default:
                 throw new CustomError ("Unsupported target");
         }

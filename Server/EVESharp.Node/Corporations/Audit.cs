@@ -1,8 +1,8 @@
 using System;
 using EVESharp.Database;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
 using EVESharp.EVE.Corporations;
-using EVESharp.EVE.Data.Corporation;
 
 namespace EVESharp.Node.Corporations;
 

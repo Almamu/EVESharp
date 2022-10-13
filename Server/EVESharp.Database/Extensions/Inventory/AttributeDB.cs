@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.Database.MySql;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
 
 namespace EVESharp.Database.Extensions.Inventory;
 

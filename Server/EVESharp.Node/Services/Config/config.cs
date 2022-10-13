@@ -1,3 +1,4 @@
+using EVESharp.Database.Inventory;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Exceptions;

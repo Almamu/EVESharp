@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Network.Caching;
 

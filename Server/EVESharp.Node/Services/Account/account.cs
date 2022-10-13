@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Market;
 using EVESharp.Database.Old;
-using EVESharp.EVE.Data.Corporation;
-using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Market;

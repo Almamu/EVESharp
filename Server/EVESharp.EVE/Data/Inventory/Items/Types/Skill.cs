@@ -1,5 +1,6 @@
-using System;
-using Attribute = EVESharp.EVE.Data.Inventory.Attributes.Attribute;
+using EVESharp.Database.EVEMath;
+using EVESharp.Database.Inventory.Attributes;
+using Attribute = EVESharp.Database.Inventory.Attributes.Attribute;
 
 namespace EVESharp.EVE.Data.Inventory.Items.Types;
 
@@ -42,9 +43,6 @@ public class Skill : ItemEntity
 
     public double GetSkillPointsForLevel (long level)
     {
-        if (level > 5 || level == 0)
-            return 0;
-
-        return Math.Ceiling (this.TimeConstant * this.mSkillPointMultiplier * Math.Pow (2, 2.5 * (level - 1)));
+        return Skills.GetSkillPointsForLevel (level, this.TimeConstant, this.mSkillPointMultiplier);
     }
 }

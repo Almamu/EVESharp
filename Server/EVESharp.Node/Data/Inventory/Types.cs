@@ -25,7 +25,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using EVESharp.Database;
+using EVESharp.Database.Dogma;
 using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 

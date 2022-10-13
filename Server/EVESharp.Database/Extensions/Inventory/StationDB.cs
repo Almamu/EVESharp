@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using EVESharp.EVE.Data.Inventory.Station;
+using EVESharp.Database.Inventory.Stations;
 
 namespace EVESharp.Database.Extensions.Inventory;
 

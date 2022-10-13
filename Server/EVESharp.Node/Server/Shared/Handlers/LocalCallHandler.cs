@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using EVESharp.EVE.Data.Account;
+using EVESharp.Database.Account;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Messages;

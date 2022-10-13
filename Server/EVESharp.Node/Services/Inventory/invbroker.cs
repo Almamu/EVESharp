@@ -1,6 +1,8 @@
 using EVESharp.Database;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
-using EVESharp.EVE.Data.Corporation;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
@@ -16,7 +18,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Dogma;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
-using Container = EVESharp.EVE.Data.Inventory.Container;
+using Container = EVESharp.Database.Inventory.Container;
 using ItemDB = EVESharp.Database.Old.ItemDB;
 
 namespace EVESharp.Node.Services.Inventory;

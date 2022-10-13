@@ -1,5 +1,5 @@
 using EVESharp.Database.Old;
-using EVESharp.EVE.Data.Standings;
+using EVESharp.Database.Standings;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Character;
 using EVESharp.EVE.Relationships;

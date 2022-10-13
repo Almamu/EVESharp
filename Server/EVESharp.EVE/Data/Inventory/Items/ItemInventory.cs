@@ -23,6 +23,7 @@
 */
 
 using System.Collections.Concurrent;
+using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Types.Information;
 
 namespace EVESharp.EVE.Data.Inventory.Items;

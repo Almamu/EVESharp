@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Configuration;
+namespace EVESharp.Database.Configuration;
 
 public interface IConstants
 {

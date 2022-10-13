@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using EVESharp.EVE.Data.Dogma;
+using EVESharp.Database.Dogma;
 using EVESharp.EVE.Dogma.Exception;
 
 namespace EVESharp.EVE.Dogma.Interpreter.Opcodes;

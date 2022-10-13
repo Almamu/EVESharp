@@ -1,8 +1,11 @@
 using System;
 using EVESharp.Database;
+using EVESharp.Database.Account;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;

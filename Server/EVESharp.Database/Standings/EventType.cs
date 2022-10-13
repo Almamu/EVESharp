@@ -1,4 +1,4 @@
-﻿namespace EVESharp.EVE.Data.Standings;
+﻿namespace EVESharp.Database.Standings;
 
 public enum EventType
 {

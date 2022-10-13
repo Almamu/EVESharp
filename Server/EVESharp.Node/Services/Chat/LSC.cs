@@ -1,10 +1,11 @@
 using System;
 using System.IO;
 using EVESharp.Database;
+using EVESharp.Database.Chat;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
 using EVESharp.Database.Old;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Chat;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;

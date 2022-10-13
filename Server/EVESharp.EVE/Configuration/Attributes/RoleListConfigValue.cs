@@ -1,6 +1,6 @@
 using System;
 using EVESharp.Common.Configuration.Attributes;
-using EVESharp.EVE.Data.Account;
+using EVESharp.Database.Account;
 
 namespace EVESharp.EVE.Configuration.Attributes;
 

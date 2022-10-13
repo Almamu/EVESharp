@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using EVESharp.EVE.Data.Dogma;
 
-namespace EVESharp.EVE.Dogma;
+namespace EVESharp.Database.Dogma;
 
 public static class Extensions
 {

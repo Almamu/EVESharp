@@ -76,6 +76,6 @@ public class LoginQueue : MessageQueue <LoginQueueEntry>
             this.Database.CluRegisterClientAddress ((int) accountID, entry.Connection.MachoNet.NodeID);
         }
 
-        entry.Connection.SendLoginNotification (status, (int) accountID, (ulong) role);
+        entry.Connection.SendLoginNotification (status, accountID ?? 0, role ?? 0);
     }
 }

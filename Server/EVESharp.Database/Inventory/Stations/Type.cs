@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Inventory.Station;
+namespace EVESharp.Database.Inventory.Stations;
 
 public class Type
 {

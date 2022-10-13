@@ -2,10 +2,11 @@
 using System.Data;
 using EVESharp.Database.Exceptions;
 using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Inventory.Types.Information;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Data.Inventory.Attributes;
 
 namespace EVESharp.Database.Extensions;
 
@@ -106,7 +107,7 @@ public static class ItemDB
             Y          = reader.GetDoubleOrNull (10),
             Z          = reader.GetDoubleOrNull (11),
             CustomInfo = reader.GetStringOrNull (12),
-            Attributes = new AttributeList (itemType, Database.InvDgmLoadAttributesForEntity (0, attributes))
+            Attributes = new AttributeList (itemType, Database.InvDgmLoadAttributesForEntity (reader.GetInt32 (0), attributes))
         };
     }
 

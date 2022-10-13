@@ -25,6 +25,7 @@
 using System.Collections.ObjectModel;
 using EVESharp.Database;
 using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.EVE.Data.Inventory;
 
 namespace EVESharp.Node.Data.Inventory;

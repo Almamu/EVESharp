@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Dogma;
+using EVESharp.Database.Dogma;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;

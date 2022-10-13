@@ -25,6 +25,7 @@
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.Database.Extensions.Inventory;
+using EVESharp.Database.Inventory.Characters;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 

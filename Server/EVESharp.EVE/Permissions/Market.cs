@@ -1,5 +1,5 @@
-using EVESharp.EVE.Data.Corporation;
-using EVESharp.EVE.Data.Market;
+using EVESharp.Database.Corporations;
+using EVESharp.Database.Market;
 using EVESharp.EVE.Sessions;
 
 namespace EVESharp.EVE.Permissions;

@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\EVESharp.ASP.Common\EVESharp.ASP.Common.csproj" />
         <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj" />
         <ProjectReference Include="..\EVESharp.Database\EVESharp.Database.csproj" />
     </ItemGroup>

@@ -1,7 +1,6 @@
-﻿using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Dogma;
+﻿using EVESharp.Database.Inventory.Attributes;
 
-namespace EVESharp.EVE.Data.Dogma;
+namespace EVESharp.Database.Dogma;
 
 public class Expression
 {

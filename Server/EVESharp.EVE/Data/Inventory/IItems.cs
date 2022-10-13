@@ -1,6 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using EVESharp.Database.Characters;
+using EVESharp.Database.Dogma;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Categories;
+using EVESharp.Database.Inventory.Characters;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;

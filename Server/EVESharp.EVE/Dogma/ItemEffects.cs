@@ -1,5 +1,6 @@
 ﻿using System;
-using EVESharp.EVE.Data.Dogma;
+using EVESharp.Database.Dogma;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Dogma;
 using EVESharp.EVE.Data.Inventory.Items.Types;

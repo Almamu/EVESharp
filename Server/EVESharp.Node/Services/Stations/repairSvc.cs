@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.Database.Inventory.Types;
+using EVESharp.Database.Market;
 using EVESharp.Database.Old;
 using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
@@ -20,7 +22,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
-using Service = EVESharp.EVE.Data.Inventory.Station.Service;
+using Service = EVESharp.Database.Inventory.Stations.Service;
 
 namespace EVESharp.Node.Services.Stations;
 

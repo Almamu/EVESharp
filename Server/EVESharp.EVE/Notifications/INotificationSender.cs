@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Corporation;
+using EVESharp.Database.Corporations;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;

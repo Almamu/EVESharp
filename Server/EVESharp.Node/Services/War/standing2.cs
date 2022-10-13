@@ -1,7 +1,7 @@
 using EVESharp.Database.Old;
+using EVESharp.Database.Standings;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Data.Standings;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Services;

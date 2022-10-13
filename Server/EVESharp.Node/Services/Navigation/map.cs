@@ -1,7 +1,7 @@
+using EVESharp.Database.Inventory.Stations;
 using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Data.Inventory.Station;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Packets.Complex;

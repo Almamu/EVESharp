@@ -1,4 +1,5 @@
-﻿using EVESharp.EVE.Data.Inventory;
+﻿using EVESharp.Database.Inventory.Characters;
+using EVESharp.EVE.Data.Inventory;
 using EVESharp.Types.Collections;
 
 namespace EVESharp.EVE.Exceptions.character;

@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Market;
+namespace EVESharp.Database.Market;
 
 public enum TransactionType
 {

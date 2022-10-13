@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using EVESharp.EVE.Data.Dogma;
 
-namespace EVESharp.EVE.Dogma;
+namespace EVESharp.Database.Dogma;
 
 /// <summary>
 /// Compiler tools to take dogma expressions and convert them to VM code that can be run inside C#

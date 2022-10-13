@@ -1,4 +1,5 @@
-﻿using EVESharp.Database.Inventory.Types;
+﻿using EVESharp.Database.Inventory.Attributes;
+using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;

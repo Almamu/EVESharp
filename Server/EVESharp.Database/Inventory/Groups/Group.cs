@@ -22,7 +22,9 @@
     Creator: Almamu
 */
 
-namespace EVESharp.EVE.Data.Inventory;
+using EVESharp.Database.Inventory.Categories;
+
+namespace EVESharp.Database.Inventory.Groups;
 
 public class Group
 {

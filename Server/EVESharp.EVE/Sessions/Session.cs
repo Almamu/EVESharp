@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using EVESharp.EVE.Data.Market;
+using EVESharp.Database.Market;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

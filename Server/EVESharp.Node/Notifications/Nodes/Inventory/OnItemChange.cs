@@ -1,4 +1,5 @@
 ﻿using System;
+using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Types;

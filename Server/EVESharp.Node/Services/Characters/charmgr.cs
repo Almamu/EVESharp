@@ -1,9 +1,9 @@
 using EVESharp.Database;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Market;
 using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items.Types;
-using EVESharp.EVE.Data.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Services.Validators;

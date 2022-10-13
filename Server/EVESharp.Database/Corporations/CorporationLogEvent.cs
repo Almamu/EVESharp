@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Corporation;
+namespace EVESharp.Database.Corporations;
 
 public enum CorporationLogEvent
 {

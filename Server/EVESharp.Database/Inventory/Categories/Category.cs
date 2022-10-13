@@ -22,7 +22,7 @@
     Creator: Almamu
 */
 
-namespace EVESharp.EVE.Data.Inventory;
+namespace EVESharp.Database.Inventory.Categories;
 
 public class Category
 {

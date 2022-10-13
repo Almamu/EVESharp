@@ -1,6 +1,6 @@
 ﻿using EVESharp.Database;
 using EVESharp.Database.Extensions;
-using EVESharp.EVE.Data.Market;
+using EVESharp.Database.Market;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Notifications;
 

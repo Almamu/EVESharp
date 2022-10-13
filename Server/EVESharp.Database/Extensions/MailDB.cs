@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Inventory;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

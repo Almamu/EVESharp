@@ -1,4 +1,4 @@
-namespace EVESharp.EVE.Data.Inventory;
+namespace EVESharp.Database.Inventory;
 
 public static class ItemRanges
 {

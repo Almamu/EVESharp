@@ -1,6 +1,6 @@
 using EVESharp.Database.Inventory.Types;
 
-namespace EVESharp.EVE.Data.Inventory;
+namespace EVESharp.Database.Inventory.Characters;
 
 public class Bloodline
 {

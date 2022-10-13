@@ -44,7 +44,7 @@ public static class Database
         connectionMock
             .SetupGet (x => x.State)
             .Returns (ConnectionState.Open);
-
+        
         return connectionMock;
     }
 }

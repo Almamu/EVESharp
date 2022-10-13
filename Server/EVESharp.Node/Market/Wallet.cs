@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Data;
 using EVESharp.Database;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
-using EVESharp.EVE.Data.Corporation;
-using EVESharp.EVE.Data.Market;
+using EVESharp.Database.Market;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Notifications;

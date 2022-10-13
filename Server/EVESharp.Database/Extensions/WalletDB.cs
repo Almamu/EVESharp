@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using EVESharp.Database.Market;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Market;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

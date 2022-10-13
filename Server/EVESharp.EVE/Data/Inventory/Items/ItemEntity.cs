@@ -24,8 +24,9 @@
 
 using System;
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Corporation;
-using EVESharp.EVE.Data.Inventory.Attributes;
+using EVESharp.Database.Corporations;
+using EVESharp.Database.Inventory;
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions.Internal;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;

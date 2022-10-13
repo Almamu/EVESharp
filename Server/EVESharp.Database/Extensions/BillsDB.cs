@@ -1,6 +1,6 @@
 using System.Collections.Generic;
+using EVESharp.Database.Market;
 using EVESharp.Database.Types;
-using EVESharp.EVE.Data.Market;
 
 namespace EVESharp.Database.Extensions;
 

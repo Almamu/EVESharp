@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Types;
-using Attribute = EVESharp.EVE.Data.Inventory.Attributes.Attribute;
+using Attribute = EVESharp.Database.Inventory.Attributes.Attribute;
 
 namespace EVESharp.EVE.Notifications.Inventory;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.MySql;
 using EVESharp.Database.Types;

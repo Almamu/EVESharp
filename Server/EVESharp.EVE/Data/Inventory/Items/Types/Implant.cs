@@ -1,3 +1,4 @@
+using EVESharp.Database.Inventory.Attributes;
 using EVESharp.EVE.Exceptions.character;
 
 namespace EVESharp.EVE.Data.Inventory.Items.Types;

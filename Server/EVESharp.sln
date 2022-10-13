@@ -24,6 +24,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.EVE.Unit", "EVESha
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.Database.MySql", "EVESharp.Database.MySql\EVESharp.Database.MySql.csproj", "{195EE1CD-2782-4008-B4F2-0929B34C5710}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.API", "EVESharp.API\EVESharp.API.csproj", "{793C2E62-55AD-418B-BC46-C12A55A136D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EVESharp.ASP.Common", "EVESharp.ASP.Common\EVESharp.ASP.Common.csproj", "{BDDC746C-2C9C-4AAC-B5FF-15EEE73060D4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,5 +82,13 @@ Global
 		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{195EE1CD-2782-4008-B4F2-0929B34C5710}.Release|Any CPU.Build.0 = Release|Any CPU
+		{793C2E62-55AD-418B-BC46-C12A55A136D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{793C2E62-55AD-418B-BC46-C12A55A136D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{793C2E62-55AD-418B-BC46-C12A55A136D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{793C2E62-55AD-418B-BC46-C12A55A136D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDDC746C-2C9C-4AAC-B5FF-15EEE73060D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDDC746C-2C9C-4AAC-B5FF-15EEE73060D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDDC746C-2C9C-4AAC-B5FF-15EEE73060D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDDC746C-2C9C-4AAC-B5FF-15EEE73060D4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

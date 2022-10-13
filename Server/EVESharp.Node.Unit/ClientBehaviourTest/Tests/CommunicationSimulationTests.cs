@@ -1,7 +1,6 @@
 using System.Net.Http;
 using EVESharp.Common.Configuration;
 using EVESharp.EVE.Accounts;
-using EVESharp.EVE.Data.Account;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Network;

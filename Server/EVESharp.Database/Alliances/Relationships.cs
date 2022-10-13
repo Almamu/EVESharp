@@ -1,4 +1,4 @@
-﻿namespace EVESharp.EVE.Data.Alliances;
+﻿namespace EVESharp.Database.Alliances;
 
 public enum Relationships
 {

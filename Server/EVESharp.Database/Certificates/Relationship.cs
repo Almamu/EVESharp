@@ -1,4 +1,4 @@
-﻿namespace EVESharp.EVE.Data.Certificates;
+﻿namespace EVESharp.Database.Certificates;
 
 public class Relationship
 {

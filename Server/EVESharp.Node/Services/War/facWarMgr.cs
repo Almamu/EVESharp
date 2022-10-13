@@ -1,4 +1,5 @@
 using System;
+using EVESharp.Database.Inventory.Groups;
 using EVESharp.Database.Old;
 using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;

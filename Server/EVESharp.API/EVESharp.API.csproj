@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Serilog.AspNetCore" Version="6.1.0-dev-00285" />
+        <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.1-dev-00896" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EVESharp.ASP.Common\EVESharp.ASP.Common.csproj" />
+      <ProjectReference Include="..\EVESharp.Common\EVESharp.Common.csproj" />
+      <ProjectReference Include="..\EVESharp.Database\EVESharp.Database.csproj" />
+      <ProjectReference Include="..\EVESharp.EVE\EVESharp.EVE.csproj" />
+    </ItemGroup>
+
+</Project>

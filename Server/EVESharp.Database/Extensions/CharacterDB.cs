@@ -172,4 +172,9 @@ public static class CharacterDB
             }
         );
     }
+
+    public static long ChrGetOnlineCount (this IDatabase Database)
+    {
+        return Database.Scalar <long> ("ChrGetOnlineCount");
+    }
 }

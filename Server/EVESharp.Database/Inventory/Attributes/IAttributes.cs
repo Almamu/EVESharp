@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace EVESharp.EVE.Data.Inventory;
+namespace EVESharp.Database.Inventory.Attributes;
 
 public interface IAttributes : IReadOnlyDictionary <int, AttributeType>
 {

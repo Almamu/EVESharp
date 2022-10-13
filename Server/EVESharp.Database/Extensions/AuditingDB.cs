@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using EVESharp.EVE.Data.Corporation;
+using EVESharp.Database.Corporations;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 

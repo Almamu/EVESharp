@@ -1,4 +1,4 @@
-using EVESharp.EVE.Data.Standings;
+using EVESharp.Database.Standings;
 
 namespace EVESharp.EVE.Relationships;
 

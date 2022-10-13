@@ -1,6 +1,7 @@
 using System;
 using EVESharp.Database;
 using EVESharp.Database.Extensions;
+using EVESharp.Database.Inventory;
 using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;

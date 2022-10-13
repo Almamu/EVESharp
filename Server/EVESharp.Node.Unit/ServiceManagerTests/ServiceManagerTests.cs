@@ -1,7 +1,7 @@
 using System;
 using System.Collections;
-using EVESharp.EVE.Data.Account;
-using EVESharp.EVE.Data.Corporation;
+using EVESharp.Database.Account;
+using EVESharp.Database.Corporations;
 using EVESharp.EVE.Data.Messages;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
