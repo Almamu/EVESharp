@@ -71,6 +71,16 @@ public class NotificationSender : INotificationSender
     {
         this.SendNotification (NotificationIdType.Corporation, corporationID, notification);
     }
+    
+    public void NotifyCorporations (PyList <PyInteger> corporationIDs, string type, PyTuple notification)
+    {
+        this.SendNotification (type, NotificationIdType.Corporation, corporationIDs, notification);
+    }
+
+    public void NotifyCorporations (PyList <PyInteger> corporationIDs, ClientNotification notification)
+    {
+        this.SendNotification (NotificationIdType.Corporation, corporationIDs, notification);
+    }
 
     public void NotifyStation (int stationID, string type, PyTuple notification)
     {

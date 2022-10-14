@@ -22,6 +22,7 @@ public class ClusterRepository : IClusterRepository
         db.InvClearNodeAssociation ();
         db.CluResetClientAddresses ();
         db.CluCleanup ();
+        db.ChrClearLoginStatus ();
     }
     
     public List <Node> FindNodes ()

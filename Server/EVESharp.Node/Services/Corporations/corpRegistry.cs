@@ -54,7 +54,7 @@ public class corpRegistry : MultiClientBoundService
     private CorporationDB              DB                  { get; }
     private ChatDB                     ChatDB              { get; }
     private OldCharacterDB             CharacterDB         { get; }
-    private IDatabase        Database            { get; }
+    private IDatabase                  Database            { get; }
     private IItems                     Items               { get; }
     private IWallets                   Wallets             { get; }
     private INotificationSender        Notifications       { get; }
@@ -66,6 +66,7 @@ public class corpRegistry : MultiClientBoundService
     private ISessionManager            SessionManager      { get; }
     private IClusterManager            ClusterManager      { get; }
     private IAudit                     Audit               { get; }
+    private IShares                    Shares              { get; }
 
     // constants
     private long CorporationAdvertisementFlatFee   { get; }
@@ -75,7 +76,7 @@ public class corpRegistry : MultiClientBoundService
     (
         CorporationDB db,          IDatabase database, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager   mailManager, IWallets            wallets,            IItems items, IConstants constants, IBoundServiceManager manager,
-        IAncestries   ancestries,  ISessionManager     sessionManager,     IClusterManager clusterManager, IAudit audit
+        IAncestries   ancestries,  ISessionManager     sessionManager,     IClusterManager clusterManager, IAudit audit, IShares shares
     ) : base (manager)
     {
         DB             = db;
@@ -91,6 +92,7 @@ public class corpRegistry : MultiClientBoundService
         SessionManager = sessionManager;
         ClusterManager = clusterManager;
         Audit          = audit;
+        Shares         = shares;
 
         ClusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
@@ -99,7 +101,7 @@ public class corpRegistry : MultiClientBoundService
     (
         CorporationDB   db,             IDatabase database, ChatDB chatDB, OldCharacterDB characterDB, INotificationSender notificationSender,
         MailManager     mailManager,    IWallets            wallets,            IConstants constants, IItems items, IAncestries ancestries,
-        ISessionManager sessionManager, Corporation         corp,               int isMaster, corpRegistry parent, IAudit audit
+        ISessionManager sessionManager, Corporation         corp,               int isMaster, corpRegistry parent, IAudit audit, IShares shares
     ) : base (parent, corp.ID)
     {
         // TODO: USE THE PARENT TO GET ALL THE DEPENDENCIES?
@@ -119,6 +121,7 @@ public class corpRegistry : MultiClientBoundService
         CorporationAdvertisementDailyRate = Constants.CorporationAdvertisementDailyRate;
         Ancestries                        = ancestries;
         Audit                             = audit;
+        Shares                            = shares;
     }
 
     /// <summary>
@@ -126,7 +129,32 @@ public class corpRegistry : MultiClientBoundService
     /// </summary>
     private void PerformTimedEvents (object sender, EventArgs args)
     {
-        DB.RemoveExpiredCorporationAds ();
+        long currentTime = DateTime.Now.ToFileTimeUtc ();
+
+        // TODO: CHANGE WHEN MULTICAST IS SUPPORTED
+        List <KeyValuePair<int, ulong>> corporationIdsAffectedByAdsHousekeeping = Database.CrpAdsGetAffectedByHousekeeping (currentTime);
+        
+        foreach ((int corporationID, ulong adID) in corporationIdsAffectedByAdsHousekeeping)
+            Notifications.NotifyCorporation (
+                corporationID, 
+                new OnCorporationRecruitmentAdChanged (corporationID, adID)
+                    .AddValue ("expiryDateTime", 1000, null)
+            );
+        
+        // remove old ads that do not apply anymore
+        Database.CrpAdsHousekeeping (currentTime);
+
+        List <KeyValuePair <int, int>> corporationIdsAffectedByVotesHousekeeping = Database.CrpVotesGetAffectedByHousekeeping (currentTime);
+
+        foreach ((int corporationID, int voteCaseID) in corporationIdsAffectedByVotesHousekeeping)
+            Notifications.NotifyCorporation (
+                corporationID,
+                new OnCorporationVoteCaseChanged (corporationID, voteCaseID)
+                    .AddValue("status", 0, 2)
+            );
+
+        // update the votes to closed when the time comes
+        Database.CrpVoteHousekeeping (currentTime);
     }
 
     public PyDataType GetEveOwners (ServiceCall call)
@@ -164,8 +192,8 @@ public class corpRegistry : MultiClientBoundService
     public PyDataType MoveCompanyShares (ServiceCall call, PyInteger corporationID, PyInteger to, PyInteger quantity)
     {
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
-        using (IWallet corporationWallet = this.Wallets.AcquireWallet (call.Session.CorporationID, 2000))
-        using (IWallet shareholderWallet = this.Wallets.AcquireWallet (to, 2000))
+        using (ISharesAccount corporationShares = this.Shares.AcquireSharesAccount (call.Session.CorporationID))
+        using (ISharesAccount characterShares = this.Shares.AcquireSharesAccount (to))
         {
             // first make sure there's enough shares available
             int availableShares = DB.GetSharesForOwner (call.Session.CorporationID, call.Session.CorporationID);
@@ -204,8 +232,8 @@ public class corpRegistry : MultiClientBoundService
         int callerCharacterID = call.Session.CharacterID;
 
         // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
-        using (IWallet corporationWallet = this.Wallets.AcquireWallet (callerCharacterID, 2000))
-        using (IWallet shareholderWallet = this.Wallets.AcquireWallet (toShareholderID, 2000))
+        using (ISharesAccount originSharesAccount = this.Shares.AcquireSharesAccount (callerCharacterID))
+        using (ISharesAccount destinationSharesAccount = this.Shares.AcquireSharesAccount (toShareholderID))
         {
             // first make sure there's enough shares available
             int availableShares = DB.GetSharesForOwner (corporationID, callerCharacterID);
@@ -1487,7 +1515,7 @@ public class corpRegistry : MultiClientBoundService
 
         return new corpRegistry (
             DB, Database, ChatDB, CharacterDB, Notifications, MailManager, this.Wallets, Constants,
-            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this, this.Audit
+            this.Items, Ancestries, SessionManager, corp, bindParams.ExtraValue, this, this.Audit, this.Shares
         );
     }
 
@@ -1741,13 +1769,13 @@ public class corpRegistry : MultiClientBoundService
         int voteCaseID = (int) DB.InsertVoteCase (corporationID, characterID, type, startDateTime, endDateTime, text, description);
 
         OnCorporationVoteCaseChanged change = new OnCorporationVoteCaseChanged (corporationID, voteCaseID)
-                                              .AddValue ("corporationID", null, corporationID)
-                                              .AddValue ("characterID",   null, characterID)
-                                              .AddValue ("type",          null, type)
-                                              .AddValue ("startDateTime", null, startDateTime)
-                                              .AddValue ("endDateTime",   null, endDateTime)
-                                              .AddValue ("text",          null, text)
-                                              .AddValue ("description",   null, description);
+          .AddValue ("corporationID", null, corporationID)
+          .AddValue ("characterID",   null, characterID)
+          .AddValue ("type",          null, type)
+          .AddValue ("startDateTime", null, startDateTime)
+          .AddValue ("endDateTime",   null, endDateTime)
+          .AddValue ("text",          null, text)
+          .AddValue ("description",   null, description);
 
         // notify the new vote being created to all shareholders
         this.NotifyShareholders (corporationID, change);
@@ -2020,6 +2048,6 @@ public class corpRegistry : MultiClientBoundService
             new Dictionary <string, object> {{"_corporationID", corporationID}}
         );
 
-        Notifications.NotifyCharacters (shareholders, change);
+        Notifications.NotifyOwners (shareholders, change);
     }
 }

@@ -11,8 +11,7 @@ public interface IWallet : IDisposable
     public double Balance         { get; set; }
     public double OriginalBalance { get; }
     public bool   ForCorporation  { get; }
-
-
+    
     /// <summary>
     /// Checks that the wallet has enough balance to perform whatever operations
     /// </summary>

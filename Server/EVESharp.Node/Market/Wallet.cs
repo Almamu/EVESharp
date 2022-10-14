@@ -18,18 +18,16 @@ public class Wallet : IWallet
     public  int                 WalletKey       { get; }
     public  double              Balance         { get; set; }
     public  double              OriginalBalance { get; }
-    public  IDatabase Database        { get; }
     public  INotificationSender Notifications   { get; }
     public  bool                ForCorporation  { get; }
     public  IWallets            Wallets         { get; }
 
-    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabase database, INotificationSender notificationSender, IWallets wallets)
+    public Wallet (int ownerID, int walletKey, bool isCorporation, IDatabase Database, INotificationSender notificationSender, IWallets wallets)
     {
         // set some data first
         this.OwnerID        = ownerID;
         this.WalletKey      = walletKey;
         this.ForCorporation = isCorporation;
-        this.Database       = database;
         this.Notifications  = notificationSender;
         this.Wallets        = wallets;
 

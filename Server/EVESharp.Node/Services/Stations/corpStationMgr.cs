@@ -238,8 +238,7 @@ public class corpStationMgr : ClientBoundService
 
         Station station = this.Items.GetStaticStation (stationID);
 
-        using IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN);
-
+        using (IWallet wallet = this.Wallets.AcquireWallet (character.ID, WalletKeys.MAIN))
         {
             wallet.EnsureEnoughBalance (newCloneType.BasePrice);
 

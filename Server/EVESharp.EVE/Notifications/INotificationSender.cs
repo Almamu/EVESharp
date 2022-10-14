@@ -31,15 +31,18 @@ public interface INotificationSender
         [Session.CORP_ROLE] = ComparisonType.Bitmask,
     };
     
-    void NotifyCharacters (PyList <PyInteger> characterIDs,  string                type, PyTuple notification);
-    void NotifyCharacters (PyList <PyInteger> characterIDs,  ClientNotification    notification);
-    void NotifyCharacter (int                 characterID,   string                type, PyTuple notification);
-    void NotifyCharacter (int                 characterID,   ClientNotification    entry);
-    void NotifyOwner (int                     ownerID,       ClientNotification    entry);
-    void NotifyOwners (PyList <PyInteger>     ownerIDs,      ClientNotification    notification);
-    void NotifyOwnerAtLocation (int           ownerID,       int                   locationID, ClientNotification entry);
-    void NotifyCorporation (int               corporationID, string                type,       PyTuple            notification);
-    void NotifyCorporation (int               corporationID, ClientNotification    notification);
+    void NotifyCharacters (PyList <PyInteger>   characterIDs,  string             type, PyTuple notification);
+    void NotifyCharacters (PyList <PyInteger>   characterIDs,  ClientNotification notification);
+    void NotifyCharacter (int                   characterID,   string             type, PyTuple notification);
+    void NotifyCharacter (int                   characterID,   ClientNotification entry);
+    void NotifyOwner (int                       ownerID,       ClientNotification entry);
+    void NotifyOwners (PyList <PyInteger>       ownerIDs,      ClientNotification notification);
+    void NotifyOwnerAtLocation (int             ownerID,       int                locationID, ClientNotification entry);
+    void NotifyCorporation (int                 corporationID, string             type,       PyTuple            notification);
+    void NotifyCorporation (int                 corporationID, ClientNotification notification);
+    void NotifyCorporations (PyList <PyInteger> corporationIDs, string             type, PyTuple notification);
+    void NotifyCorporations (PyList <PyInteger> corporationIDs, ClientNotification notification);
+
     void NotifyStation (int                   stationID,     string                type, PyTuple notification);
     void NotifyStation (int                   stationID,     ClientNotification    notification);
     void NotifyAlliance (int                  allianceID,    ClientNotification    notification);

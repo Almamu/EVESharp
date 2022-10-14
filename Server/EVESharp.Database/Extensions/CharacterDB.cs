@@ -173,8 +173,17 @@ public static class CharacterDB
         );
     }
 
+    /// <summary>
+    /// Returns the amount of online players currently in the cluster
+    /// </summary>
+    /// <returns></returns>
     public static long ChrGetOnlineCount (this IDatabase Database)
     {
         return Database.Scalar <long> ("ChrGetOnlineCount");
+    }
+
+    public static void ChrClearLoginStatus (this IDatabase Database)
+    {
+        Database.QueryProcedure ("ChrClearLoginStatus");
     }
 }

@@ -243,6 +243,7 @@ internal class Program
         container.Register <IConstants, Constants> (Lifestyle.Singleton);
         container.Register <IDogmaNotifications, DogmaNotifications> (Lifestyle.Singleton);
         container.Register <IAudit, Audit> (Lifestyle.Singleton);
+        container.Register <IShares, Shares> (Lifestyle.Singleton);
 
         // register the database accessors dependencies
         container.Register <OldCharacterDB> (Lifestyle.Singleton);

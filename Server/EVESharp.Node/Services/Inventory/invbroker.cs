@@ -165,6 +165,7 @@ public class invbroker : ClientBoundService
         // create a metainventory for it
         ItemInventory metaInventory = this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
 
+        // TODO: CREATE DIFFERENT OBJECTS FOR HANDLING DIFFERENT CONTAINERS
         return this.BindInventory (
             this.CheckInventoryBeforeLoading (metaInventory),
             ownerID,

@@ -14,7 +14,7 @@ public class Station : ItemInventory
     public Database.Inventory.Types.Information.Station StationInformation { get; }
 
     public Operation                   Operations               => this.StationInformation.Operations;
-    public Type      StationType              => this.StationInformation.Type;
+    public Type                        StationType              => this.StationInformation.Type;
     public Dictionary <int, Character> Guests                   { get; } = new Dictionary <int, Character> ();
     public int                         Security                 => this.StationInformation.Security;
     public double                      DockingCostPerVolume     => this.StationInformation.DockingCostPerVolume;

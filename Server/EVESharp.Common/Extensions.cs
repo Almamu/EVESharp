@@ -24,7 +24,7 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Writes an extended size indicator to the stream. These indicatos can be 1 or 5 bytes wide.
+    /// Writes an extended size indicator to the stream. These indicators can be 1 or 5 bytes wide.
     /// If the <paramref name="len"/> parameter is less than 255 just one byte is written
     /// If not, one 0xFF byte is written and then 4 bytes with the actual int value are written
     /// </summary>

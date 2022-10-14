@@ -60,6 +60,7 @@ public class MachoNet : IMachoNet
         Database.InvClearNodeAssociation ();
         Database.CluResetClientAddresses ();
         Database.CluCleanup ();
+        Database.ChrClearLoginStatus ();
         Database.CluRegisterSingleNode (NodeID);
         
         // start the login queue processing

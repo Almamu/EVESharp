@@ -1217,14 +1217,6 @@ public class CorporationDB : DatabaseAccessor
         );
     }
 
-    public void RemoveExpiredCorporationAds ()
-    {
-        this.Database.Prepare (
-            "DELETE FROM crpRecruitmentAds WHERE expiryDateTime < @currentTime",
-            new Dictionary <string, object> {{"@currentTime", DateTime.UtcNow.ToFileTimeUtc ()}}
-        );
-    }
-
     public PyDataType GetMemberIDsWithMoreThanAvgShares (int corporationID)
     {
         return this.Database.PrepareList (
@@ -1290,7 +1282,7 @@ public class CorporationDB : DatabaseAccessor
     public PyDataType GetSanctionedActionsByCorporation (int corporationID, int status)
     {
         return this.Database.PrepareRowset (
-            "SELECT voteCaseID, voteType, corporationID, chrVotes.characterID, startDateTime, endDateTime, voteCaseText, description, COUNT(*) AS votes, parameter, parameter1, parameter2, 0 AS actedUpon, 0 AS inEffect, @time AS expires, NULL AS timeRescended, NULL AS timeActedUpon FROM crpvotes RIGHT JOIN crpvoteoptions USING(voteCaseID) RIGHT JOIN chrVotes USING(optionID) WHERE corporationID = @corporationID AND status = @status GROUP BY optionID ORDER BY votes DESC",
+            "SELECT voteCaseID, voteType, corporationID, chrVotes.characterID, startDateTime, endDateTime, voteCaseText, description, COUNT(*) AS votes, parameter, parameter1, parameter2, 1 AS actedUpon, 1 AS inEffect, @time AS expires, NULL AS timeRescended, NULL AS timeActedUpon FROM crpvotes RIGHT JOIN crpvoteoptions USING(voteCaseID) RIGHT JOIN chrVotes USING(optionID) WHERE corporationID = @corporationID AND status = @status GROUP BY optionID ORDER BY votes DESC",
             new Dictionary <string, object>
             {
                 {"@corporationID", corporationID},
