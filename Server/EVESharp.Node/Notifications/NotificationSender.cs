@@ -1,4 +1,6 @@
-﻿using EVESharp.Database.Corporations;
+﻿using System.Collections.Generic;
+using System.Linq;
+using EVESharp.Database.Corporations;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Packets.Complex;
@@ -108,9 +110,36 @@ public class NotificationSender : INotificationSender
         );
     }
 
+    public void NotifyCorporationByRole (int corporationID, ClientNotification notification, IEnumerable <long> roleMask)
+    {
+        PyList<PyTuple> idsOfInterest = new PyList<PyTuple> ();
+        
+        // build a PyList with all the tuples
+        foreach (long role in roleMask)
+        {
+            idsOfInterest.Add (
+                new PyTuple (2)
+                {
+                    [0] = corporationID,
+                    [1] = role
+                }
+            );
+        }    
+    }
+    
+    public void NotifyCorporationByRole (int corporationID, ClientNotification notification, params long[] roleMask)
+    {
+        this.NotifyCorporationByRole (corporationID, notification, roleMask.AsEnumerable ());
+    }
+
     public void NotifyCorporationByRole (int corporationID, CorporationRole role, ClientNotification notification)
     {
         this.NotifyCorporationByRole (corporationID, (long) role, notification);
+    }
+
+    public void NotifyCorporationByRole (int corporationID, ClientNotification notification, params CorporationRole[] role)
+    {
+        this.NotifyCorporationByRole (corporationID, notification, role.Cast<long> ());
     }
 
     /// <summary>

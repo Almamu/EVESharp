@@ -91,39 +91,6 @@ public class CorporationDB : DatabaseAccessor
         }
     }
 
-    public int GetSharesForOwner (int corporationID, int ownerID)
-    {
-        DbDataReader reader = this.Database.Select (
-            "SELECT shares FROM crpShares WHERE ownerID = @ownerID AND corporationID = @corporationID",
-            new Dictionary <string, object>
-            {
-                {"@ownerID", ownerID},
-                {"@corporationID", corporationID}
-            }
-        );
-
-        using (reader)
-        {
-            if (reader.Read () == false)
-                return 0;
-
-            return reader.GetInt32 (0);
-        }
-    }
-
-    public void UpdateShares (int corporationID, int ownerID, int newSharesCount)
-    {
-        this.Database.Prepare (
-            "REPLACE INTO crpShares(ownerID, corporationID, shares) VALUES (@ownerID, @corporationID, @shares)",
-            new Dictionary <string, object>
-            {
-                {"@ownerID", ownerID},
-                {"@corporationID", corporationID},
-                {"@shares", newSharesCount}
-            }
-        );
-    }
-
     public Rowset GetMedalsReceived (int characterID, bool publicOnly = false)
     {
         return this.Database.PrepareRowset (
@@ -1225,10 +1192,10 @@ public class CorporationDB : DatabaseAccessor
         );
     }
 
-    public ulong InsertVoteCase (int corporationID, int characterID, int type, long startDateTime, long endDateTime, string text, string description)
+    public ulong InsertVoteCase (int corporationID, int characterID, int type, long startDateTime, long endDateTime, long expires, string text, string description)
     {
         return this.Database.Insert (
-            "INSERT INTO crpVotes(voteType, corporationID, characterID, startDateTime, endDateTime, voteCaseText, description)VALUE(@type, @corporationID, @characterID, @startDateTime, @endDateTime, @text, @description)",
+            "INSERT INTO crpVotes(voteType, corporationID, characterID, startDateTime, endDateTime, expires, voteCaseText, description)VALUE(@type, @corporationID, @characterID, @startDateTime, @endDateTime, @expires, @text, @description)",
             new Dictionary <string, object>
             {
                 {"@type", type},
@@ -1236,6 +1203,7 @@ public class CorporationDB : DatabaseAccessor
                 {"@characterID", characterID},
                 {"@startDateTime", startDateTime},
                 {"@endDateTime", endDateTime},
+                {"@expires", expires},
                 {"@text", text},
                 {"@description", description}
             }
@@ -1282,12 +1250,11 @@ public class CorporationDB : DatabaseAccessor
     public PyDataType GetSanctionedActionsByCorporation (int corporationID, int status)
     {
         return this.Database.PrepareRowset (
-            "SELECT voteCaseID, voteType, corporationID, chrVotes.characterID, startDateTime, endDateTime, voteCaseText, description, COUNT(*) AS votes, parameter, parameter1, parameter2, 1 AS actedUpon, 1 AS inEffect, @time AS expires, NULL AS timeRescended, NULL AS timeActedUpon FROM crpvotes RIGHT JOIN crpvoteoptions USING(voteCaseID) RIGHT JOIN chrVotes USING(optionID) WHERE corporationID = @corporationID AND status = @status GROUP BY optionID ORDER BY votes DESC",
+            "SELECT voteCaseID, voteType, corporationID, chrVotes.characterID, startDateTime, endDateTime, voteCaseText, description, COUNT(*) AS votes, parameter, parameter1, parameter2, actedUpon, inEffect, expires, timeRescended, timeActedUpon FROM crpvotes RIGHT JOIN crpvoteoptions USING(voteCaseID) RIGHT JOIN chrVotes USING(optionID) WHERE corporationID = @corporationID AND status = @status GROUP BY optionID ORDER BY votes DESC",
             new Dictionary <string, object>
             {
                 {"@corporationID", corporationID},
-                {"@status", status},
-                {"@time", DateTime.UtcNow.AddDays (20).ToFileTimeUtc ()}
+                {"@status", status}
             }
         );
     }

@@ -144,6 +144,7 @@ public class corpRegistry : MultiClientBoundService
         // remove old ads that do not apply anymore
         Database.CrpAdsHousekeeping (currentTime);
 
+        // TODO: SUPPORT ITEM UNLOCKING WHEN VOTES DON'T PASS
         List <KeyValuePair <int, int>> corporationIdsAffectedByVotesHousekeeping = Database.CrpVotesGetAffectedByHousekeeping (currentTime);
 
         foreach ((int corporationID, int voteCaseID) in corporationIdsAffectedByVotesHousekeeping)
@@ -177,12 +178,21 @@ public class corpRegistry : MultiClientBoundService
     {
         int entityID = call.Session.CharacterID;
 
-        if (corpShares == true)
-            entityID = call.Session.CorporationID;
+        if (corpShares != true)
+            return this.DB.GetSharesByShareholder (entityID);
+
+        entityID = call.Session.CorporationID;
+            
+        // if we're checking corporation's shares, ensure the player has enough permissions
+        if (
+            CorporationRole.Accountant.Is (call.Session.CorporationID) == false &&
+            CorporationRole.JuniorAccountant.Is (call.Session.CorporationID) == false)
+            throw new CrpAccessDenied (MLS.UI_GENERIC_ACCESSDENIED);
 
         return DB.GetSharesByShareholder (entityID);
     }
 
+    [MustHaveCorporationRole(CorporationRole.Accountant, CorporationRole.JuniorAccountant)]
     public PyDataType GetShareholders (ServiceCall call, PyInteger corporationID)
     {
         return DB.GetShareholders (corporationID);
@@ -191,22 +201,21 @@ public class corpRegistry : MultiClientBoundService
     [MustHaveCorporationRole (MLS.UI_CORP_DO_NOT_HAVE_ROLE_DIRECTOR, CorporationRole.Director)]
     public PyDataType MoveCompanyShares (ServiceCall call, PyInteger corporationID, PyInteger to, PyInteger quantity)
     {
-        // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
         using (ISharesAccount corporationShares = this.Shares.AcquireSharesAccount (call.Session.CorporationID))
         using (ISharesAccount characterShares = this.Shares.AcquireSharesAccount (to))
         {
             // first make sure there's enough shares available
-            int availableShares = DB.GetSharesForOwner (call.Session.CorporationID, call.Session.CorporationID);
+            uint availableShares = corporationShares.GetSharesForCorporation (call.Session.CorporationID);
 
             if (availableShares < quantity)
                 throw new NotEnoughShares (quantity, availableShares);
 
             // get the shares the destination already has
-            int currentShares = DB.GetSharesForOwner (call.Session.CorporationID, to);
+            uint currentShares = characterShares.GetSharesForCorporation (call.Session.CorporationID);
 
             // make the transaction
-            DB.UpdateShares (call.Session.CorporationID, to,                         quantity + currentShares);
-            DB.UpdateShares (call.Session.CorporationID, call.Session.CorporationID, availableShares - quantity);
+            corporationShares.UpdateSharesForCorporation (call.Session.CorporationID, availableShares - quantity);
+            characterShares.UpdateSharesForCorporation (call.Session.CorporationID, quantity + currentShares);
 
             // create the notifications
             OnShareChange changeForNewHolder = new OnShareChange (
@@ -219,9 +228,9 @@ public class corpRegistry : MultiClientBoundService
                 call.Session.CorporationID, availableShares, availableShares - quantity
             );
 
-            // send both notifications
-            Notifications.NotifyCorporation (call.Session.CorporationID, changeForNewHolder);
-            Notifications.NotifyCorporation (call.Session.CorporationID, changeForRestCorp);
+            // notify both parts
+            Notifications.NotifyOwner (to, changeForNewHolder);
+            Notifications.NotifyCorporationByRole (call.Session.CorporationID, changeForRestCorp, CorporationRole.JuniorAccountant, CorporationRole.Accountant);
         }
 
         return null;
@@ -231,22 +240,21 @@ public class corpRegistry : MultiClientBoundService
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        // TODO: the WALLETKEY SHOULD BE SOMETHING ELSE?
         using (ISharesAccount originSharesAccount = this.Shares.AcquireSharesAccount (callerCharacterID))
         using (ISharesAccount destinationSharesAccount = this.Shares.AcquireSharesAccount (toShareholderID))
         {
             // first make sure there's enough shares available
-            int availableShares = DB.GetSharesForOwner (corporationID, callerCharacterID);
+            uint availableShares = originSharesAccount.GetSharesForCorporation (corporationID);
 
             if (availableShares < quantity)
                 throw new NotEnoughShares (quantity, availableShares);
 
             // get the shares the destination already has
-            int currentShares = DB.GetSharesForOwner (corporationID, toShareholderID);
+            uint currentShares = destinationSharesAccount.GetSharesForCorporation (corporationID);
 
             // make the transaction
-            DB.UpdateShares (corporationID, toShareholderID,   quantity + currentShares);
-            DB.UpdateShares (corporationID, callerCharacterID, availableShares - quantity);
+            originSharesAccount.UpdateSharesForCorporation (corporationID, availableShares - quantity);
+            destinationSharesAccount.UpdateSharesForCorporation (corporationID, quantity + currentShares);
 
             // create the notifications
             OnShareChange changeForNewHolder = new OnShareChange (
@@ -254,14 +262,15 @@ public class corpRegistry : MultiClientBoundService
                 currentShares == 0 ? null : currentShares, currentShares + quantity
             );
 
-            OnShareChange changeForRestCorp = new OnShareChange (
+            OnShareChange changeForCharacter = new OnShareChange (
                 call.Session.CorporationID,
                 call.Session.CorporationID, availableShares, availableShares - quantity
             );
 
-            // send both notifications
-            Notifications.NotifyCorporation (call.Session.CorporationID, changeForNewHolder);
-            Notifications.NotifyCorporation (call.Session.CorporationID, changeForRestCorp);
+            // notify the old owner first
+            Notifications.NotifyCharacter (callerCharacterID, changeForCharacter);
+            // TODO: CHECK IF THE ID IS FOR A CORPORATION AND SEND THE RIGHT ROLE?
+            Notifications.NotifyOwner (toShareholderID, changeForNewHolder);
         }
 
         return null;
@@ -659,7 +668,7 @@ public class corpRegistry : MultiClientBoundService
                 // create the employment record for the character
                 CharacterDB.CreateEmploymentRecord (character.ID, corporationID, DateTime.UtcNow.ToFileTimeUtc ());
                 // create company shares too!
-                DB.UpdateShares (corporationID, corporationID, 1000);
+                Database.CrpSharesSet (corporationID, corporationID, 1000);
 
                 // set the default wallet for the character
                 update.CorpAccountKey = WalletKeys.MAIN;
@@ -1740,7 +1749,7 @@ public class corpRegistry : MultiClientBoundService
     public PyBool CanViewVotes (ServiceCall call, PyInteger corporationID)
     {
         return (call.Session.CorporationID == corporationID && CorporationRole.Director.Is (call.Session.CorporationRole)) ||
-               DB.GetSharesForOwner (corporationID, call.Session.CharacterID) > 0;
+               Database.CrpSharesGet (call.Session.CharacterID, corporationID) > 0;
     }
 
     [MustHaveCorporationRole (CorporationRole.Director, typeof (CrpOnlyDirectorsCanProposeVotes))]
@@ -1750,7 +1759,7 @@ public class corpRegistry : MultiClientBoundService
         PyInteger       endDateTime
     )
     {
-        // TODO: current CEO seems to loose control if the vote is for a new CEO, this might complicate things a little on the permissions side of things
+        // TODO: current CEO seems to lose control if the vote is for a new CEO, this might complicate things a little on the permissions side of things
         /*                'MAIL_TEMPLATE_CEO_ROLES_REVOKED_BODY': (2424454,
                                                      u'%(candidateName)s is running for CEO in %(corporationName)s. Your roles as CEO have been revoked for the duration of the voting period.'),
             'MAIL_TEMPLATE_CEO_ROLES_REVOKED_SUBJECT': (2424457,
@@ -1766,7 +1775,7 @@ public class corpRegistry : MultiClientBoundService
         // parse rowset options
         Rowset options = rowsetOptions;
 
-        int voteCaseID = (int) DB.InsertVoteCase (corporationID, characterID, type, startDateTime, endDateTime, text, description);
+        int voteCaseID = (int) DB.InsertVoteCase (corporationID, characterID, type, startDateTime, endDateTime, endDateTime + (TimeSpan.TicksPerDay * 14), text, description);
 
         OnCorporationVoteCaseChanged change = new OnCorporationVoteCaseChanged (corporationID, voteCaseID)
           .AddValue ("corporationID", null, corporationID)
@@ -1798,10 +1807,79 @@ public class corpRegistry : MultiClientBoundService
         return null;
     }
 
+    [MustHaveCorporationRole(CorporationRole.Director)]
     public PyDataType GetSanctionedActionsByCorporation (ServiceCall call, PyInteger corporationID, PyInteger status)
     {
-        // TODO: CHECK PERMISSIONS FOR THIS
         return DB.GetSanctionedActionsByCorporation (corporationID, status);
+    }
+
+    private void UpdateSanctionedSharesAction (int voteCaseID)
+    {
+        (double rate, int parameter) = Database.CrpVotesGetDecision (voteCaseID);
+
+        // not enough votes for the most, voted option
+        if (rate <= 0.5 || parameter <= 0) 
+            return;
+        
+        // open the shares account and create the new shares
+        using (ISharesAccount corporationAccount = this.Shares.AcquireSharesAccount (this.ObjectID))
+        {
+            uint currentShares = corporationAccount.GetSharesForCorporation (this.ObjectID);
+            
+            corporationAccount.UpdateSharesForCorporation (
+                this.ObjectID,
+                currentShares + (uint) parameter
+            );
+            
+            OnShareChange changeForNewHolder = new OnShareChange (
+                this.ObjectID, this.ObjectID,
+                currentShares == 0 ? null : currentShares, currentShares + (uint) parameter
+            );
+            
+            Notifications.NotifyCorporationByRole (this.ObjectID, changeForNewHolder, CorporationRole.JuniorAccountant, CorporationRole.Accountant);
+        }
+    }
+    
+    [MustHaveCorporationRole(CorporationRole.Director)]
+    public PyDataType UpdateSanctionedAction (ServiceCall call, PyInteger voteCaseID, PyInteger newStatus, PyString _)
+    {
+        // newStatus will always be 1, so it can be ignored
+        if (Corporation.CeoID != call.Session.CharacterID)
+            throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED12);
+        
+        // ensure the vote can still be acted upon
+        if (Database.CrpVotesIsExpired (voteCaseID) == true)
+            throw new CrpAccessDenied ("This vote case is already expired");
+
+        // get vote type
+        CorporationVotes type = Database.CrpVotesGetType (voteCaseID);
+
+        // TODO: FINISH IMPLEMENTATION OF EVERYTHING ELSE
+        switch (type)
+        {
+            case CorporationVotes.Shares:
+                this.UpdateSanctionedSharesAction (voteCaseID);
+                break;
+            case CorporationVotes.War:
+            case CorporationVotes.KickMember:
+            case CorporationVotes.ItemUnlock:
+                throw new CustomError ("Not supported yet");
+        }
+        
+        // update the sanctionable action
+        Database.CrpVotesApply (voteCaseID);
+        
+        // send the notification to everyone that can see the sanctioned actions
+        OnSanctionedActionChanged changes = new OnSanctionedActionChanged (this.ObjectID, voteCaseID)
+            .AddValue ("inEffect", 0, 1)
+            .AddValue ("actedUpon", 0, 1)
+            .AddValue ("timeActedUpon", null, DateTime.Now.ToFileTimeUtc ())
+            .AddValue ("status", 2, 1);
+        
+        // notify directors of the corporation
+        Notifications.NotifyCorporationByRole (this.ObjectID, CorporationRole.Director, changes);
+        
+        return null;
     }
 
     public PyDataType GetVoteCasesByCorporation (ServiceCall call, PyInteger corporationID)

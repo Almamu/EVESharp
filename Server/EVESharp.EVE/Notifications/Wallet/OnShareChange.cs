@@ -11,10 +11,10 @@ public class OnShareChange : ClientNotification
 
     public int  ShareholderID { get; init; }
     public int  CorporationID { get; init; }
-    public int? OldShares     { get; init; }
-    public int? NewShares     { get; init; }
+    public uint? OldShares     { get; init; }
+    public uint? NewShares     { get; init; }
 
-    public OnShareChange (int shareholderID, int corporationID, int? oldShares, int? newShares) : base (NOTIFICATION_NAME)
+    public OnShareChange (int shareholderID, int corporationID, uint? oldShares, uint? newShares) : base (NOTIFICATION_NAME)
     {
         this.OldShares = oldShares;
         this.NewShares = newShares;

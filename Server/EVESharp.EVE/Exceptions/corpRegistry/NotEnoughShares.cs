@@ -4,7 +4,7 @@ namespace EVESharp.EVE.Exceptions.corpRegistry;
 
 public class NotEnoughShares : UserError
 {
-    public NotEnoughShares (int amount, int balance) : base (
+    public NotEnoughShares (int amount, uint balance) : base (
         "NotEnoughShares", new PyDictionary
         {
             ["amount"]  = FormatAmount (amount),

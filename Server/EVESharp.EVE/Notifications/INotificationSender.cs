@@ -43,12 +43,15 @@ public interface INotificationSender
     void NotifyCorporations (PyList <PyInteger> corporationIDs, string             type, PyTuple notification);
     void NotifyCorporations (PyList <PyInteger> corporationIDs, ClientNotification notification);
 
-    void NotifyStation (int                   stationID,     string                type, PyTuple notification);
-    void NotifyStation (int                   stationID,     ClientNotification    notification);
-    void NotifyAlliance (int                  allianceID,    ClientNotification    notification);
-    void NotifyCorporationByRole (int         corporationID, long                  roleMask, ClientNotification notification);
-    void NotifyCorporationByRole (int         corporationID, CorporationRole       role,     ClientNotification notification);
-    void NotifyNode (long                     nodeID,        InterNodeNotification notification);
+    void        NotifyStation (int           stationID,     string                type, PyTuple notification);
+    void        NotifyStation (int           stationID,     ClientNotification    notification);
+    void        NotifyAlliance (int          allianceID,    ClientNotification    notification);
+    public void NotifyCorporationByRole (int corporationID, ClientNotification    notification, IEnumerable <long>       roleMask);
+    void        NotifyCorporationByRole (int corporationID, long                  roleMask,     ClientNotification       notification);
+    void        NotifyCorporationByRole (int corporationID, ClientNotification    notification, params long []           roles);
+    void        NotifyCorporationByRole (int corporationID, CorporationRole       role,         ClientNotification       notification);
+    void        NotifyCorporationByRole (int corporationID, ClientNotification    notification, params CorporationRole[] roles);
+    void        NotifyNode (long             nodeID,        InterNodeNotification notification);
 
     void SendNotification (NotificationIdType idType,           int                id,            ClientNotification data);
     void SendNotification (NotificationIdType idType,           PyTuple            ids,           ClientNotification data);
