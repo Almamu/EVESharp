@@ -9,7 +9,11 @@ CREATE PROCEDURE `CrpSharesGet`(
 SQL SECURITY INVOKER
 COMMENT 'Gets the current shares owned for the given corporationID'
 BEGIN
-	SELECT shares FROM crpShares WHERE ownerID = _ownerID AND corporationID = _corporationID;
+	DECLARE _shares INT(10) UNSIGNED DEFAULT 0;
+
+	SELECT shares INTO _shares FROM crpShares WHERE ownerID = _ownerID AND corporationID = _corporationID;
+
+	SELECT _shares;
 END//
 
 DELIMITER ;
