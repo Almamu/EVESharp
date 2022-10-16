@@ -14,7 +14,7 @@ BEGIN
 	LEFT JOIN crpVotes USING (voteCaseID)
 	LEFT JOIN crpShares sharesVotes ON chrVotes.characterID = sharesVotes.ownerID
 	LEFT JOIN crpShares sharesTotal ON crpVotes.corporationID = sharesTotal.corporationID
-	WHERE status = 2 AND (voteType = 2 OR voteType = 3 OR voteType = 6 OR voteType = 1) AND endDateTime < _currentTime AND parameter > 0
+	WHERE status = 0 AND (voteType = 2 OR voteType = 3 OR voteType = 6 OR voteType = 1) AND endDateTime < _currentTime AND parameter > 0
 	GROUP BY voteCaseID
 	HAVING COALESCE(SUM(sharesVotes.shares), 0) / COALESCE(SUM(sharesTotal.shares), 0) > 0.5;
 END//

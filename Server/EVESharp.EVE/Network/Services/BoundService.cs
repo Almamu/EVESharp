@@ -118,4 +118,10 @@ public abstract class BoundService : Service
     /// <param name="characterID">The character to update sessions for</param>
     /// <param name="changes">The delta of changes</param>
     public abstract void ApplySessionChange (int characterID, PyDictionary <PyString, PyTuple> changes);
+
+    /// <summary>
+    /// Destroys this service, unregisters it and notifies the owner of the reference (player) to let it know that
+    /// it's not available anymore
+    /// </summary>
+    public abstract void DestroyService ();
 }

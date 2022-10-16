@@ -169,7 +169,7 @@ public class CorporationDB : DatabaseAccessor
     public Dictionary <PyDataType, int> GetOffices (int corporationID)
     {
         DbDataReader reader = this.Database.Select (
-            "SELECT officeID FROM crpOffices WHERE corporationID = @corporationID",
+            "SELECT officeID FROM crpOffices WHERE corporationID = @corporationID AND impounded = 0",
             new Dictionary <string, object> {{"@corporationID", corporationID}}
         );
 
@@ -188,24 +188,36 @@ public class CorporationDB : DatabaseAccessor
     public PyDataType GetOfficesLocation (int corporationID)
     {
         return this.Database.PrepareRowset (
-            "SELECT stationID AS locationID FROM crpOffices WHERE corporationID = @corporationID",
+            "SELECT stationID AS locationID FROM crpOffices WHERE corporationID = @corporationID AND impounded = 0",
             new Dictionary <string, object> {{"@corporationID", corporationID}}
         );
     }
 
-    public Rowset GetAssetsInOfficesAtStation (int corporationID, int stationID)
+    public PyDataType GetImpoundedLocations (int corporationID)
+    {
+        return this.Database.PrepareRowset (
+            "SELECT stationID AS locationID FROM crpOffices WHERE corporationID = @corporationID AND impounded = 1",
+            new Dictionary <string, object>
+            {
+                {"@corporationID", corporationID}
+            }
+        );
+    }
+
+    public Rowset GetAssetsInOfficesAtStation (int corporationID, int stationID, int impounded)
     {
         return this.Database.PrepareRowset (
             "SELECT itemID, typeID, locationID, ownerID, flag, contraband, singleton, quantity, groupID, categoryID " +
             "FROM invItems " +
             "LEFT JOIN invTypes USING(typeID) " +
             "LEFT JOIN invGroups USING(groupID) " +
-            "WHERE ownerID = @ownerID AND locationID = (SELECT officeID FROM crpOffices WHERE corporationID = @ownerID AND stationID = @stationID) AND flag != @deliveriesFlag",
+            "WHERE ownerID = @ownerID AND locationID = (SELECT officeID FROM crpOffices WHERE corporationID = @ownerID AND stationID = @stationID AND impounded = @impounded) AND flag != @deliveriesFlag",
             new Dictionary <string, object>
             {
                 {"@ownerID", corporationID},
                 {"@deliveriesFlag", Flags.CorpMarket},
-                {"@stationID", stationID}
+                {"@stationID", stationID},
+                {"@impounded", impounded}
             }
         );
     }
@@ -847,7 +859,7 @@ public class CorporationDB : DatabaseAccessor
     public CRowset GetItemsRented (int corporationID)
     {
         return this.Database.PrepareCRowset (
-            "SELECT crpOffices.typeID, stationID AS rentedFromID, invItems.typeID AS stationTypeID, startDate, rentPeriodInDays, periodCost, balanceDueDate FROM crpOffices LEFT JOIN invItems ON invItems.itemID = crpOffices.stationID WHERE corporationID = @corporationID",
+            "SELECT crpOffices.typeID, stationID AS rentedFromID, invItems.typeID AS stationTypeID, startDate, rentPeriodInDays, periodCost, balanceDueDate FROM crpOffices LEFT JOIN invItems ON invItems.itemID = crpOffices.stationID WHERE corporationID = @corporationID AND impounded = 0",
             new Dictionary <string, object> {{"@corporationID", corporationID}}
         );
     }

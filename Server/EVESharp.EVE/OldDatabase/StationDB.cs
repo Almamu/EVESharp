@@ -15,7 +15,7 @@ public class StationDB : DatabaseAccessor
     public int CountRentedOffices (int stationID)
     {
         DbDataReader reader = this.Database.Select (
-            "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID",
+            "SELECT COUNT(*) FROM crpOffices WHERE stationID = @stationID AND impounded = 0",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
 
@@ -49,7 +49,7 @@ public class StationDB : DatabaseAccessor
     public PyList <PyPackedRow> GetOfficesList (int stationID)
     {
         return this.Database.PreparePackedRowList (
-            "SELECT corporationID, officeID AS itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID",
+            "SELECT corporationID, officeID AS itemID, officeFolderID FROM crpOffices WHERE stationID = @stationID AND impounded = 0",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
     }
@@ -57,7 +57,7 @@ public class StationDB : DatabaseAccessor
     public PyDataType GetOfficesOwners (int stationID)
     {
         return this.Database.PrepareRowset (
-            "SELECT corporationID AS ownerID, itemName AS ownerName, eveNames.typeID FROM crpOffices LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE stationID = @stationID",
+            "SELECT corporationID AS ownerID, itemName AS ownerName, eveNames.typeID FROM crpOffices LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE stationID = @stationID AND impounded = 0",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
     }
@@ -69,22 +69,5 @@ public class StationDB : DatabaseAccessor
             "SELECT corporationID, itemName AS corporationName, corporation.stationID FROM crpOffices LEFT JOIN corporation USING (corporationID) LEFT JOIN eveNames ON eveNames.itemID = corporationID WHERE crpOffices.stationID = @stationID",
             new Dictionary <string, object> {{"@stationID", stationID}}
         );
-    }
-
-    public bool CorporationHasOfficeRentedAt (int corporationID, int stationID)
-    {
-        DbDataReader reader = this.Database.Select (
-            "SELECT corporationID FROM crpOffices WHERE stationID = @stationID AND corporationID = @corporationID",
-            new Dictionary <string, object>
-            {
-                {"@corporationID", corporationID},
-                {"@stationID", stationID}
-            }
-        );
-
-        using (reader)
-        {
-            return reader.Read ();
-        }
     }
 }

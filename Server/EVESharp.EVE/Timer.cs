@@ -20,7 +20,6 @@ public class Timer<T> : IDisposable
         this.mTimer.Elapsed   += this.OnTimerFired;
         this.mTimer.AutoReset =  false;
         this.mTimer.Enabled   =  true;
-        this.ShouldStop       =  true;
     }
 
     public Timer (TimeSpan interval, T state, Action <T> callback, ILogger logger)
@@ -30,23 +29,16 @@ public class Timer<T> : IDisposable
         this.Log              =  logger;
         this.mTimer           =  new Timer (interval.TotalMilliseconds);
         this.mTimer.Elapsed   += this.OnTimerFired;
-        this.mTimer.AutoReset =  false;
+        this.mTimer.AutoReset =  true;
         this.mTimer.Enabled   =  true;
-        this.ShouldStop       =  false;
     }
 
     private void OnTimerFired (object sender, ElapsedEventArgs args)
     {
         try
         {
-            // stop the timer
-            if (this.ShouldStop)
-                this.mTimer.Enabled = false;
             // run the callback
             this.Callback (this.State);
-            // dispose of the timer
-            if (this.ShouldStop)
-                this.mTimer.Dispose ();    
         }
         catch (Exception e)
         {
@@ -69,7 +61,7 @@ public class Timer<T> : IDisposable
     /// Logger used to output logging messages on the timer
     /// </summary>
     private ILogger Log { get; }
-    private bool ShouldStop { get; }
+    
     public void Dispose ()
     {
         this.mTimer?.Dispose ();

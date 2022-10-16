@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using EVESharp.EVE.Notifications.Network;
 using EVESharp.EVE.Sessions;
+using EVESharp.EVE.Types.Network;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -97,9 +99,6 @@ public abstract class MultiClientBoundService : BoundService
         if (instance.Sessions.TryAdd (call.Session.EnsureCharacterIsSelected (), call.Session) == false)
             throw new Exception ("Cannot register the bound service to the character");
 
-        // TODO: the expiration time is 1 day, might be better to properly support this?
-        // TODO: investigate these a bit more closely in the future
-        // TODO: i'm not so sure about the expiration time
         BoundServiceInformation = new PyTuple (2)
         {
             [0] = instance.BoundString,
@@ -185,5 +184,60 @@ public abstract class MultiClientBoundService : BoundService
             return;
 
         session.ApplyDelta (changes);
+    }
+
+    public override void DestroyService ()
+    {
+        // TODO: PROPERLY IMPLEMENT AND CLEAN THIS UP LATER
+        foreach ((int _, Session session) in Sessions)
+        {
+            PyTuple data = new OnMachoObjectDisconnect (this.BoundString, session.UserID, BoundServiceInformation [1] as PyString);
+        
+            PyTuple dataContainer = new PyTuple (2)
+            {
+                [0] = 1, // gpcs.ObjectCall::ObjectCall
+                [1] = data
+            };
+
+            dataContainer = new PyTuple (2)
+            {
+                [0] = 0, // gpcs.ServiceCall::NotifyDown
+                [1] = dataContainer
+            };
+
+            dataContainer = new PyTuple (2)
+            {
+                [0] = 0, // gpcs.ObjectCall::NotifyDown
+                [1] = new PySubStream (dataContainer)
+            };
+
+            dataContainer = new PyTuple (2)
+            {
+                [0] = dataContainer,
+                [1] = null
+            };
+
+            string idType        = Session.USERID;
+            PyList idsOfInterest = new PyList () {session.UserID};
+
+            PyPacket packet = new PyPacket (PyPacket.PacketType.NOTIFICATION)
+            {
+                Destination = new PyAddressBroadcast (idsOfInterest, idType, "OnMachoObjectDisconnect"),
+                Source      = new PyAddressNode (BoundServiceManager.MachoNet.NodeID),
+
+                // set the userID to -1, this will indicate the cluster controller to fill it in
+                UserID  = -1,
+                Payload = dataContainer,
+                OutOfBounds = new PyDictionary()
+                {
+                    {"OID-", BoundServiceInformation [1]}
+                }
+            };
+
+            BoundServiceManager.MachoNet.QueueOutputPacket (packet);
+        
+            // remove ourselves from the list
+            BoundServiceManager.UnbindService (this);            
+        }
     }
 }

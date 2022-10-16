@@ -1,7 +1,9 @@
 ﻿using System;
 using EVESharp.Database;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
 using EVESharp.Database.Old;
+using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Services;
@@ -43,12 +45,14 @@ public class corpmgr : Service
         return DB.GetCorporationRow (corporationID);
     }
 
+    [MustHaveCorporationRole(CorporationRole.Accountant)]
     public PyDataType GetAssetInventory (ServiceCall call, PyInteger corporationID, PyString which)
     {
         // TODO: CHECK PROPER PERMISSIONS TOO!
         if (call.Session.CorporationID != corporationID)
             throw new CrpAccessDenied ("You must belong to this corporation");
 
+        // TODO: SUPPORT PROPER CACHE EXPIRING SO THESE EXPIRE AFTER 5 MINUTES
         if (which == "offices")
         {
             // dirty little hack, but should do the trick
@@ -63,23 +67,53 @@ public class corpmgr : Service
 
             return CachedMethodCallResult.FromCacheHint (cacheHint);
         }
+        else if (which == "junk" || true)
+        {
+            // dirty little hack, but should do the trick
+            CacheStorage.StoreCall (
+                "corpmgr",
+                "GetAssetInventoryForLocation_" + which + "_" + corporationID,
+                DB.GetImpoundedLocations (corporationID),
+                DateTime.UtcNow.ToFileTimeUtc ()
+            );
 
-        throw new Exception ("This asset inventory is not supported yet!");
+            PyDataType cacheHint = CacheStorage.GetHint ("corpmgr", "GetAssetInventoryForLocation_" + which + "_" + corporationID);
+
+            return CachedMethodCallResult.FromCacheHint (cacheHint);
+        }
+
+        return null;
     }
 
+    [MustHaveCorporationRole(CorporationRole.Accountant)]
     public PyDataType GetAssetInventoryForLocation (ServiceCall call, PyInteger corporationID, PyInteger location, PyString which)
     {
         // TODO: CHECK PROPER PERMISSIONS TOO!
         if (call.Session.CorporationID != corporationID)
             throw new CrpAccessDenied ("You must belong to this corporation");
 
+        // TODO: SUPPORT PROPER CACHE EXPIRING SO THESE EXPIRE AFTER 5 MINUTES
         if (which == "offices")
         {
             // dirty little hack, but should do the trick
             CacheStorage.StoreCall (
                 "corpmgr",
                 "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID,
-                DB.GetAssetsInOfficesAtStation (corporationID, location),
+                DB.GetAssetsInOfficesAtStation (corporationID, location, 0),
+                DateTime.UtcNow.ToFileTimeUtc ()
+            );
+
+            PyDataType cacheHint = CacheStorage.GetHint ("corpmgr", "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID);
+
+            return CachedMethodCallResult.FromCacheHint (cacheHint);
+        }
+        else if (which == "junk")
+        {
+            // dirty little hack, but should do the trick
+            CacheStorage.StoreCall (
+                "corpmgr",
+                "GetAssetInventoryForLocation_" + location + "_" + which + "_" + corporationID,
+                DB.GetAssetsInOfficesAtStation (corporationID, location, 1),
                 DateTime.UtcNow.ToFileTimeUtc ()
             );
 

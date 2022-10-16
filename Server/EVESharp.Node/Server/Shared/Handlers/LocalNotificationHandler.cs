@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
@@ -14,6 +16,7 @@ using EVESharp.EVE.Types.Network;
 using EVESharp.Node.Notifications.Nodes.Corps;
 using EVESharp.Node.Services;
 using EVESharp.Node.Services.Corporations;
+using EVESharp.Node.Services.Inventory;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Serilog;
@@ -158,6 +161,14 @@ public class LocalNotificationHandler
 
             case OnCorporationOfficeRented.NOTIFICATION_NAME:
                 this.HandleOnCorporationOfficeRented (packet.Payload);
+                break;
+            
+            case OnCorporationOfficeUnrented.NOTIFICATION_NAME:
+                this.HandleOnCorporationOfficeUnrented (packet.Payload);
+                break;
+            
+            case OnOfficeFolderDestroyed.NOTIFICATION_NAME:
+                this.HandleOnOfficeFolderDestroyed(packet.Payload);
                 break;
 
             case "ClientHasDisconnected":
@@ -476,35 +487,51 @@ public class LocalNotificationHandler
 
     private void HandleOnCorporationOfficeRented (OnCorporationOfficeRented change)
     {
-        if (ServiceManager.corpRegistry.FindInstanceForObjectID (change.CorporationID, out corpRegistry newService) &&
-            newService.OfficesSparseRowset is not null)
-        {
-            PyDictionary <PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple>
-            {
-                ["officeID"] = new PyTuple (2)
-                {
-                    [0] = null,
-                    [1] = change.OfficeFolderID
-                },
-                ["stationID"] = new PyTuple (2)
-                {
-                    [0] = null,
-                    [1] = change.StationID
-                },
-                ["typeID"] = new PyTuple (2)
-                {
-                    [0] = null,
-                    [1] = change.TypeID
-                },
-                ["officeFolderID"] = new PyTuple (2)
-                {
-                    [0] = null,
-                    [1] = change.OfficeFolderID
-                }
-            };
+        if (ServiceManager.corpRegistry.FindInstanceForObjectID (change.CorporationID, out corpRegistry service) == false)
+            return;
 
-            newService.OfficesSparseRowset.AddRow (change.OfficeFolderID, changes);
-        }
+        PyDictionary <PyString, PyTuple> changes = new PyDictionary <PyString, PyTuple>
+        {
+            ["officeID"] = new PyTuple (2)
+            {
+                [0] = null,
+                [1] = change.OfficeFolderID
+            },
+            ["stationID"] = new PyTuple (2)
+            {
+                [0] = null,
+                [1] = change.StationID
+            },
+            ["typeID"] = new PyTuple (2)
+            {
+                [0] = null,
+                [1] = change.TypeID
+            },
+            ["officeFolderID"] = new PyTuple (2)
+            {
+                [0] = null,
+                [1] = change.OfficeFolderID
+            }
+        };
+
+        service.OfficesSparseRowset?.AddRow (change.OfficeFolderID, changes);
+    }
+
+    private void HandleOnCorporationOfficeUnrented (OnCorporationOfficeUnrented change)
+    {
+        if (ServiceManager.corpRegistry.FindInstanceForObjectID (change.CorporationID, out corpRegistry service) == false)
+            return;
+
+        service.OfficesSparseRowset?.RemoveRow (change.OfficeFolderID);
+    }
+
+    private void HandleOnOfficeFolderDestroyed (OnOfficeFolderDestroyed change)
+    {
+        if (ServiceManager.invbroker.BoundInventories.TryGetValue (change.OfficeFolderID, out List <BoundInventory> services) == false)
+            return;
+
+        foreach (BoundInventory boundInventory in services)
+            boundInventory.DestroyService ();
     }
 
     private void HandleClientHasDisconnected (PyTuple data, PyDictionary oob)

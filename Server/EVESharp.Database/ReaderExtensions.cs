@@ -46,6 +46,11 @@ public static class ReaderExtensions
         return reader.IsDBNull (columnIndex) ? defaultValue : reader.GetDouble (columnIndex);
     }
 
+    public static object GetValueOrNull (this IDataReader reader, int columnIndex)
+    {
+        return reader.IsDBNull (columnIndex) ? null : reader.GetValue (columnIndex);
+    }
+
     public static string GetStringOrDefault (this IDataReader reader, int columnIndex, string defaultValue = "")
     {
         return reader.IsDBNull (columnIndex) ? defaultValue : reader.GetString (columnIndex);
@@ -691,8 +696,8 @@ public static class ReaderExtensions
                 throw new InvalidDataException ("Expected at least one row back, but couldn't get any");
             if (reader.FieldCount != 1)
                 throw new InvalidDataException ($"Expected two columns but returned {reader.FieldCount}");
-            
-            return (T1) reader.GetValue (0);
+
+            return (T1) reader.GetValueOrNull (0);
         }
     }
 
@@ -706,8 +711,8 @@ public static class ReaderExtensions
                 throw new InvalidDataException ($"Expected two columns but returned {reader.FieldCount}");
             
             return (
-                (T1) reader.GetValue (0),
-                (T2) reader.GetValue (1)
+                (T1) reader.GetValueOrNull (0),
+                (T2) reader.GetValueOrNull (1)
             );
         }
     }
@@ -722,9 +727,9 @@ public static class ReaderExtensions
                 throw new InvalidDataException ($"Expected two columns but returned {reader.FieldCount}");
             
             return (
-                (T1) reader.GetValue (0),
-                (T2) reader.GetValue (1),
-                (T3) reader.GetValue (2)
+                (T1) reader.GetValueOrNull (0),
+                (T2) reader.GetValueOrNull (1),
+                (T3) reader.GetValueOrNull (2)
             );
         }
     }

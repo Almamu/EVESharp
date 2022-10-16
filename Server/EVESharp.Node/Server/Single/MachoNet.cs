@@ -183,6 +183,8 @@ public class MachoNet : IMachoNet
 
     private void SendComplexBroadcastPacket (PyPacket packet)
     {
+        // TODO: MIGHT BE BETTER TO ITERATE OVER TRANSPORTS AND THEN OVER THE IDSOFINTEREST
+        // TODO: OR EVEN BETTER, USE LOOKUP TABLES FOR THE COMMON IDENTIFIES (USERID, ALLIANCEID, CHARACTERID, CORPORATIONID, STATIONID, SOLARSYSTEMID, LOCATIONID)
         PyAddressBroadcast dest = packet.Destination as PyAddressBroadcast;
 
         // extract the actual ids used to identify the destination

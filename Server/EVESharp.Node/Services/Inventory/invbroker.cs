@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using EVESharp.Database;
 using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
@@ -29,13 +31,21 @@ public class invbroker : ClientBoundService
     private readonly int         mObjectID;
     public override  AccessLevel AccessLevel => AccessLevel.None;
 
+    /// <summary>
+    /// The list of bound inventories currently handled by this broker
+    ///
+    /// Key is inventoryID (itemID) and values are all the BoundInventories for that itemID
+    /// </summary>
+    public Dictionary <int, List <BoundInventory>> BoundInventories = new Dictionary <int, List <BoundInventory>> ();
+
     private IItems              Items              { get; }
     private ItemDB              ItemDB             { get; }
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
     private IDogmaNotifications DogmaNotifications { get; }
     private EffectsManager      EffectsManager     { get; }
-    private IDatabase Database           { get; }
+    private IDatabase           Database           { get; }
+    public  invbroker           Parent             { get; }
 
     public invbroker
     (
@@ -55,7 +65,8 @@ public class invbroker : ClientBoundService
     private invbroker
     (
         ItemDB              itemDB,             EffectsManager       effectsManager, IItems items, INotificationSender notificationSender,
-        IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        int    objectID, Session             session, ISolarSystems solarSystems
+        IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        int    objectID, Session             session, ISolarSystems solarSystems,
+        invbroker parent
     ) : base (manager, session, objectID)
     {
         EffectsManager     = effectsManager;
@@ -65,6 +76,7 @@ public class invbroker : ClientBoundService
         Notifications      = notificationSender;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
+        this.Parent        = parent;
     }
 
     private ItemInventory CheckInventoryBeforeLoading (ItemEntity inventoryItem)
@@ -82,6 +94,7 @@ public class invbroker : ClientBoundService
 
     private PySubStruct BindInventory (ItemInventory inventoryItem, int ownerID, Session session, Flags flag)
     {
+        // TODO: ENSURE THAT THE PLAYER HAS ACCESS TO THESE INVENTORIES, SPECIALLY OFFICES
         ItemInventory inventory = inventoryItem;
 
         // create a meta inventory only if required
@@ -91,7 +104,7 @@ public class invbroker : ClientBoundService
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
             ItemDB, EffectsManager, inventory, flag, this.Items, Notifications, this.DogmaNotifications,
-            BoundServiceManager, session
+            BoundServiceManager, session, this
         );
     }
 
@@ -288,7 +301,7 @@ public class invbroker : ClientBoundService
 
         return new invbroker (
             ItemDB, EffectsManager, this.Items, Notifications, this.DogmaNotifications, BoundServiceManager, bindParams.ObjectID,
-            call.Session, this.SolarSystems
+            call.Session, this.SolarSystems, this
         );
     }
 }

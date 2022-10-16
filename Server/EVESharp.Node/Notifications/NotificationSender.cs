@@ -124,7 +124,9 @@ public class NotificationSender : INotificationSender
                     [1] = role
                 }
             );
-        }    
+        }
+
+        this.SendNotification (NotificationIdType.CorporationAndRole, idsOfInterest, notification);
     }
     
     public void NotifyCorporationByRole (int corporationID, ClientNotification notification, params long[] roleMask)

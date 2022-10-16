@@ -736,30 +736,34 @@ public class BoundInventory : ClientBoundService
     public static PySubStruct BindInventory
     (
         ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, Flags flag, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager boundServiceManager, Session session
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager boundServiceManager, Session session,
+        invbroker creator
     )
     {
-        BoundService instance = new BoundInventory (
+        // create an instance of the inventory service and bind it to the item data
+        // bind the service
+        BoundInventory instance = new BoundInventory (
             itemDB, effectsManager, item, flag, items, notificationSender, dogmaNotifications,
             boundServiceManager, session
         );
 
-        // bind the service
         int boundID = boundServiceManager.BindService (instance);
         // build the bound service string
         string boundServiceStr = boundServiceManager.BuildBoundServiceString (boundID);
 
-        // TODO: the expiration time is 1 day, might be better to properly support this?
-        // TODO: investigate these a bit more closely in the future
-        // TODO: i'm not so sure about the expiration time
-        PyTuple boundServiceInformation = new PyTuple (2)
+        instance.BoundServiceInformation = new PyTuple (2)
         {
             [0] = boundServiceStr,
-            [1] = DateTime.UtcNow.Add (TimeSpan.FromDays (1)).ToFileTime ()
+            [1] = Guid.NewGuid ().ToString () // ReferenceID, this should be unique
         };
+        
+        if (creator.Parent.BoundInventories.TryGetValue (item.ID, out List <BoundInventory> inventories) == false)
+            inventories = creator.Parent.BoundInventories [item.ID] = new List <BoundInventory> ();
+
+        inventories.Add (instance);
 
         // after the service is bound the call can be run (if required)
-        return new PySubStruct (new PySubStream (boundServiceInformation));
+        return new PySubStruct (new PySubStream (instance.BoundServiceInformation));
     }
 
     public PyDataType BreakPlasticWrap (ServiceCall call, PyInteger crateID)

@@ -14,8 +14,10 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Exceptions;
+using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.corpStationMgr;
 using EVESharp.EVE.Market;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
@@ -48,7 +50,8 @@ public class corpStationMgr : ClientBoundService
     public corpStationMgr
     (
         StationDB            stationDb, INotificationSender notificationSender, IItems              items,    IConstants constants,
-        IBoundServiceManager manager,   ISolarSystems solarSystems, IWallets            wallets,            IDatabase database, ItemDB     itemDB
+        IBoundServiceManager manager,   ISolarSystems solarSystems, IWallets            wallets,            IDatabase database, ItemDB     itemDB,
+        IClusterManager cluster
     ) : base (manager)
     {
         StationDB     = stationDb;
@@ -59,6 +62,8 @@ public class corpStationMgr : ClientBoundService
         Database      = database;
         SolarSystems  = solarSystems;
         ItemDB        = itemDB;
+
+        cluster.ClusterTimerTick += this.PerformTimedEvents;
     }
 
     // TODO: PROVIDE OBJECTID PROPERLY
@@ -75,6 +80,50 @@ public class corpStationMgr : ClientBoundService
         this.Wallets  = wallets;
         ItemDB        = itemDB;
         Database      = database;
+    }
+
+    /// <summary>
+    /// Checks for expired offices and notifies everyone about the changes
+    /// </summary>
+    private void PerformTimedEvents (object sender, EventArgs args)
+    {
+        foreach ((int stationID, int corporationID, int officeFolderID) in Database.CrpOfficesGetExpired ())
+        {
+            UnrentOffice (officeFolderID, corporationID, stationID);
+        }
+    }
+
+    private void UnrentOffice (int officeFolderID, int corporationID, int stationID)
+    {
+        // notify bill received, this forces an update of the wallet window if open and on the right tab
+        Notifications.NotifyCorporationByRole (corporationID, new OnBillReceived (), CorporationRole.Accountant, CorporationRole.JuniorAccountant);
+        
+        // notify the owner of the officeFolderID to close it
+        long officeNodeID = Database.InvGetItemNode ((int) officeFolderID);
+        
+        if (officeNodeID > 0)
+            Notifications.NotifyNode (
+                officeNodeID,
+                new OnOfficeFolderDestroyed ((int) officeFolderID)
+            );
+        
+        // destroy the office or impound it if there's any items in it
+        Database.CrpOfficeDestroyOrImpound ((int) officeFolderID);
+
+        // finally notify the node about the rental change so the sparse rowset is updated
+        long corporationNodeID = Database.InvGetItemNode (corporationID);
+
+        if (corporationNodeID > 0)
+            Notifications.NotifyNode (
+                corporationNodeID, new OnCorporationOfficeUnrented
+                {
+                    CorporationID  = corporationID,
+                    OfficeFolderID = (int) officeFolderID,
+                }
+            );
+
+        // notify everyone in station that the office folder doesn't exist anymore
+        Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (corporationID, null, null));
     }
 
     [MustBeInStation]
@@ -193,7 +242,7 @@ public class corpStationMgr : ClientBoundService
         if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID))
             return false;
 
-        // TODO: PROPERLY IMPLEMENT THIS ONE
+        // TODO: PROPERLY IMPLEMENT THIS ONE (check for impounded offices)
         return false;
     }
 
@@ -281,7 +330,7 @@ public class corpStationMgr : ClientBoundService
             throw new NoOfficesAreAvailableForRenting ();
 
         // check if there's any office rented by us already
-        if (StationDB.CorporationHasOfficeRentedAt (call.Session.CorporationID, stationID))
+        if (Database.CrpOfficeGetAtStation (call.Session.CorporationID, stationID) is not null)
             throw new RentingYouHaveAnOfficeHere ();
 
         // ensure the character has the required skill to manage offices
@@ -313,9 +362,9 @@ public class corpStationMgr : ClientBoundService
         // create the record in the database
         StationDB.RentOffice (call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
         // notify all characters of the corporation in the station about the office change
-        Notifications.NotifyOwnerAtLocation (call.Session.CorporationID, stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
+        Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
         // notify all the characters about the bill received
-        Notifications.NotifyCorporation (call.Session.CorporationID, new OnBillReceived ());
+        Notifications.NotifyCorporationByRole (call.Session.CorporationID, new OnBillReceived (), CorporationRole.Accountant, CorporationRole.JuniorAccountant);
         // notify the node with the new office
         long nodeID = Database.InvGetItemNode (call.Session.CorporationID);
 
@@ -332,6 +381,22 @@ public class corpStationMgr : ClientBoundService
 
         // return the new officeID
         return item.ID;
+    }
+    
+    [MustBeInStation]
+    [MustHaveCorporationRole (typeof (CrpOnlyDirectorCanCancelRent), CorporationRole.Director)]
+    public PyDataType CancelRentOfOffice (ServiceCall call)
+    {
+        // check if there's any office rented by us already
+        uint? officeFolderID = Database.CrpOfficeGetAtStation (call.Session.CorporationID, call.Session.StationID);
+        
+        if (officeFolderID is null)
+            throw new NoOfficeAtStation ();
+        
+        // handles the whole unrenting logic
+        this.UnrentOffice ((int) officeFolderID, call.Session.CorporationID, call.Session.StationID);
+        
+        return null;
     }
 
     [MustBeInStation]

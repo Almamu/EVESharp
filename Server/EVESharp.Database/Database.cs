@@ -205,9 +205,12 @@ public class Database : IDatabase
         using (command)
         {
             command.ExecuteNonQuery ();
-
-            return (ulong) command.LastInsertedId;
         }
+
+        command = new MySqlCommand ("SELECT LAST_INSERT_ID()", (MySqlConnection) connection);
+
+        using (command)
+            return (ulong) command.ExecuteScalar ();
     }
 #endregion Procedures
 }
