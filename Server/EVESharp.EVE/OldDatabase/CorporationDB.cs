@@ -230,7 +230,7 @@ public class CorporationDB : DatabaseAccessor
                        " officeID, stationID, typeID, officeFolderID " +
                        "FROM crpOffices " +
                        "LEFT JOIN invItems ON itemID = stationID " +
-                       "WHERE corporationID=@corporationID AND itemID IN (";
+                       "WHERE corporationID=@corporationID AND impounded = 0 AND itemID IN (";
 
         foreach (PyInteger id in itemIDs)
             parameters ["@itemID" + parameters.Count.ToString ("X")] = (int) id;
@@ -260,7 +260,7 @@ public class CorporationDB : DatabaseAccessor
         Dictionary <string, object> parameters = new Dictionary <string, object> ();
 
         string query =
-            $"SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE crpOffices.corporationID = @corporationID AND {columnName} IN ({PyString.Join (',', itemIDs)}) ";
+            $"SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE crpOffices.corporationID = @corporationID AND impounded = 0 AND {columnName} IN ({PyString.Join (',', itemIDs)}) ";
 
         parameters ["@corporationID"] = corporationID;
 
@@ -276,7 +276,7 @@ public class CorporationDB : DatabaseAccessor
     public PyList <PyTuple> GetOffices (int corporationID, int startPos, int limit, SparseRowset header)
     {
         DbDataReader reader = this.Database.Select (
-            "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE corporationID = @corporationID LIMIT @startPos,@limit",
+            "SELECT officeID, stationID, typeID, officeFolderID FROM crpOffices LEFT JOIN invItems ON itemID = stationID WHERE corporationID = @corporationID AND impounded = 0 LIMIT @startPos,@limit",
             new Dictionary <string, object>
             {
                 {"@corporationID", corporationID},
@@ -295,7 +295,7 @@ public class CorporationDB : DatabaseAccessor
     {
         DbDataReader reader =
             this.Database.Select (
-                "SELECT COUNT(*) AS recordCount FROM crpOffices WHERE corporationID = @corporationID",
+                "SELECT COUNT(*) AS recordCount FROM crpOffices WHERE corporationID = @corporationID AND impounded = 0",
                 new Dictionary <string, object> {{"@corporationID", corporationID}}
             );
 

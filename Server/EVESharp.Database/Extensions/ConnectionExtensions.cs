@@ -76,6 +76,11 @@ public static class ConnectionExtensions
     {
         return Database.SelectProcedure (procedureName, values).Scalar <T1, T2, T3> ();
     }
+
+    public static PyDictionary <PyString, PyTuple> DifferenceDict (this IDatabase Database, string procedureName, Dictionary <string, object> values = null)
+    {
+        return Database.SelectProcedure (procedureName, values).DifferenceDict ();
+    }
 #endregion Procedure functions
 
 #region Query functions

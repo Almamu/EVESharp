@@ -10,15 +10,28 @@ COMMENT 'Performs timed events related to corporations like changing vote status
 BEGIN
 	UPDATE crpVotes SET status = 2 WHERE voteCaseID IN (
 		SELECT voteCaseID
-		FROM crpVoteOptions
-		LEFT JOIN chrVotes USING (optionID)
-		LEFT JOIN crpVotes USING (voteCaseID)
-		LEFT JOIN crpShares sharesVotes ON chrVotes.characterID = sharesVotes.ownerID
-		LEFT JOIN crpShares sharesTotal ON crpVotes.corporationID = sharesTotal.corporationID
-		WHERE status = 2 AND (voteType = 2 OR voteType = 3 OR voteType = 6 OR voteType = 1) AND endDateTime < _currentTime AND parameter > 0
-		GROUP BY voteCaseID
-		HAVING COALESCE(SUM(sharesVotes.shares), 0) / COALESCE(SUM(sharesTotal.shares), 0) > 0.5
+		FROM
+		(
+				SELECT voteCaseID, optionsByShares.shares / (SELECT COALESCE(SUM(shares), 0) FROM crpShares WHERE corporationID = optionsByShares.corporationID) AS rate
+				FROM
+					(
+						SELECT
+							voteCaseID, optionID, parameter, voteType, crpVotes.corporationID, COALESCE(SUM(shares), 0) AS shares
+						FROM crpVoteOptions vt
+						LEFT JOIN crpShares ON ownerID = (SELECT characterID FROM chrVotes WHERE optionID = vt.optionID)
+				        LEFT JOIN crpVotes USING (voteCaseID)
+						WHERE status = 0 AND endDateTime < _currentTime
+						GROUP BY optionID
+				        ORDER BY shares DESC
+				    ) optionsByShares
+				LEFT JOIN crpShares USING (corporationID)
+				WHERE voteType = 2 OR voteType = 3 OR voteType = 6 OR voteType = 1
+				GROUP BY voteCaseID
+				HAVING rate > 0.5
+		) voteCasesAffected
 	);
+
+	-- UPDATE crpVotes SET status = 3 WHERE endDateTime < _currentTime AND status = 0;
 END//
 
 DELIMITER ;

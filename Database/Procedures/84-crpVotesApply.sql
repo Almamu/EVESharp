@@ -9,7 +9,7 @@ CREATE PROCEDURE `CrpVotesApply`(
 SQL SECURITY INVOKER
 COMMENT 'Updates a voteCaseID and applies it'
 BEGIN
-	UPDATE crpVotes SET timeActedUpon = _currentTime, inEffect = 1, actedUpon = 1, status = 1 WHERE voteCaseID = _voteCaseID AND expires < _currentTime;
+	UPDATE crpVotes SET timeActedUpon = _currentTime, inEffect = 1, actedUpon = 1, status = 1 WHERE voteCaseID = _voteCaseID AND expires > _currentTime;
 END//
 
 DELIMITER ;

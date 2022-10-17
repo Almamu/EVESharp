@@ -207,4 +207,15 @@ public static class ItemDB
                 new Dictionary <string, object> {{"@itemID", id}}
             );
     }
+
+    public static uint InvItemsGetType (this IDatabase Database, int itemID)
+    {
+        return Database.Scalar <uint> (
+            "InvItemsGetType",
+            new Dictionary <string, object> ()
+            {
+                {"_itemID", itemID}
+            }
+        );
+    }
 }

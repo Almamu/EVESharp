@@ -9,14 +9,15 @@ public class OnSanctionedActionChanged : ClientNotification
 {
     private const string NOTIFICATION_NAME = "OnSanctionedActionChanged";
     
-    public  int                              CorporationID { get; }
-    public  int                              VoteCaseID    { get; }
-    private PyDictionary <PyString, PyTuple> Changes       { get; } = new PyDictionary <PyString, PyTuple> ();
+    public int                              CorporationID { get; }
+    public int                              VoteCaseID    { get; }
+    public PyDictionary <PyString, PyTuple> Changes       { get; }
 
-    public OnSanctionedActionChanged (int corporationID, int voteCaseID) : base (NOTIFICATION_NAME)
+    public OnSanctionedActionChanged (int corporationID, int voteCaseID, PyDictionary<PyString, PyTuple> changes = null) : base (NOTIFICATION_NAME)
     {
         this.CorporationID = corporationID;
         this.VoteCaseID    = voteCaseID;
+        this.Changes       = changes ?? new PyDictionary <PyString, PyTuple> ();
     }
     
     public OnSanctionedActionChanged AddValue (string columnName, PyDataType oldValue, PyDataType newValue)

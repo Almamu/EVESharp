@@ -52,7 +52,7 @@ public static class CorporationsDB
         }
     }
     
-    public static List<KeyValuePair<int,int>> CrpVotesGetAffectedByHousekeeping (this IDatabase Database, long currentTime)
+    public static IEnumerable<(int corporationID, int voteCaseID, int parameter, int voteType, double rate)> CrpVotesGetAffectedByHousekeeping (this IDatabase Database, long currentTime)
     {
         DbDataReader reader = Database.SelectProcedure (
             "CrpVotesGetAffectedByHousekeeping",
@@ -64,12 +64,14 @@ public static class CorporationsDB
 
         using (reader)
         {
-            List <KeyValuePair<int, int>> result = new List <KeyValuePair<int, int>> ();
-
             while (reader.Read () == true)
-                result.Add (new KeyValuePair<int, int> (reader.GetInt32 (0), reader.GetInt32 (1)));
-
-            return result;
+                yield return (
+                    reader.GetInt32 (0),
+                    reader.GetInt32 (1),
+                    reader.GetInt32 (2),
+                    reader.GetInt32 (3),
+                    reader.GetDouble (4)
+                );
         }
     }
 
@@ -203,12 +205,59 @@ public static class CorporationsDB
 
     public static PyDataType InvItemsLockedGetAtLocation (this IDatabase Database, int corporationID, int stationID)
     {
-        return Database.IntRowDictionary (
+        return Database.IndexRowset (
             0, "InvItemsLockedGetAtLocation",
             new Dictionary <string, object> ()
             {
                 {"_corporationID", corporationID},
                 {"_stationID", stationID}
+            }
+        );
+    }
+
+    public static void InvItemsLockedAdd (this IDatabase Database, int itemID, int corporationID, int stationID, int voteCaseID)
+    {
+        Database.QueryProcedure (
+            "InvItemsLockedAdd",
+            new Dictionary <string, object> ()
+            {
+                {"_itemID", itemID},
+                {"_corporationID", corporationID},
+                {"_stationID", stationID},
+                {"_voteCaseID", voteCaseID}
+            }
+        );
+    }
+
+    public static (int itemID, int corporationID, int stationID) InvItemsLockedRemove (this IDatabase Database, int voteCaseID)
+    {
+        return Database.Scalar<int, int, int> (
+            "InvItemsLockedRemove",
+            new Dictionary <string, object> ()
+            {
+                {"_voteCaseID", voteCaseID}
+            }
+        );
+    }
+
+    public static (int corporationID, int stationID) InvItemsLockedRemoveByID (this IDatabase Database, int itemID)
+    {
+        return Database.Scalar<int, int> (
+            "InvItemsLockedRemoveByID",
+            new Dictionary <string, object> ()
+            {
+                {"_itemID", itemID}
+            }
+        );
+    }
+
+    public static PyDictionary <PyString, PyTuple> CrpVotesGetAsSanctionable (this IDatabase Database, int voteCaseID)
+    {
+        return Database.DifferenceDict (
+            "CrpVotesGetAsSanctionable",
+            new Dictionary <string, object> ()
+            {
+                {"_voteCaseID", voteCaseID}
             }
         );
     }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text.RegularExpressions;
 using EVESharp.Database;
@@ -34,6 +35,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
 using EVESharp.Node.Chat;
 using EVESharp.Node.Notifications.Nodes.Corps;
+using EVESharp.Node.Services.Database;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Serilog;
@@ -145,14 +147,57 @@ public class corpRegistry : MultiClientBoundService
         Database.CrpAdsHousekeeping (currentTime);
 
         // TODO: SUPPORT ITEM UNLOCKING WHEN VOTES DON'T PASS
-        List <KeyValuePair <int, int>> corporationIdsAffectedByVotesHousekeeping = Database.CrpVotesGetAffectedByHousekeeping (currentTime);
+        foreach ((int corporationID, int voteCaseID, int parameter, int voteType, double rate) in Database.CrpVotesGetAffectedByHousekeeping (currentTime))
+        {
+            int newStatus = 2;
+            
+            switch (voteType)
+            {
+                 case (int) CorporationVotes.ItemLockdown:
+                     if (rate <= 0.5 || parameter == 0)
+                         this.UnlockItemByVoteCaseID (voteCaseID);
+                     else
+                     {
+                         newStatus = 1;
+                         
+                         // update the sanctionable action
+                         Database.CrpVotesApply (voteCaseID);
+        
+                         // send the notification to everyone that can see the sanctioned actions
+                         OnSanctionedActionChanged changes = new OnSanctionedActionChanged (
+                             corporationID,
+                             voteCaseID,
+                             Database.CrpVotesGetAsSanctionable (voteCaseID)
+                         );
 
-        foreach ((int corporationID, int voteCaseID) in corporationIdsAffectedByVotesHousekeeping)
+                         // notify directors of the corporation
+                         Notifications.NotifyCorporationByRole (corporationID, CorporationRole.Director, changes);
+                     }
+                     break;
+            }
+
+            // ensure only votes over 50% pass
+            if (rate <= 0.5 || parameter == 0)
+                continue;
+
             Notifications.NotifyCorporation (
                 corporationID,
                 new OnCorporationVoteCaseChanged (corporationID, voteCaseID)
-                    .AddValue("status", 0, 2)
+                    .AddValue ("status", 0, newStatus)
             );
+
+            // send the notification to everyone that can see the sanctioned actions
+            Notifications.NotifyCorporationByRole (
+                corporationID,
+                CorporationRole.Director,
+                new OnSanctionedActionChanged (
+                    corporationID,
+                    voteCaseID,
+                    Database.CrpVotesGetAsSanctionable (voteCaseID)
+                )
+                .AddValue ("status", null, 2)
+            );
+        }
 
         // update the votes to closed when the time comes
         Database.CrpVoteHousekeeping (currentTime);
@@ -1759,6 +1804,44 @@ public class corpRegistry : MultiClientBoundService
                Database.CrpSharesGet (call.Session.CharacterID, corporationID) > 0;
     }
 
+    private void LockdownItem (int voteCaseID, int itemID, int stationID)
+    {
+        // lock the item
+        Database.InvItemsLockedAdd (itemID, this.ObjectID, stationID, voteCaseID);
+        // get the item type
+        uint typeID = Database.InvItemsGetType (itemID);
+        // TODO: DETERMINE WHO REALLY HAS TO GET THIS NOTIFICATION
+        OnLockedItemChange change = new OnLockedItemChange (itemID, this.ObjectID, stationID)
+            .AddChange ("typeID", null, typeID);
+        
+        Notifications.NotifyCorporation (this.ObjectID, change);
+    }
+
+    private void NotifyUnlockedItem (int itemID, int corporationID, int stationID)
+    {
+        // TODO: DETERMINE WHO REALLY HAS TO GET THIS NOTIFICATION
+        OnLockedItemChange change = new OnLockedItemChange (itemID, corporationID, stationID)
+            .AddChange ("typeID", 34, null);
+        
+        Notifications.NotifyCorporation (corporationID, change);
+    }
+
+    private void UnlockItemByVoteCaseID (int voteCaseID)
+    {
+        // unlock the item
+        (int itemID, int corporationID, int stationID) = Database.InvItemsLockedRemove (voteCaseID);
+        
+        NotifyUnlockedItem (itemID, corporationID, stationID);
+    }
+
+    private void UnlockItemByItemID (int itemID)
+    {
+        // unlock the item
+        (int corporationID, int stationID) = Database.InvItemsLockedRemoveByID (itemID);
+        
+        NotifyUnlockedItem (itemID, corporationID, stationID);
+    }
+
     [MustHaveCorporationRole (CorporationRole.Director, typeof (CrpOnlyDirectorsCanProposeVotes))]
     public PyDataType InsertVoteCase
     (
@@ -1781,17 +1864,23 @@ public class corpRegistry : MultiClientBoundService
 
         // parse rowset options
         Rowset options = rowsetOptions;
-
+        
         int voteCaseID = (int) DB.InsertVoteCase (corporationID, characterID, type, startDateTime, endDateTime, endDateTime + (TimeSpan.TicksPerDay * 14), text, description);
+        
+        // TODO: ENSURE THE PLAYER HAS ACCESS TO THIS ITEM FIRST
+        if (type == (int) CorporationVotes.ItemLockdown)
+            this.LockdownItem (voteCaseID, options.Rows [0] [1] as PyInteger, call.Session.StationID);
 
         OnCorporationVoteCaseChanged change = new OnCorporationVoteCaseChanged (corporationID, voteCaseID)
+          .AddValue ("voteCaseID", null, voteCaseID)
           .AddValue ("corporationID", null, corporationID)
           .AddValue ("characterID",   null, characterID)
-          .AddValue ("type",          null, type)
+          .AddValue ("voteType",      null, type)
           .AddValue ("startDateTime", null, startDateTime)
           .AddValue ("endDateTime",   null, endDateTime)
           .AddValue ("text",          null, text)
-          .AddValue ("description",   null, description);
+          .AddValue ("description",   null, description)
+          .AddValue ("voteCaseText",  null, text);
 
         // notify the new vote being created to all shareholders
         this.NotifyShareholders (corporationID, change);
@@ -1810,7 +1899,7 @@ public class corpRegistry : MultiClientBoundService
                 entry [parameter1] as PyInteger,
                 entry [parameter2] as PyInteger
             );
-
+        
         return null;
     }
 
@@ -1846,6 +1935,18 @@ public class corpRegistry : MultiClientBoundService
             Notifications.NotifyCorporationByRole (this.ObjectID, changeForNewHolder, CorporationRole.JuniorAccountant, CorporationRole.Accountant);
         }
     }
+
+    private void UpdateItemUnlockAction (int voteCaseID)
+    {
+        (double rate, int itemID) = Database.CrpVotesGetDecision (voteCaseID);
+
+        // not enough votes for the most, voted option
+        if (rate <= 0.5)
+            return;
+        
+        // just unlock the item
+        this.UnlockItemByItemID (itemID);
+    }
     
     [MustHaveCorporationRole(CorporationRole.Director)]
     public PyDataType UpdateSanctionedAction (ServiceCall call, PyInteger voteCaseID, PyInteger newStatus, PyString _)
@@ -1857,6 +1958,7 @@ public class corpRegistry : MultiClientBoundService
         // ensure the vote can still be acted upon
         if (Database.CrpVotesIsExpired (voteCaseID) == true)
             throw new CrpAccessDenied ("This vote case is already expired");
+        // TODO: MAKE SURE THAT THE STATUS IS 2 SO NOTHING IS ACTED UPON UNLESS POSSIBLE
 
         // get vote type
         CorporationVotes type = Database.CrpVotesGetType (voteCaseID);
@@ -1867,9 +1969,11 @@ public class corpRegistry : MultiClientBoundService
             case CorporationVotes.Shares:
                 this.UpdateSanctionedSharesAction (voteCaseID);
                 break;
+            case CorporationVotes.ItemUnlock:
+                this.UpdateItemUnlockAction (voteCaseID);
+                break;
             case CorporationVotes.War:
             case CorporationVotes.KickMember:
-            case CorporationVotes.ItemUnlock:
                 throw new CustomError ("Not supported yet");
         }
         

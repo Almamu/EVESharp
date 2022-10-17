@@ -368,6 +368,9 @@ public static class ReaderExtensions
     {
         using (reader)
         {
+            if (reader.Read () == false)
+                throw new InvalidDataException ("No data returned");
+            
             PyDictionary <TKey, TValue> result = new PyDictionary <TKey, TValue> ();
 
             for (int i = 0; i < reader.FieldCount; i++)
@@ -731,6 +734,28 @@ public static class ReaderExtensions
                 (T2) reader.GetValueOrNull (1),
                 (T3) reader.GetValueOrNull (2)
             );
+        }
+    }
+
+    public static PyDictionary <PyString, PyTuple> DifferenceDict (this IDataReader reader)
+    {
+        using (reader)
+        {
+            if (reader.Read () == false)
+                throw new InvalidDataException ("Expected at least one row back, but couldn't get any");
+            
+            PyDictionary <PyString, PyTuple> result = new PyDictionary <PyString, PyTuple> ();
+        
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                result [reader.GetName (i)] = new PyTuple (2)
+                {
+                    [0] = null,
+                    [1] = reader.GetPyDataType (GetFieldType (reader, i), i)
+                };
+            }
+
+            return result;
         }
     }
 }

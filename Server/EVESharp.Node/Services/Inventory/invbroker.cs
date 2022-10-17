@@ -98,9 +98,9 @@ public class invbroker : ClientBoundService
         ItemInventory inventory = inventoryItem;
 
         // create a meta inventory only if required
-        if (inventoryItem is not Ship && inventoryItem is not Character)
+        if (inventoryItem is not Ship && inventoryItem is not Character && inventoryItem is not OfficeFolder)
             inventory = this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
-
+        
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
             ItemDB, EffectsManager, inventory, flag, this.Items, Notifications, this.DogmaNotifications,

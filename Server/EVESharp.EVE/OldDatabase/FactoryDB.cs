@@ -15,11 +15,10 @@ public class FactoryDB : DatabaseAccessor
         // TODO: IMPROVE PERMISSIONS CHECK ON THE ITEM, CAN BLUEPRINTS BE CHECKED REGARDLESS OF OWNERSHIP?
         // TODO: MOST LIKELY YES, FOR CONTRACT STUFF AND OTHER THINGS
         return this.Database.PrepareDictionary (
-            "SELECT copy, productionTime AS manufacturingTime, productivityLevel, materialLevel, maxProductionLimit, researchMaterialTime, researchCopyTime, researchProductivityTime, researchTechTime, wasteFactor AS wastageFactor, productTypeID FROM invItems LEFT JOIN invBlueprints USING(itemID) LEFT JOIN invBlueprintTypes ON invBlueprintTypes.blueprintTypeID = invItems.typeID WHERE itemID = @itemID AND ownerID = @characterID",
+            "SELECT copy, productionTime AS manufacturingTime, productivityLevel, materialLevel, maxProductionLimit, researchMaterialTime, researchCopyTime, researchProductivityTime, researchTechTime, wasteFactor AS wastageFactor, productTypeID FROM invItems RIGHT JOIN invBlueprints USING(itemID) RIGHT JOIN invBlueprintTypes ON invBlueprintTypes.blueprintTypeID = invItems.typeID WHERE itemID = @itemID",
             new Dictionary <string, object>
             {
-                {"@itemID", blueprintID},
-                {"@characterID", characterID}
+                {"@itemID", blueprintID}
             }
         );
     }
@@ -35,7 +34,7 @@ public class FactoryDB : DatabaseAccessor
     public Rowset GetMaterialCompositionOfItemType (int typeID)
     {
         return this.Database.PrepareRowset (
-            "SELECT requiredTypeID AS typeID, quantity FROM typeActivityMaterials LEFT JOIN invBlueprintTypes ON productTypeID = @typeID WHERE typeID = invBlueprintTypes.blueprintTypeID AND activityID = 1 AND damagePerJob = 1",
+            "SELECT requiredTypeID AS typeID, quantity FROM typeActivityMaterials RIGHT JOIN invBlueprintTypes ON productTypeID = @typeID WHERE typeID = invBlueprintTypes.blueprintTypeID AND activityID = 1 AND damagePerJob = 1",
             new Dictionary <string, object> {{"@typeID", typeID}}
         );
     }
@@ -43,7 +42,7 @@ public class FactoryDB : DatabaseAccessor
     public Rowset GetBlueprintInformationAtLocationWithFlag (int locationID, int flag)
     {
         return this.Database.PrepareRowset (
-            "SELECT itemID, typeID, singleton, licensedProductionRunsRemaining, productivityLevel, materialLevel, copy FROM invItems LEFT JOIN invBlueprints USING(itemID) WHERE locationID = @locationID AND flag = @flag",
+            "SELECT itemID, typeID, singleton, licensedProductionRunsRemaining, productivityLevel, materialLevel, copy FROM invItems RIGHT JOIN invBlueprints USING(itemID) WHERE locationID = @locationID AND flag = @flag",
             new Dictionary <string, object>
             {
                 {"@locationID", locationID},
@@ -55,7 +54,7 @@ public class FactoryDB : DatabaseAccessor
     public Rowset GetBlueprintInformationAtLocation (int locationID)
     {
         return this.Database.PrepareRowset (
-            "SELECT itemID, typeID, singleton, licensedProductionRunsRemaining, productivityLevel, materialLevel, copy FROM invItems LEFT JOIN invBlueprints USING(itemID) WHERE locationID = @locationID",
+            "SELECT itemID, typeID, singleton, licensedProductionRunsRemaining, productivityLevel, materialLevel, copy FROM invItems RIGHT JOIN invBlueprints USING(itemID) WHERE locationID = @locationID",
             new Dictionary <string, object> {{"@locationID", locationID}}
         );
     }
