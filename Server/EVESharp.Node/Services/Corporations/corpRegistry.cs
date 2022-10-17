@@ -401,9 +401,16 @@ public class corpRegistry : MultiClientBoundService
 
     public PyDataType GetLockedItemLocations (ServiceCall call)
     {
+        // TODO: CHECK PERMISSIONS!
         // this just returns a list of itemIDs (locations) that are locked
         // most likely used by the corp stuff for SOMETHING(tm)
-        return new PyList <PyInteger> ();
+        return Database.InvItemsLockedGetLocations (call.Session.CorporationID);
+    }
+
+    public PyDataType GetLockedItemsByLocation (ServiceCall call, PyInteger locationID)
+    {
+        // TODO: CHECK PERMISSIONS!
+        return Database.InvItemsLockedGetAtLocation (call.Session.CorporationID, locationID);
     }
 
     public PyBool CanBeKickedOut (ServiceCall call, PyInteger characterID)

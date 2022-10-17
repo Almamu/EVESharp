@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using EVESharp.Database.Corporations;
+using EVESharp.Types;
+using EVESharp.Types.Collections;
 
 namespace EVESharp.Database.Extensions;
 
@@ -184,6 +186,29 @@ public static class CorporationsDB
             {
                 {"_voteCaseID", voteCaseID},
                 {"_characterID", characterID}
+            }
+        );
+    }
+
+    public static PyList <PyInteger> InvItemsLockedGetLocations (this IDatabase Database, int corporationID)
+    {
+        return Database.List<PyInteger> (
+            "InvItemsLockedGetLocations",
+            new Dictionary <string, object> ()
+            {
+                {"_corporationID", corporationID}
+            }
+        );
+    }
+
+    public static PyDataType InvItemsLockedGetAtLocation (this IDatabase Database, int corporationID, int stationID)
+    {
+        return Database.IntRowDictionary (
+            0, "InvItemsLockedGetAtLocation",
+            new Dictionary <string, object> ()
+            {
+                {"_corporationID", corporationID},
+                {"_stationID", stationID}
             }
         );
     }
