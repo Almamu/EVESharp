@@ -82,6 +82,17 @@ public static class CorporationsDB
         );
     }
 
+    public static int CrpVotesGetCorporation (this IDatabase Database, int voteCaseID)
+    {
+        return Database.Scalar <int> (
+            "CrpVotesGetCorporation",
+            new Dictionary<string, object> ()
+            {
+                {"_voteCaseID", voteCaseID}
+            }
+        );
+    }
+
     public static uint CrpSharesGet (this IDatabase Database, int ownerID, int corporationID)
     {
         return Database.Scalar<uint> (
@@ -138,6 +149,41 @@ public static class CorporationsDB
             {
                 {"_voteCaseID", voteCaseID},
                 {"_currentTime", DateTime.Now.ToFileTimeUtc ()}
+            }
+        );
+    }
+
+    public static bool CrpVotesHasEnded (this IDatabase Database, int voteCaseID)
+    {
+        return 1 == Database.Scalar <int> (
+            "CrpVotesHasEnded",
+            new Dictionary <string, object> ()
+            {
+                {"_voteCaseID", voteCaseID},
+                {"_currentTime", DateTime.Now.ToFileTimeUtc ()}
+            }
+        );
+    }
+
+    public static bool CrpVotesExists (this IDatabase Database, int voteCaseID)
+    {
+        return 1 == Database.Scalar <int> (
+            "CrpVotesExists",
+            new Dictionary<string, object> ()
+            {
+                {"_voteCaseID", voteCaseID}
+            }
+        );
+    }
+
+    public static bool CrpVotesHasVoted (this IDatabase Database, int voteCaseID, int characterID)
+    {
+        return 0 < Database.Scalar<int> (
+            "CrpVotesHasVoted",
+            new Dictionary <string, object> ()
+            {
+                {"_voteCaseID", voteCaseID},
+                {"_characterID", characterID}
             }
         );
     }

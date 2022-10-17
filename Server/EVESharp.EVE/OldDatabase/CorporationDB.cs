@@ -858,8 +858,9 @@ public class CorporationDB : DatabaseAccessor
 
     public CRowset GetItemsRented (int corporationID)
     {
+        // TODO: WHEN SUPPORTING ANYTHING ELSE ENSURE THE TYPEID IS FETCHED FROM WHERE IT SHOULD BE
         return this.Database.PrepareCRowset (
-            "SELECT crpOffices.typeID, stationID AS rentedFromID, invItems.typeID AS stationTypeID, startDate, rentPeriodInDays, periodCost, balanceDueDate FROM crpOffices LEFT JOIN invItems ON invItems.itemID = crpOffices.stationID WHERE corporationID = @corporationID AND impounded = 0",
+            "SELECT 26 AS typeID, stationID AS rentedFromID, invItems.typeID AS stationTypeID, startDate, rentPeriodInDays, periodCost, balanceDueDate FROM crpOffices LEFT JOIN invItems ON invItems.itemID = crpOffices.stationID WHERE corporationID = @corporationID AND impounded = 0",
             new Dictionary <string, object> {{"@corporationID", corporationID}}
         );
     }

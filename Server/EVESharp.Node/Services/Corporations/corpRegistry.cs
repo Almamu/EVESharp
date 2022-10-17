@@ -1935,12 +1935,30 @@ public class corpRegistry : MultiClientBoundService
 
         if (this.CanViewVotes (call, corporationID) == false)
             throw new CrpAccessDenied (MLS.UI_SHARED_WALLETHINT12);
+        if (Database.CrpVotesExists (voteCaseID) == false)
+            throw new CrpAccessDenied ("You don't have access to this vote");
+        if (Database.CrpVotesHasEnded (voteCaseID) == true)
+            throw new CorpVoteCaseClosed ();
+        if (Database.CrpVotesGetCorporation (voteCaseID) != corporationID)
+            throw new CrpAccessDenied ("You don't have access to this vote");
+        if (Database.CrpVotesHasVoted (voteCaseID, characterID) == true)
+            throw new CrpAlreadyVoted ();
+        
+        // check if the voter has any shares
+        using (ISharesAccount sharesAccount = Shares.AcquireSharesAccount (call.Session.CharacterID))
+        {
+            uint shares = sharesAccount.GetSharesForCorporation (corporationID);
 
+            if (shares == 0)
+                throw new CrpAccessDenied ("You don't have access to this vote");
+        }
+
+        // finally insert the vote
         DB.InsertVote (voteCaseID, optionID, characterID);
 
         OnCorporationVoteChanged change = new OnCorporationVoteChanged (corporationID, voteCaseID, characterID)
-                                          .AddValue ("characterID", null, characterID)
-                                          .AddValue ("optionID",    null, optionID);
+          .AddValue ("characterID", null, characterID)
+          .AddValue ("optionID",    null, optionID);
 
         // notify the new vote to the original character
         this.NotifyShareholders (corporationID, change);
