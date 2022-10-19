@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using EVESharp.Database;
+using EVESharp.Database.Configuration;
 using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Market;
@@ -46,22 +47,25 @@ public class contractMgr : Service
     private IDogmaNotifications DogmaNotifications { get; }
     private IContracts          Contracts          { get; }
 
+    private int CourierMaxVolume;
+
     public contractMgr
     (
         ContractDB db,      ItemDB              itemDB, MarketDB marketDB, OldCharacterDB characterDB, IItems items, INotificationSender notificationSender,
-        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems, IContracts contracts
+        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems, IContracts contracts, IConstants constants
     )
     {
-        DB                 = db;
-        ItemDB             = itemDB;
-        MarketDB           = marketDB;
-        CharacterDB        = characterDB;
-        Items              = items;
-        Notifications      = notificationSender;
-        this.Wallets       = wallets;
-        DogmaNotifications = dogmaNotifications;
-        SolarSystems       = solarSystems;
-        Contracts          = contracts;
+        DB                    = db;
+        ItemDB                = itemDB;
+        MarketDB              = marketDB;
+        CharacterDB           = characterDB;
+        Items                 = items;
+        Notifications         = notificationSender;
+        this.Wallets          = wallets;
+        DogmaNotifications    = dogmaNotifications;
+        SolarSystems          = solarSystems;
+        Contracts             = contracts;
+        this.CourierMaxVolume = constants.ContractCourierMaxVolume;
     }
 
     public PyDataType NumRequiringAttention (ServiceCall call)
@@ -134,7 +138,7 @@ public class contractMgr : Service
         return DB.GetItemsInStationForPlayer (call.Session.CharacterID, stationID);
     }
 
-    private void PrepareItemsForCourierOrAuctionContract (IContract contract, PyList <PyList> itemList, Station station, int ownerID, int shipID)
+    private void PrepareCrateOfItems (IContract contract, PyList <PyList> itemList, Station station, int ownerID, int shipID)
     {
         // ensure there's a crate created for the items
         contract.CreateCrate ();
@@ -150,7 +154,13 @@ public class contractMgr : Service
 
             contract.AddItem (itemID, quantity, ownerID, station.ID);
         }
-        
+
+        // ensure that the maximum volume is not exceeded
+        if (contract.Volume is null)
+            throw new ConCannotTradeItemSanity ();
+        if (contract.Type == ContractTypes.Courier && contract.Volume > this.CourierMaxVolume)
+            throw new ConExceedsMaxVolume ((double) contract.Volume, this.CourierMaxVolume);
+
         foreach (PyList itemEntryList in itemList)
         {
             PyList <PyInteger> itemEntry = itemEntryList.GetEnumerable <PyInteger> ();
@@ -202,6 +212,9 @@ public class contractMgr : Service
 
         if (call.NamedPayload.TryGetValue ("forCorp", out PyBool forCorp) == false)
             forCorp = false;
+        
+        // TODO: CHECK FOR MINIMUM BID PRICE
+        // const_conBidMinimum = 1000000
 
         Character character = this.Items.GetItem <Character> (callerCharacterID);
 
@@ -238,30 +251,40 @@ public class contractMgr : Service
                    reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN
                ))
         {
-            // TODO: take broker's tax, deposit and sales tax
-
-            switch ((int) contractType)
+            try
             {
-                case (int) ContractTypes.ItemExchange:
-                case (int) ContractTypes.Auction:
-                case (int) ContractTypes.Courier:
-                    this.PrepareItemsForCourierOrAuctionContract (
-                        contract,
-                        (call.NamedPayload ["itemList"] as PyList).GetEnumerable <PyList> (),
-                        station,
-                        callerCharacterID,
-                        (int) call.Session.ShipID
-                    );
-                    break;
+                // TODO: take broker's tax, deposit and sales tax
 
-                case (int) ContractTypes.Loan: break;
-                default:                       throw new CustomError ("Unknown contract type");
+                switch ((int) contractType)
+                {
+                    case (int) ContractTypes.ItemExchange:
+                    case (int) ContractTypes.Auction:
+                    case (int) ContractTypes.Courier:
+                    case (int) ContractTypes.Loan:
+                        this.PrepareCrateOfItems (
+                            contract,
+                            (call.NamedPayload ["itemList"] as PyList).GetEnumerable <PyList> (),
+                            station,
+                            callerCharacterID,
+                            (int) call.Session.ShipID
+                        );
+                        break;
+
+                    default:                       throw new CustomError ("Unknown contract type");
+                }
+
+                if (contractType == (int) ContractTypes.ItemExchange)
+                    this.PrepareRequestedItems (contract, (call.NamedPayload ["requestItemTypeList"] as PyList).GetEnumerable <PyList> ());
+
+                return contract.ID;      
             }
-
-            if (contractType == (int) ContractTypes.ItemExchange)
-                this.PrepareRequestedItems (contract, (call.NamedPayload ["requestItemTypeList"] as PyList).GetEnumerable <PyList> ());
-
-            return contract.ID;            
+            catch (Exception e)
+            {
+                // any exception means the data was not 100% right
+                contract.Destroy ();
+                
+                throw;
+            }      
         }
     }
 
@@ -420,6 +443,21 @@ public class contractMgr : Service
         );
     }
 
+    public PyDataType GetMyCurrentcontractList (ServiceCall call, PyBool acceptedByMe, PyInteger isCorp)
+    {
+        return GetMyCurrentContractList (call, acceptedByMe, isCorp == 1);
+    }
+
+    public PyDataType GetMyCurrentContractList (ServiceCall call, PyInteger acceptedByMe, PyBool isCorp)
+    {
+        return GetMyCurrentContractList (call, acceptedByMe == 1, isCorp);
+    }
+    
+    public PyDataType GetMyCurrentContractList (ServiceCall call, PyInteger acceptedByMe, PyInteger isCorp)
+    {
+        return GetMyCurrentContractList (call, acceptedByMe == 1, isCorp == 1);
+    }
+
     public PyDataType GetMyCurrentContractList (ServiceCall call, PyBool acceptedByMe, PyBool isCorp)
     {
         int ownerID = 0;
@@ -463,7 +501,7 @@ public class contractMgr : Service
     {
         using (IContract contract = Contracts.AcquireContract (contractID))
         {
-            contract.Accept (call.Session);
+            contract.Accept (call.Session, forCorp);
 
             return null;
         }

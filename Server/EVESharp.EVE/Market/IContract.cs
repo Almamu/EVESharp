@@ -8,23 +8,23 @@ namespace EVESharp.EVE.Market;
 
 public interface IContract : IDisposable
 {
-    public int            ID            { get; }
-    public double?        Price         { get; }
-    public int            Collateral    { get; }
-    public long           ExpireTime    { get; }
-    public int            CrateID       { get; }
-    public int            StationID     { get; }
-    public ContractStatus Status        { get; }
-    public ContractTypes  Type          { get; }
-    public int            IssuerID      { get; }
-    public int            IssuerCorpID  { get; }
-    public bool           ForCorp       { get; }
-    public double?        Reward        { get; }
-    public double?        Volume        { get; }
-    public int            AcceptorID    { get; }
-    public long           AcceptedDate  { get; }
-    public long           CompletedDate { get; }
-
+    public int            ID             { get; }
+    public double?        Price          { get; }
+    public int            Collateral     { get; }
+    public long           ExpireTime     { get; }
+    public int            CrateID        { get; }
+    public int            StartStationID { get; }
+    public int            EndStationID   { get; }
+    public ContractStatus Status         { get; }
+    public ContractTypes  Type           { get; }
+    public int            IssuerID       { get; }
+    public int            IssuerCorpID   { get; }
+    public bool           ForCorp        { get; }
+    public double?        Reward         { get; }
+    public double?        Volume         { get; }
+    public int            AcceptorID     { get; }
+    public long           AcceptedDate   { get; }
+    public long           CompletedDate  { get; }
 
     /// <summary>
     /// Adds an item into the contract's item list checking for specific conditions
@@ -55,7 +55,8 @@ public interface IContract : IDisposable
     /// Accepts the contract and handles all the item movement that has to happen
     /// </summary>
     /// <param name="session"></param>
-    public void Accept (Session session);
+    /// <param name="forCorp"></param>
+    public void Accept (Session session, bool forCorp);
     
     /// <summary>
     /// Creates an item crate required to store items inside the contract

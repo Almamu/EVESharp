@@ -29,19 +29,20 @@ public static class ContractsDB
 
             return new Contract
             {
-                ID           = contractID,
-                Price        = reader.GetDoubleOrNull (0),
-                Collateral   = reader.GetInt32 (1),
-                Status       = (ContractStatus) reader.GetInt32 (2),
-                Type         = (ContractTypes) reader.GetInt32 (3),
-                ExpireTime   = reader.GetInt64 (4),
-                CrateID      = reader.GetInt32 (5),
-                StationID    = reader.GetInt32 (6),
-                IssuerID     = reader.GetInt32 (7),
-                IssuerCorpID = reader.GetInt32 (8),
-                ForCorp      = reader.GetBoolean (9),
-                Reward       = reader.GetDoubleOrNull (10),
-                Volume       = reader.GetDoubleOrNull (11),
+                ID             = contractID,
+                Price          = reader.GetDoubleOrNull (0),
+                Collateral     = reader.GetInt32 (1),
+                Status         = (ContractStatus) reader.GetInt32 (2),
+                Type           = (ContractTypes) reader.GetInt32 (3),
+                ExpireTime     = reader.GetInt64 (4),
+                CrateID        = reader.GetInt32 (5),
+                StartStationID = reader.GetInt32 (6),
+                EndStationID   = reader.GetInt32OrDefault (12),
+                IssuerID       = reader.GetInt32 (7),
+                IssuerCorpID   = reader.GetInt32 (8),
+                ForCorp        = reader.GetBoolean (9),
+                Reward         = reader.GetDoubleOrNull (10),
+                Volume         = reader.GetDoubleOrNull (11),
             };
         }
     }
@@ -105,7 +106,9 @@ public static class ContractsDB
                 {"_contractID", contract.ID},
                 {"_status", (int) contract.Status},
                 {"_crateID", contract.CrateID},
-                {"_volume", contract.Volume}
+                {"_volume", contract.Volume},
+                {"_acceptorID", contract.AcceptorID},
+                {"_dateAccepted", contract.AcceptedDate}
             }
         );
     }
@@ -153,7 +156,7 @@ public static class ContractsDB
             new Dictionary <string, object> ()
             {
                 {"_contractID", contractID},
-                {"_quantity", quantity},
+                {"_amount", quantity},
                 {"_bidderID", bidder},
                 {"_forCorp", forCorp},
                 {"_walletKey", walletKey}
@@ -212,5 +215,17 @@ public static class ContractsDB
                     Contraband = reader.GetBoolean (4)
                 };
         }
+    }
+
+    public static void ConDestroy (this DbLock DbLock, int contractID)
+    {
+        DbLock.Creator.QueryProcedure (
+            DbLock.Connection,
+            "ConDestroy",
+            new Dictionary <string, object> ()
+            {
+                {"_contractID", contractID}
+            }
+        );
     }
 }

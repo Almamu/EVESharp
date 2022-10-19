@@ -8,7 +8,7 @@ CREATE PROCEDURE `ConGetMaximumBid`(
 SQL SECURITY INVOKER
 COMMENT 'Gets the maximum bidder for the specified contract'
 BEGIN
-	SELECT MAX(amount), bidderID, walletKey FROM conBids WHERE contractID = _contractID;
+	SELECT bidderID, amount, walletKey FROM conBids WHERE contractID = _contractID ORDER BY amount DESC LIMIT 1;
 END//
 
 DELIMITER ;

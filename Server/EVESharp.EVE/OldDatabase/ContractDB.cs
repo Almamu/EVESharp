@@ -118,14 +118,14 @@ public class ContractDB : DatabaseAccessor
             " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerID = @characterID AND forCorp = @notForCorp AND dateExpired > @currentTime) AS numOutstandingContractsNonCorp," +
             " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND issuerCorpID = @corporationID AND forCorp = @forCorp AND dateExpired > @currentTime) AS numOutstandingContractsForCorp," +
             " (SELECT COUNT(*) FROM conContracts WHERE status = @outstandingStatus AND (issuerID = @characterID OR issuerCorpID = @corporationID) AND dateExpired > @currentTime) AS numOutstandingContracts," +
-            " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime))) AS numRequiresAttention," +
-            " (SELECT COUNT(*) FROM conContracts WHERE (forCorp = @forCorp AND issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorID = @corporationID AND dateCompleted <= @currentTime)) AS numRequiresAttentionCorp," +
+            " (SELECT COUNT(*) FROM conContracts WHERE forCorp = @notForCorp AND ((issuerID = @characterID AND dateExpired < @currentTime) OR (acceptorID = @characterID AND dateCompleted <= @currentTime AND dateCompleted != 0))) AS numRequiresAttention," +
+            " (SELECT COUNT(*) FROM conContracts WHERE (forCorp = @forCorp AND issuerCorpID = @corporationID AND dateExpired < @currentTime) OR (acceptorID = @corporationID AND dateCompleted <= @currentTime AND dateCompleted != 0)) AS numRequiresAttentionCorp," +
             " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @characterID) AS numAssignedTo," +
             " (SELECT COUNT(*) FROM conContracts WHERE assigneeID = @corporationID) AS numAssignedToCorp," +
             " (SELECT COUNT(DISTINCT contractID) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @characterID AND status = @outstandingStatus) AS numBiddingOn," +
-            " (SELECT COUNT(*) FROM conContracts WHERE status = @inProgressStatus AND issuerID = @characterID AND forCorp = @notForCorp) AS numInProgress," +
+            " (SELECT COUNT(*) FROM conContracts WHERE status = @inProgressStatus AND acceptorID = @characterID) AS numInProgress," +
             " (SELECT COUNT(DISTINCT contractID) FROM conBids LEFT JOIN conContracts USING(contractID) WHERE bidderID = @corporationID AND status = @outstandingStatus) AS numBiddingOnCorp," +
-            " (SELECT COUNT(*) FROM conContracts WHERE status = @inProgressStatus AND issuerCorpID = @corporationID AND forCorp = @forCorp) AS numInProgressCorp",
+            " (SELECT COUNT(*) FROM conContracts WHERE status = @inProgressStatus AND acceptorID = @corporationID) AS numInProgressCorp",
             new Dictionary <string, object>
             {
                 {"@outstandingStatus", (int) ContractStatus.Outstanding},

@@ -36,4 +36,7 @@ public static class Constants
     // alliance related constants
     public const string allianceCreationCost   = "allianceCreationCost";
     public const string allianceMembershipCost = "allianceMembershipCost";
+    
+    // contract related constants
+    public const string conCourierMaxVolume = "conCourierMaxVolume";
 }

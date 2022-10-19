@@ -20,6 +20,7 @@ using EVESharp.EVE.Sessions;
 using EVESharp.Node.Notifications;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
+using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Market;
 
@@ -63,7 +64,8 @@ public class Contract : IContract
         get => this.mInformation.CrateID;
         set => this.mInformation.CrateID = value;
     }
-    public int            StationID    => this.mInformation.StationID;
+    public int StartStationID => this.mInformation.StartStationID;
+    public int EndStationID   => this.mInformation.EndStationID;
     public ContractStatus Status
     {
         get => this.mInformation.Status;
@@ -94,6 +96,8 @@ public class Contract : IContract
         get => this.mInformation.CompletedDate;
         set => this.mInformation.CompletedDate = value;
     }
+
+    private bool mDisposed = false;
     
     public Contract (int contractID, IDatabase Database, ITypes types, IItems Items, IWallets wallets, INotificationSender notificationSender, IDogmaNotifications dogmaNotifications)
     {
@@ -112,12 +116,12 @@ public class Contract : IContract
         if (CrateID != 0)
             return;
         
-        // TODO: WRITE A CREATE CONTAINER FUNCTION
         ItemEntity item = Items.CreateSimpleItem (
-            Types [TypeID.PlasticWrap],
+            EndStationID != 0 ? Items.GetItem <Station> (EndStationID).Name : null,
+            (int) TypeID.PlasticWrap,
             Items.LocationSystem.ID,
-            StationID,
-            Flags.None
+            this.StartStationID,
+            Flags.None, 1, false, true
         );
 
         // store the crateID and initialize the volume
@@ -143,7 +147,7 @@ public class Contract : IContract
             
         Lock.ConAddItem (ID, preloadValue.TypeID, preloadValue.Quantity, 1, itemID);
 
-        Volume += preloadValue.Volume;
+        Volume += (preloadValue.Volume * quantity);
     }
 
     public void AddRequestedItem (int typeID, int quantity)
@@ -183,6 +187,9 @@ public class Contract : IContract
         // calculate next bid slot
         int nextMinimumBid = maximumBid + (int) Math.Max (0.1 * (double) Price, 1000);
 
+        if (maximumBidderID == 0)
+            nextMinimumBid = (int) Price;
+        
         if (quantity < nextMinimumBid)
             throw new ConBidTooLow (quantity, nextMinimumBid);
 
@@ -194,10 +201,14 @@ public class Contract : IContract
         }
 
         Notifications.NotifyOwners (this.GetOutbids (), new OnContractOutbid (ID));
+        Notifications.NotifyOwner (ForCorp ? IssuerID : IssuerCorpID, new OnContractOutbid (ID));
 
         // finally place the bid
         ulong bidID = Lock.ConPlaceBid (ID, quantity, bidderID, forCorp, walletKey);
 
+        if (maximumBidderID == 0)
+            return bidID;
+        
         // return the money for the player that was the highest bidder
         using (IWallet maximumBidderWallet = this.Wallets.AcquireWallet (maximumBidderID, bidderWalletKey))
         {
@@ -250,7 +261,7 @@ public class Contract : IContract
         int contractCreator = ForCorp ? IssuerCorpID : IssuerID;
         
         // change the ownership of all the player's items
-        foreach ((RequestedContractItem item, int quantity) in ValidateRequestedItems (StationID, acceptorID))
+        foreach ((RequestedContractItem item, int quantity) in ValidateRequestedItems (this.StartStationID, acceptorID))
         {
             ItemEntity loadedItem = Items.LoadItem (item.ItemID, out bool loadRequired);
 
@@ -262,10 +273,10 @@ public class Contract : IContract
                 loadedItem.LocationID = Items.LocationRecycler.ID;
                 // notify the old owner that the item got destroyed
                 DogmaNotifications.QueueMultiEvent (
-                    acceptorID, OnItemChange.BuildLocationChange (loadedItem, StationID)
+                    acceptorID, OnItemChange.BuildLocationChange (loadedItem, this.StartStationID)
                 );
                 // now move the item to the final place
-                loadedItem.LocationID = StationID;
+                loadedItem.LocationID = this.StartStationID;
                 loadedItem.OwnerID    = contractCreator;
                 // notify the new owner
                 DogmaNotifications.QueueMultiEvent (
@@ -311,7 +322,7 @@ public class Contract : IContract
         {
             ItemEntity loadedItem = Items.LoadItem ((int) itemID, out bool loadRequired);
 
-            loadedItem.LocationID = StationID;
+            loadedItem.LocationID = this.StartStationID;
             loadedItem.OwnerID    = acceptorID;
 
             DogmaNotifications.QueueMultiEvent (
@@ -330,21 +341,60 @@ public class Contract : IContract
         CompletedDate = DateTime.Now.ToFileTimeUtc ();
     }
 
-    public void Accept (Session session)
+    private void AcceptCourierContract (int acceptorID)
+    {
+        // move the crate into the player's inventory
+        Container crate = Items.LoadItem <Container> (CrateID, out bool loadRequired);
+
+        Items.MetaInventories.OnItemDestroyed (crate);
+
+        crate.LocationID = this.StartStationID;
+        crate.OwnerID    = acceptorID;
+        crate.Flag       = Flags.Hangar;
+
+        foreach ((int _, ItemEntity item) in crate.Items)
+        {
+            item.OwnerID = acceptorID;
+            item.Flag    = Flags.None;
+            item.Persist ();
+        }
+        
+        DogmaNotifications.QueueMultiEvent (
+            acceptorID, OnItemChange.BuildNewItemChange (crate)
+        );
+        
+        crate.Persist ();
+
+        Items.MetaInventories.OnItemLoaded (crate);
+            
+        // finally unload the item
+        // TODO: ADD SUPPORT FOR REFERENCE COUNTING ITEMS!
+        /*if (loadRequired)
+            Items.UnloadItem (crate);*/
+
+        Status = ContractStatus.InProgress;
+    }
+
+    public void Accept (Session session, bool forCorp)
     {
         if (Status != ContractStatus.Outstanding)
             throw new ConContractNotOutstanding ();
         if (ExpireTime < DateTime.Now.ToFileTimeUtc ())
             throw new ConContractExpired ();
+
+        // TODO: CHECK FOR PERMISSIONS FOR ACCEPTING CONTRACTS FOR CORPORATION
+        int acceptorID = forCorp ? session.CorporationID : session.CharacterID;
         
         switch (Type)
         {
             case ContractTypes.ItemExchange:
-                this.AcceptItemExchangeContract (session.CharacterID);
+                this.AcceptItemExchangeContract (acceptorID);
+                break;
+            case ContractTypes.Courier:
+                this.AcceptCourierContract (acceptorID);
                 break;
             
             case ContractTypes.Auction:  throw new CustomError ("Auctions cannot be accepted!");
-            case ContractTypes.Courier:  throw new CustomError ("Courier contracts not supported yet!");
             case ContractTypes.Loan:     throw new CustomError ("Loan contracts not supported yet!");
             case ContractTypes.Freeform: throw new CustomError ("Freeform contracts not supported yet!");
             default:                     throw new CustomError ("Unknown contract type to accept!");
@@ -356,11 +406,17 @@ public class Contract : IContract
         DogmaNotifications.QueueMultiEvent(
             ForCorp ? IssuerCorpID : IssuerID, new OnContractAccepted (ID)
         );
+        DogmaNotifications.QueueMultiEvent (
+            acceptorID, new OnContractAccepted (ID)
+        );
     }
     
     public void Destroy ()
     {
-        // TODO: IMPLEMENT THIS
+        Lock.ConDestroy (ID);
+
+        // finally dispose of the contract as it's not needed
+        Dispose (false);
     }
 
     private string GenerateLockName ()
@@ -368,9 +424,21 @@ public class Contract : IContract
         return $"contract_{this.ID}";
     }
 
+    private void Dispose (bool save)
+    {
+        if (this.mDisposed)
+            return;
+        
+        this.mDisposed = true;
+        
+        if (save)
+            Lock.ConSaveInfo (this.mInformation);
+        
+        Lock.Dispose ();
+    }
+
     public void Dispose ()
     {
-        Lock.ConSaveInfo (this.mInformation);
-        Lock.Dispose ();
+        this.Dispose (true);
     }
 }
