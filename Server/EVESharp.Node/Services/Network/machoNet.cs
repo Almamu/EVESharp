@@ -24,9 +24,13 @@
 
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
+using EVESharp.EVE.Exceptions.machoNet;
+using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Caching;
 using EVESharp.EVE.Network.Services;
 using EVESharp.Node.Cache;
+using EVESharp.Node.Server.Shared.Exceptions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 
@@ -34,12 +38,14 @@ namespace EVESharp.Node.Services.Network;
 
 public class machoNet : Service
 {
-    public override AccessLevel   AccessLevel  => AccessLevel.None;
-    private         ICacheStorage CacheStorage { get; }
+    public override AccessLevel     AccessLevel    => AccessLevel.None;
+    private         ICacheStorage   CacheStorage   { get; }
+    private         IClusterManager ClusterManager { get; }
 
-    public machoNet (ICacheStorage cacheStorage)
+    public machoNet (ICacheStorage cacheStorage, IClusterManager clusterManager)
     {
-        CacheStorage = cacheStorage;
+        CacheStorage   = cacheStorage;
+        ClusterManager = clusterManager;
     }
 
     public PyTuple GetInitVals (ServiceCall call)

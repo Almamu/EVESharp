@@ -7,5 +7,6 @@ CREATE TABLE `conBids` (
   `bidderID` int(10) unsigned NOT NULL,
   `amount` double unsigned NOT NULL,
   `forCorp` tinyint unsigned NOT NULL DEFAULT 0,
+  `walletKey` INT NOT NULL,
   PRIMARY KEY (`bidID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

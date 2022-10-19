@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using EVESharp.Database;
 using EVESharp.Database.Extensions;
 using EVESharp.Database.Inventory;
@@ -20,6 +21,7 @@ using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
+using EVESharp.Node.Server.Shared.Exceptions;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using Service = EVESharp.Database.Inventory.Stations.Service;
@@ -257,12 +259,28 @@ public class repairSvc : ClientBoundService
         {
             if (check == "RepairUnassembleVoidsContract")
                 ignoreContractVoiding = true;
-
-            if (check == "ConfirmRepackageSomethingWithUpgrades")
+            else if (check == "ConfirmRepackageSomethingWithUpgrades")
                 ignoreRepackageWithUpgrades = true;
         }
 
-        foreach ((PyInteger stationID, PyList itemIDs) in validIDsByStationID.GetEnumerable <PyInteger, PyList> ())
+        List <int> stationIDs = new List <int> ();
+        
+        // get the first station id and check if the station belongs to us
+        foreach ((PyInteger currentStationID, PyList _) in validIDsByStationID.GetEnumerable <PyInteger, PyList> ())
+        {
+            stationIDs.Add (currentStationID);
+        }
+
+        if (stationIDs.Distinct ().Count () > 1)
+            throw new CustomError ("Cannot repair items from more than one station at the same time");
+
+        int stationID = stationIDs.First ();
+        int nodeID    = (int) this.SolarSystems.GetNodeStationBelongsTo (stationID);
+
+        if (nodeID != call.MachoNet.NodeID && nodeID != 0)
+            throw new RedirectCallRequest (nodeID);
+
+        foreach ((PyInteger _, PyList itemIDs) in validIDsByStationID.GetEnumerable <PyInteger, PyList> ())
         {
             foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
             {
@@ -286,56 +304,43 @@ public class repairSvc : ClientBoundService
             if (entry.Singleton == false)
                 continue;
 
-            // extra situation, the repair is happening on a item in our node, the client must know immediately
-            if (entry.NodeID == call.MachoNet.NodeID || this.SolarSystems.StationBelongsToUs (entry.LocationID))
+            ItemEntity item = this.Items.LoadItem (entry.ItemID, out bool loadRequired);
+
+            // the item is an inventory, take everything out!
+            if (item is ItemInventory inventory)
             {
-                ItemEntity item = this.Items.LoadItem (entry.ItemID, out bool loadRequired);
-
-                // the item is an inventory, take everything out!
-                if (item is ItemInventory inventory)
-                    foreach ((int _, ItemEntity itemInInventory) in inventory.Items)
-                        // if the item is in a rig slot, destroy it
-                        if (itemInInventory.IsInRigSlot ())
-                        {
-                            Flags oldFlag = itemInInventory.Flag;
-                            this.Items.DestroyItem (itemInInventory);
-                            // notify the client about the change
-                            this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
-                        }
-                        else
-                        {
-                            Flags oldFlag = itemInInventory.Flag;
-                            // update item's location
-                            itemInInventory.LocationID = entry.LocationID;
-                            itemInInventory.Flag       = Flags.Hangar;
-
-                            // notify the client about the change
-                            this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
-                            // save the item
-                            itemInInventory.Persist ();
-                        }
-
-                // update the singleton flag too
-                item.Singleton = false;
-                this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
-
-                // load was required, the item is not needed anymore
-                if (loadRequired)
-                    this.Items.UnloadItem (item);
-            }
-            else
-            {
-                long nodeID = this.SolarSystems.GetNodeStationBelongsTo (entry.LocationID);
-
-                if (nodeID > 0)
+                foreach ((int _, ItemEntity itemInInventory) in inventory.Items)
                 {
-                    Notifications.Nodes.Inventory.OnItemChange change = new Notifications.Nodes.Inventory.OnItemChange ();
+                    // if the item is in a rig slot, destroy it
+                    if (itemInInventory.IsInRigSlot ())
+                    {
+                        Flags oldFlag = itemInInventory.Flag;
+                        this.Items.DestroyItem (itemInInventory);
+                        // notify the client about the change
+                        this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                    }
+                    else
+                    {
+                        Flags oldFlag = itemInInventory.Flag;
+                        // update item's location
+                        itemInInventory.LocationID = entry.LocationID;
+                        itemInInventory.Flag       = Flags.Hangar;
 
-                    change.AddChange (entry.ItemID, "singleton", true, false);
-
-                    Notifications.NotifyNode (nodeID, change);
+                        // notify the client about the change
+                        this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                        // save the item
+                        itemInInventory.Persist ();
+                    }
                 }
             }
+
+            // update the singleton flag too
+            item.Singleton = false;
+            this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
+
+            // load was required, the item is not needed anymore
+            if (loadRequired)
+                this.Items.UnloadItem (item);
 
             // finally repackage the item
             RepairDB.RepackageItem (entry.ItemID, entry.LocationID);

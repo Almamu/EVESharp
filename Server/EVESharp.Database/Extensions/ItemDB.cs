@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using EVESharp.Database.Exceptions;
 using EVESharp.Database.Extensions.Inventory;
 using EVESharp.Database.Inventory;
@@ -217,5 +218,30 @@ public static class ItemDB
                 {"_itemID", itemID}
             }
         );
+    }
+
+    public static IEnumerable <(int itemID, int quantity, bool singleton, bool contraband)> InvItemsGetAtLocationByType (this IDatabase Database, int typeID, int locationID, int ownerID, Flags flags = Flags.Hangar)
+    {
+        DbDataReader reader = Database.SelectProcedure (
+            "InvGetItemsAtLocationByType",
+            new Dictionary <string, object> ()
+            {
+                {"_locationID", locationID},
+                {"_ownerID", ownerID},
+                {"_typeID", typeID},
+                {"_flag", (int) flags}
+            }
+        );
+
+        using (reader)
+        {
+            while (reader.Read () == true)
+                yield return (
+                    reader.GetInt32 (0),
+                    reader.GetInt32 (1),
+                    reader.GetBoolean (2),
+                    reader.GetBoolean (3)
+                );
+        }
     }
 }

@@ -9,6 +9,7 @@ using EVESharp.EVE.Network.Transports;
 using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types.Network;
+using EVESharp.Node.Server.Shared.Exceptions;
 using EVESharp.Node.Server.Shared.Helpers;
 using EVESharp.Node.Services;
 using EVESharp.Types;
@@ -126,6 +127,39 @@ public class LocalCallHandler
         catch (PyException e)
         {
             PacketCallHelper.SendException (callInformation, packet.Type, e);
+        }
+        catch (RedirectCallRequest redirection)
+        {
+            bool canBeRedirected = true;
+            
+            switch (packet.Destination)
+            {
+                case PyAddressAny destAny:
+                    packet.Destination = new PyAddressNode(redirection.NodeID, destAny.CallID, destAny.Service);
+                    break;
+                case PyAddressNode destNode:
+                    packet.Destination = new PyAddressNode(redirection.NodeID, destNode.CallID, destNode.Service);
+                    break;
+                default:
+                    Log.Fatal ("Trying to redirect a non-node, non-any packet. How are we supposed to do that?!");
+                    canBeRedirected = false;
+                    break;
+            }
+
+            if (canBeRedirected == true)
+            {
+                packet.OutOfBounds ??= new PyDictionary ();
+                // ensure the session is attached
+                packet.OutOfBounds ["Session"] = machoMessage.Transport.Session;
+                // finally forward the packet
+                MachoNet.QueueOutputPacket (packet);
+            }
+            else
+            {
+                PacketCallHelper.SendException (
+                    callInformation, packet.Type, new CustomError ("There was an error reaching the destination node for your request")
+                );
+            }
         }
         catch (ProvisionalResponse provisional)
         {

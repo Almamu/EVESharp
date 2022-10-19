@@ -10,6 +10,7 @@ using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma.Interpreter.Opcodes;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.contractMgr;
 using EVESharp.EVE.Market;
@@ -26,6 +27,7 @@ using Container = EVESharp.EVE.Data.Inventory.Items.Types.Container;
 
 namespace EVESharp.Node.Services.Contracts;
 
+// TODO: REWRITE THE USAGE OF THE CHARACTER CLASS HERE TO FETCH THE DATA OFF THE DATABASE TO PREVENT ISSUES ON MULTI-NODE INSTALLATIONS
 [MustBeCharacter]
 public class contractMgr : Service
 {
@@ -35,18 +37,19 @@ public class contractMgr : Service
     private ContractDB          DB                 { get; }
     private ItemDB              ItemDB             { get; }
     private MarketDB            MarketDB           { get; }
-    private OldCharacterDB         CharacterDB        { get; }
+    private OldCharacterDB      CharacterDB        { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
     private IWallets            Wallets            { get; }
     private IDogmaNotifications DogmaNotifications { get; }
+    private IContracts          Contracts          { get; }
 
     public contractMgr
     (
         ContractDB db,      ItemDB              itemDB, MarketDB marketDB, OldCharacterDB characterDB, IItems items, INotificationSender notificationSender,
-        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems
+        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems, IContracts contracts
     )
     {
         DB                 = db;
@@ -58,6 +61,7 @@ public class contractMgr : Service
         this.Wallets       = wallets;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
+        Contracts          = contracts;
     }
 
     public PyDataType NumRequiringAttention (ServiceCall call)
@@ -130,60 +134,54 @@ public class contractMgr : Service
         return DB.GetItemsInStationForPlayer (call.Session.CharacterID, stationID);
     }
 
-    private void PrepareItemsForCourierOrAuctionContract
-    (
-        DbLock dbLock, ulong   contractID,
-        PyList <PyList> itemList,   Station station, int ownerID, int shipID
-    )
+    private void PrepareItemsForCourierOrAuctionContract (IContract contract, PyList <PyList> itemList, Station station, int ownerID, int shipID)
     {
-        // create the container in the system to ensure it's not visible to the player
-        Container container = this.Items.CreateSimpleItem (
-            this.Types [TypeID.PlasticWrap],
-            this.Items.LocationSystem.ID, station.ID, Flags.None
-        ) as Container;
-
-        Dictionary <int, ContractDB.ItemQuantityEntry> items =
-            DB.PrepareItemsForContract (dbLock, contractID, itemList, station, ownerID, container.ID, shipID);
-
-        double volume = 0;
-
-        // build notification for item changes
-        OnItemChange changes            = new OnItemChange ();
-        long         stationNode        = this.SolarSystems.GetNodeStationBelongsTo (station.ID);
-        bool         stationBelongsToUs = this.SolarSystems.StationBelongsToUs (station.ID);
-
-        // notify the changes in the items to the nodes
-        foreach ((int _, ContractDB.ItemQuantityEntry item) in items)
+        // ensure there's a crate created for the items
+        contract.CreateCrate ();
+        
+        foreach (PyList itemEntryList in itemList)
         {
-            if (stationNode == 0 || stationBelongsToUs)
-            {
-                ItemEntity entity = this.Items.LoadItem (item.ItemID);
+            PyList <PyInteger> itemEntry = itemEntryList.GetEnumerable <PyInteger> ();
+            PyInteger          itemID    = itemEntry [0];
+            PyInteger          quantity  = itemEntry [1];
 
-                entity.LocationID = container.ID;
-                entity.Persist ();
+            if (itemID == shipID)
+                throw new ConCannotTradeCurrentShip ();
 
-                // notify the character
-                Notifications.NotifyCharacter (ownerID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
-            }
-            else
-            {
-                // queue the notification
-                changes.AddChange (item.ItemID, "locationID", station.ID, container.ID);
-            }
-
-            // ensure the volume is taken into account
-            volume += item.Volume;
+            contract.AddItem (itemID, quantity, ownerID, station.ID);
         }
+        
+        foreach (PyList itemEntryList in itemList)
+        {
+            PyList <PyInteger> itemEntry = itemEntryList.GetEnumerable <PyInteger> ();
+            PyInteger          itemID    = itemEntry [0];
 
-        // notify the proper node if needed
-        if (changes.Updates.Count > 0)
-            Notifications.NotifyNode (stationNode, changes);
+            ItemEntity entity = this.Items.LoadItem (itemID, out bool loadRequired);
 
-        // update the contract with the crate and the new volume
-        DB.UpdateContractCrateAndVolume (dbLock, contractID, container.ID, volume);
+            entity.LocationID = contract.CrateID;
+            entity.Persist ();
+
+            // notify the character
+            Notifications.NotifyCharacter (ownerID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
+
+            if (loadRequired)
+                this.Items.UnloadItem (entity);
+        }
     }
 
-    public PyDataType CreateContract
+    private void PrepareRequestedItems (IContract contract, PyList <PyList> itemList)
+    {
+        foreach (PyList itemEntryList in itemList)
+        {
+            PyList <PyInteger> itemEntry = itemEntryList.GetEnumerable <PyInteger> ();
+            PyInteger          typeID    = itemEntry [0];
+            PyInteger          quantity  = itemEntry [1];
+            
+            contract.AddRequestedItem (typeID, quantity);
+        }
+    }
+
+    public PyInteger CreateContract
     (
         ServiceCall call,       PyInteger contractType,            PyInteger availability,   PyInteger assigneeID,
         PyInteger       expireTime, PyInteger courierContractDuration, PyInteger startStationID, PyInteger endStationID, PyInteger priceOrStartingBid,
@@ -221,14 +219,11 @@ public class contractMgr : Service
         }
 
         Station station = this.Items.GetStaticStation (startStationID);
-
-        using DbLock dbLock = MarketDB.AcquireMarketLock ();
         
         // take reward from the character
         if (reward > 0)
         {
-            using IWallet wallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN);
-
+            using (IWallet wallet = this.Wallets.AcquireWallet (callerCharacterID, WalletKeys.MAIN))
             {
                 wallet.EnsureEnoughBalance (reward);
                 wallet.CreateJournalRecord (MarketReference.ContractRewardAdded, null, null, -reward);
@@ -236,38 +231,38 @@ public class contractMgr : Service
         }
 
         // named payload contains itemList, flag, requestItemTypeList and forCorp
-        ulong contractID = DB.CreateContract (
-            dbLock, call.Session.CharacterID,
-            call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
-            assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
-            reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN
-        );
-
-        // TODO: take broker's tax, deposit and sales tax
-
-        switch ((int) contractType)
+        using (IContract contract = Contracts.CreateContract (
+                   call.Session.CharacterID,
+                   call.Session.CorporationID, call.Session.AllianceID, (ContractTypes) (int) contractType, availability,
+                   assigneeID ?? 0, expireTime, courierContractDuration, startStationID, endStationID, priceOrStartingBid,
+                   reward, collateralOrBuyoutPrice, title, description, WalletKeys.MAIN
+               ))
         {
-            case (int) ContractTypes.ItemExchange:
-            case (int) ContractTypes.Auction:
-            case (int) ContractTypes.Courier:
-                this.PrepareItemsForCourierOrAuctionContract (
-                    dbLock,
-                    contractID,
-                    (call.NamedPayload ["itemList"] as PyList).GetEnumerable <PyList> (),
-                    station,
-                    callerCharacterID,
-                    (int) call.Session.ShipID
-                );
-                break;
+            // TODO: take broker's tax, deposit and sales tax
 
-            case (int) ContractTypes.Loan: break;
-            default:                       throw new CustomError ("Unknown contract type");
+            switch ((int) contractType)
+            {
+                case (int) ContractTypes.ItemExchange:
+                case (int) ContractTypes.Auction:
+                case (int) ContractTypes.Courier:
+                    this.PrepareItemsForCourierOrAuctionContract (
+                        contract,
+                        (call.NamedPayload ["itemList"] as PyList).GetEnumerable <PyList> (),
+                        station,
+                        callerCharacterID,
+                        (int) call.Session.ShipID
+                    );
+                    break;
+
+                case (int) ContractTypes.Loan: break;
+                default:                       throw new CustomError ("Unknown contract type");
+            }
+
+            if (contractType == (int) ContractTypes.ItemExchange)
+                this.PrepareRequestedItems (contract, (call.NamedPayload ["requestItemTypeList"] as PyList).GetEnumerable <PyList> ());
+
+            return contract.ID;            
         }
-
-        if (contractType == (int) ContractTypes.ItemExchange)
-            DB.PrepareRequestedItems (dbLock, contractID, (call.NamedPayload ["requestItemTypeList"] as PyList).GetEnumerable <PyList> ());
-
-        return contractID;
     }
 
     public PyDataType GetContractList (ServiceCall call, PyObjectData filtersKeyval)
@@ -347,8 +342,6 @@ public class contractMgr : Service
 
     public PyDataType DeleteContract (ServiceCall call, PyInteger contractID, PyObjectData keyVal)
     {
-        using DbLock dbLock = MarketDB.AcquireMarketLock ();
-
         // get contract type and status
 
         // get the items back to where they belong (if any)
@@ -460,222 +453,20 @@ public class contractMgr : Service
 
     public PyDataType PlaceBid (ServiceCall call, PyInteger contractID, PyInteger quantity, PyBool forCorp, PyObjectData locationData)
     {
-        using DbLock dbLock = MarketDB.AcquireMarketLock ();
-    
-        // TODO: SUPPORT PROPER CORP WALLET
-        int bidderID = call.Session.CharacterID;
-
-        if (forCorp == true)
+        using (IContract contract = Contracts.AcquireContract (contractID))
         {
-            bidderID = call.Session.CorporationID;
-
-            throw new UserError ("Corp bidding is not supported for now!");
+            return contract.PlaceBid (quantity, call.Session, forCorp);
         }
-
-        ContractDB.Contract contract = DB.GetContract (dbLock, contractID);
-
-        // ensure the contract is still in progress
-        if (contract.Status != ContractStatus.Outstanding)
-            throw new ConAuctionAlreadyClaimed ();
-
-        DB.GetMaximumBid (dbLock, contractID, out int maximumBidderID, out int maximumBid);
-
-        // calculate next bid slot
-        int nextMinimumBid = maximumBid + (int) Math.Max (0.1 * (double) contract.Price, 1000);
-
-        if (quantity < nextMinimumBid)
-            throw new ConBidTooLow (quantity, nextMinimumBid);
-
-        // take the bid's money off the wallet
-        using IWallet bidderWallet = this.Wallets.AcquireWallet (bidderID, WalletKeys.MAIN);
-
-        {
-            bidderWallet.EnsureEnoughBalance (quantity);
-            bidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBid, null, null, -quantity);
-        }
-
-        // check who we'd outbid and notify them
-        DB.GetOutbids (dbLock, contractID, quantity, out List <int> characterIDs, out List <int> corporationIDs);
-
-        OnContractOutbid notification = new OnContractOutbid (contractID);
-
-        foreach (int corporationID in corporationIDs)
-            if (corporationID != bidderID)
-                Notifications.NotifyCorporation (corporationID, notification);
-
-        foreach (int characterID in characterIDs)
-            if (characterID != bidderID)
-                Notifications.NotifyCharacter (characterID, notification);
-
-        // finally place the bid
-        ulong bidID = DB.PlaceBid (dbLock, contractID, quantity, bidderID, forCorp);
-
-        // return the money for the player that was the highest bidder
-        using IWallet maximumBidderWallet = this.Wallets.AcquireWallet (maximumBidderID, WalletKeys.MAIN);
-
-        {
-            maximumBidderWallet.CreateJournalRecord (MarketReference.ContractAuctionBidRefund, null, null, maximumBid);
-        }
-
-        return bidID;
-    }
-
-    private void AcceptItemExchangeContract
-    (
-        DbLock dbLock, Session session, ContractDB.Contract contract, Station station, int ownerID, Flags flag = Flags.Hangar
-    )
-    {
-        List <ContractDB.ItemQuantityEntry> offeredItems = DB.GetOfferedItems (dbLock, contract.ID);
-        Dictionary <int, int>               itemsToCheck = DB.GetRequiredItemTypeIDs (dbLock, contract.ID);
-        List <ContractDB.ItemQuantityEntry> changedItems = DB.CheckRequiredItemsAtStation (dbLock, station, ownerID, contract.IssuerID, flag, itemsToCheck);
-
-        // extract the crate
-        DB.ExtractCrate (dbLock, contract.CrateID, station.ID, ownerID);
-
-        long stationNode = this.SolarSystems.GetNodeStationBelongsTo (station.ID);
-
-        if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (station.ID))
-        {
-            foreach (ContractDB.ItemQuantityEntry change in changedItems)
-            {
-                ItemEntity item = this.Items.LoadItem (change.ItemID);
-
-                if (change.Quantity == 0)
-                {
-                    // remove item from the meta inventories
-                    this.Items.MetaInventories.OnItemDestroyed (item);
-                    // temporarily move the item to the recycler, let the current owner know
-                    item.LocationID = this.Items.LocationRecycler.ID;
-
-                    this.DogmaNotifications.QueueMultiEvent (
-                        session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (item, station.ID)
-                    );
-
-                    // now set the item to the correct owner and place and notify it's new owner
-                    // TODO: TAKE forCorp INTO ACCOUNT
-                    item.LocationID = station.ID;
-                    item.OwnerID    = contract.IssuerID;
-                    Notifications.NotifyCharacter (contract.IssuerID, EVE.Notifications.Inventory.OnItemChange.BuildNewItemChange (item));
-                    // add the item back to meta inventories if required
-                    this.Items.MetaInventories.OnItemLoaded (item);
-                }
-                else
-                {
-                    int oldQuantity = item.Quantity;
-                    item.Quantity = change.Quantity;
-
-                    this.DogmaNotifications.QueueMultiEvent (
-                        session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildQuantityChange (item, oldQuantity)
-                    );
-
-                    item.Persist ();
-
-                    // unload the item if required
-                    this.Items.UnloadItem (item);
-                }
-            }
-
-            // move the offered items
-            foreach (ContractDB.ItemQuantityEntry entry in offeredItems)
-            {
-                ItemEntity item = this.Items.LoadItem (entry.ItemID);
-
-                item.LocationID = station.ID;
-                item.OwnerID    = ownerID;
-
-                this.DogmaNotifications.QueueMultiEvent (
-                    session.CharacterID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (item, contract.CrateID)
-                );
-
-                item.Persist ();
-
-                // unload the item if possible
-                this.Items.UnloadItem (item);
-            }
-        }
-        else
-        {
-            OnItemChange changes = new OnItemChange ();
-
-            foreach (ContractDB.ItemQuantityEntry change in changedItems)
-                if (change.Quantity == 0)
-                {
-                    changes
-                        .AddChange (change.ItemID, "locationID", contract.CrateID,  station.ID)
-                        .AddChange (change.ItemID, "ownerID",    contract.IssuerID, ownerID);
-                }
-                else
-                {
-                    // change the item quantity
-                    changes.AddChange (change.ItemID, "quantity", change.OldQuantity, change.Quantity);
-
-                    // create a new item and notify the new node about it
-                    // TODO: HANDLE BLUEPRINTS TOO! RIGHT NOW NO DATA IS COPIED FOR THEM
-                    ItemEntity item = this.Items.CreateSimpleItem (
-                        this.Types [change.TypeID], contract.IssuerID, station.ID, Flags.Hangar, change.OldQuantity - change.Quantity
-                    );
-
-                    // unload the created item
-                    this.Items.UnloadItem (item);
-                    changes.AddChange (item.ID, "location", 0, station.ID);
-                }
-
-            // move the offered items
-            foreach (ContractDB.ItemQuantityEntry entry in offeredItems)
-                // TODO: TAKE INTO ACCOUNT forCorp
-                changes
-                    .AddChange (entry.ItemID, "locationID", contract.CrateID,  station.ID)
-                    .AddChange (entry.ItemID, "ownerID",    contract.IssuerID, station.ID);
-        }
-
-        // the contract was properly accepted, update it's status
-        DB.UpdateContractStatus (dbLock, contract.ID, ContractStatus.Finished);
-        DB.UpdateAcceptorID (dbLock, contract.ID, ownerID);
-        DB.UpdateAcceptedDate (dbLock, contract.ID);
-        DB.UpdateCompletedDate (dbLock, contract.ID);
-
-        // notify the contract as being accepted
-        if (contract.ForCorp == false)
-            Notifications.NotifyCharacter (contract.IssuerID, new OnContractAccepted (contract.ID));
-        else
-            Notifications.NotifyCorporation (contract.IssuerCorpID, new OnContractAccepted (contract.ID));
     }
 
     public PyDataType AcceptContract (ServiceCall call, PyInteger contractID, PyBool forCorp)
     {
-        if (forCorp == true)
-            throw new UserError ("Cannot accept contracts for corporation yet");
-
-        using DbLock dbLock = MarketDB.AcquireMarketLock ();
-        
-        int callerCharacterID = call.Session.CharacterID;
-
-        // TODO: SUPPORT forCorp
-        ContractDB.Contract contract = DB.GetContract (dbLock, contractID);
-
-        if (contract.Status != ContractStatus.Outstanding)
-            throw new ConContractNotOutstanding ();
-
-        if (contract.ExpireTime < DateTime.UtcNow.ToFileTimeUtc ())
-            throw new ConContractExpired ();
-
-        Station station = this.Items.GetStaticStation (contract.StationID);
-
-        // TODO: CHECK REWARD/PRICE
-        switch (contract.Type)
+        using (IContract contract = Contracts.AcquireContract (contractID))
         {
-            case ContractTypes.ItemExchange:
-                this.AcceptItemExchangeContract (dbLock, call.Session, contract, station, callerCharacterID);
-                break;
+            contract.Accept (call.Session);
 
-            case ContractTypes.Auction:  throw new CustomError ("Auctions cannot be accepted!");
-            case ContractTypes.Courier:  throw new CustomError ("Courier contracts not supported yet!");
-            case ContractTypes.Loan:     throw new CustomError ("Loan contracts not supported yet!");
-            case ContractTypes.Freeform: throw new CustomError ("Freeform contracts not supported yet!");
-            default:                     throw new CustomError ("Unknown contract type to accept!");
+            return null;
         }
-        
-        return null;
     }
 
     public PyDataType FinishAuction (ServiceCall call, PyInteger contractID, PyBool forCorp)
@@ -688,4 +479,5 @@ public class contractMgr : Service
         // TODO: IMPLEMENT THIS!
         return null;
     }
+
 }

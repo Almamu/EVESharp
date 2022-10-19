@@ -6,7 +6,7 @@ namespace EVESharp.EVE.Types.Network;
 
 public class PyAddressAny : PyAddress
 {
-    public PyInteger ID { get; }
+    public PyInteger CallID { get; }
     /// <summary>
     /// The related service
     /// </summary>
@@ -15,7 +15,7 @@ public class PyAddressAny : PyAddress
     public PyAddressAny (PyInteger id, PyString service = null) : base (TYPE_ANY)
     {
         this.Service = service;
-        this.ID      = id;
+        this.CallID      = id;
     }
 
     public static implicit operator PyDataType (PyAddressAny value)
@@ -26,7 +26,7 @@ public class PyAddressAny : PyAddress
             {
                 [0] = value.Type,
                 [1] = value.Service,
-                [2] = value.ID
+                [2] = value.CallID
             }
         );
     }

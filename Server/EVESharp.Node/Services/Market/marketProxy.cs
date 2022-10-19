@@ -27,10 +27,12 @@ using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Market;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.EVE.Sessions;
+using EVESharp.Node.Server.Shared.Exceptions;
 using EVESharp.Types;
 
 namespace EVESharp.Node.Services.Market;
 
+// TODO: REWRITE THE USAGE OF THE CHARACTER CLASS HERE TO FETCH THE DATA OFF THE DATABASE TO PREVENT ISSUES ON MULTI-NODE INSTALLATIONS
 [MustBeCharacter]
 public class marketProxy : Service
 {
@@ -370,17 +372,8 @@ public class marketProxy : Service
 
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                 this.Items.UnloadItem (item);
-
-                // check if the station it's at is loaded and notify the node in question
-                // if not take care of the item notification ourselves
-                long stationNode = this.SolarSystems.GetNodeStationBelongsTo (stationID);
-
-                if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (stationID))
-                    Notifications.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
-                else
-                    Notifications.NotifyNode (
-                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (itemID, this.Items.LocationMarket.ID, stationID)
-                    );
+                
+                Notifications.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
             }
 
             // ensure we do not sell more than we have
@@ -405,43 +398,27 @@ public class marketProxy : Service
         if (items is null)
             throw new NotEnoughQuantity (this.Types [typeID]);
 
-        long stationNode = this.SolarSystems.GetNodeStationBelongsTo (stationID);
-
-        if (this.SolarSystems.StationBelongsToUs (stationID) || stationNode == 0)
+        // load the items here and send proper notifications
+        foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
         {
-            // load the items here and send proper notifications
-            foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
+            ItemEntity item = this.Items.LoadItem (entry.ItemID);
+
+            if (entry.Quantity == 0)
             {
-                ItemEntity item = this.Items.LoadItem (entry.ItemID);
-
-                if (entry.Quantity == 0)
-                {
-                    // item has to be destroyed
-                    this.Items.DestroyItem (item);
-                    // notify item destroyal
-                    this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
-                }
-                else
-                {
-                    // just a quantity change
-                    item.Quantity = entry.Quantity;
-                    // notify the client
-                    this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
-                    // unload the item if it's not needed
-                    this.Items.UnloadItem (item);
-                }
+                // item has to be destroyed
+                this.Items.DestroyItem (item);
+                // notify item destroyal
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
             }
-        }
-        else
-        {
-            // the item changes should be handled by a different node
-            Notifications.Nodes.Inventory.OnItemChange changes = new Notifications.Nodes.Inventory.OnItemChange ();
-
-            foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
-                if (entry.Quantity == 0)
-                    changes.AddChange (entry.ItemID, "locationID", entry.LocationID, this.Items.LocationMarket.ID);
-                else
-                    changes.AddChange (entry.ItemID, "quantity", entry.OriginalQuantity, entry.Quantity);
+            else
+            {
+                // just a quantity change
+                item.Quantity = entry.Quantity;
+                // notify the client
+                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
+                // unload the item if it's not needed
+                this.Items.UnloadItem (item);
+            }
         }
     }
 
@@ -590,8 +567,6 @@ public class marketProxy : Service
                 // create the transaction records for both characters
                 wallet.CreateTransactionRecord (TransactionType.Buy, character.ID, orderOwnerID, typeID, quantityToBuy, price, stationID);
 
-                long stationNode = this.SolarSystems.GetNodeStationBelongsTo (stationID);
-
                 // create the new item that will be used by the player
                 ItemEntity item = this.Items.CreateSimpleItem (
                     this.Types [typeID], wallet.OwnerID, stationID, wallet.OwnerID == character.CorporationID ? Flags.CorpMarket : Flags.Hangar, quantityToBuy
@@ -599,13 +574,8 @@ public class marketProxy : Service
 
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                 this.Items.UnloadItem (item);
-
-                if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (stationID))
-                    Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
-                else
-                    Notifications.NotifyNode (
-                        stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, stationID)
-                    );
+                
+                Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
             }
 
             // ensure we do not buy more than we need
@@ -675,6 +645,11 @@ public class marketProxy : Service
         PyDataType      located
     )
     {
+        int nodeID = (int) this.SolarSystems.GetNodeStationBelongsTo (stationID);
+
+        if (nodeID != call.MachoNet.NodeID && nodeID != 0)
+            throw new RedirectCallRequest (nodeID);
+        
         // get solarSystem for the station
         Character character  = this.Items.GetItem <Character> (call.Session.CharacterID);
         double    brokerCost = 0.0;
@@ -772,17 +747,8 @@ public class marketProxy : Service
 
             // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
             this.Items.UnloadItem (item);
-
-            // check what node this item should be loaded at
-            long stationNode = this.SolarSystems.GetNodeStationBelongsTo (order.LocationID);
-
-            if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (order.LocationID))
-                Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
-            else
-                Notifications.NotifyNode (
-                    stationNode,
-                    Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, order.LocationID)
-                );
+            
+            Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
         }
 
         // finally remove the order
@@ -936,15 +902,8 @@ public class marketProxy : Service
 
         // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
         this.Items.UnloadItem (item);
-
-        long stationNode = this.SolarSystems.GetNodeStationBelongsTo (order.LocationID);
-
-        if (stationNode == 0 || this.SolarSystems.StationBelongsToUs (order.LocationID))
-            Notifications.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
-        else
-            Notifications.NotifyNode (
-                stationNode, Node.Notifications.Nodes.Inventory.OnItemChange.BuildLocationChange (item.ID, this.Items.LocationMarket.ID, order.LocationID)
-            );
+        
+        Notifications.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
 
         // finally notify the character about the order change
         Notifications.NotifyCharacter (order.CharacterID, new OnOwnOrderChanged (order.TypeID, "Expiry"));

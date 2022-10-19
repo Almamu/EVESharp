@@ -170,6 +170,9 @@ public static class ReaderExtensions
     {
         using (reader)
         {
+            if (reader.Read () == false)
+                throw new InvalidDataException ("No data returned");
+                    
             DBRowDescriptor descriptor = DBRowDescriptor (reader);
             return PackedRow (reader, descriptor);    
         }
