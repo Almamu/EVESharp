@@ -13,7 +13,8 @@ CREATE TABLE `crpOffices` (
   `balanceDueDate` BIGINT(20) NULL DEFAULT NULL,
   `impounded` TINYINT(1) NOT NULL DEFAULT '0',
   `nextBillID` INT(10) UNSIGNED NOT NULL,
-  PRIMARY KEY  (`corporationID`,`officeFolderID`)
+  PRIMARY KEY  (`corporationID`,`stationID`),
+  INDEX `officeFolderID` (`officeFolderID` ASC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Data for the table `crpOffices` */

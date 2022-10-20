@@ -344,25 +344,34 @@ public class corpStationMgr : ClientBoundService
             corpWallet.EnsureEnoughBalance (rentalCost);
             corpWallet.CreateJournalRecord (MarketReference.OfficeRentalFee, ownerCorporationID, null, -rentalCost);
         }
-
-        // create the office folder
-        ItemEntity item = this.Items.CreateSimpleItem (
-            this.Types [TypeID.OfficeFolder], call.Session.CorporationID,
-            stationID, Flags.Office, 1, false, true
-        );
-
+        
+        // first check if there's an impounded office and re-enable it
         long dueDate = DateTime.UtcNow.AddDays (30).ToFileTimeUtc ();
-
+        
         // create the bill record for the renewal
         int billID = (int) Database.MktBillsCreate (
             BillTypes.RentalBill, call.Session.CorporationID, ownerCorporationID,
             rentalCost, dueDate, 0, (int) TypeID.OfficeFolder, stationID
         );
+        
+        // if there's an impounded office, reuse it instead of creating a new one
+        if (Database.CrpOfficesGetAtStation (call.Session.CorporationID, stationID, true, out int officeFolderID) == false)
+        {
+            // create the office folder
+            ItemEntity item = this.Items.CreateSimpleItem (
+                this.Types [TypeID.OfficeFolder], call.Session.CorporationID,
+                stationID, Flags.Office, 1, false, true
+            );
+            
+            officeFolderID = item.ID;
+        }
+        
+        // TODO: FIX WHY THE ITEMS INSIDE DO NOT COME BACK
 
         // create the record in the database
-        StationDB.RentOffice (call.Session.CorporationID, stationID, item.ID, dueDate, rentalCost, billID);
+        StationDB.RentOffice (call.Session.CorporationID, stationID, officeFolderID, dueDate, rentalCost, billID);
         // notify all characters of the corporation in the station about the office change
-        Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, item.ID, item.ID));
+        Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (call.Session.CorporationID, officeFolderID, officeFolderID));
         // notify all the characters about the bill received
         Notifications.NotifyCorporationByRole (call.Session.CorporationID, new OnBillReceived (), CorporationRole.Accountant, CorporationRole.JuniorAccountant);
         // notify the node with the new office
@@ -374,13 +383,13 @@ public class corpStationMgr : ClientBoundService
                 {
                     CorporationID  = call.Session.CorporationID,
                     StationID      = stationID,
-                    OfficeFolderID = item.ID,
+                    OfficeFolderID = officeFolderID,
                     TypeID         = (int) TypeID.OfficeFolder
                 }
             );
 
         // return the new officeID
-        return item.ID;
+        return officeFolderID;
     }
     
     [MustBeInStation]

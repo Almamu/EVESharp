@@ -261,4 +261,29 @@ public static class CorporationsDB
             }
         );
     }
+
+    public static bool CrpOfficesGetAtStation (this IDatabase Database, int corporationID, int stationID, bool impounded, out int officeFolderID)
+    {
+        DbDataReader reader = Database.SelectProcedure (
+            "CrpOfficesGetAtStation",
+            new Dictionary <string, object> ()
+            {
+                {"_corporationID", corporationID},
+                {"_stationID", stationID},
+                {"_impounded", impounded}
+            }
+        );
+
+        officeFolderID = 0;
+
+        using (reader)
+        {
+            if (reader.Read () == false)
+                return false;
+
+            officeFolderID = reader.GetInt32 (0);
+
+            return true;
+        }
+    }
 }

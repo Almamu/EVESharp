@@ -375,6 +375,30 @@ public class Contract : IContract
         Status = ContractStatus.InProgress;
     }
 
+    private void AcceptLoanContract (int acceptorID)
+    {
+        // move the crate into the player's inventory
+        Container crate = Items.LoadItem <Container> (CrateID, out bool loadRequired);
+
+        foreach ((int _, ItemEntity item) in crate.Items)
+        {
+            item.LocationID = StartStationID;
+            item.OwnerID    = acceptorID;
+            item.Flag       = Flags.Hangar;
+            item.Persist ();
+
+            Items.MetaInventories.OnItemMoved (item, crate.ID, StartStationID, Flags.Hangar, Flags.Hangar);
+            
+            DogmaNotifications.QueueMultiEvent (
+                acceptorID, OnItemChange.BuildNewItemChange (item)
+            );
+        }
+
+        crate.Destroy ();
+
+        Status = ContractStatus.InProgress;
+    }
+
     public void Accept (Session session, bool forCorp)
     {
         if (Status != ContractStatus.Outstanding)
@@ -394,8 +418,11 @@ public class Contract : IContract
                 this.AcceptCourierContract (acceptorID);
                 break;
             
+            case ContractTypes.Loan:
+                this.AcceptLoanContract (acceptorID);
+                break;
+            
             case ContractTypes.Auction:  throw new CustomError ("Auctions cannot be accepted!");
-            case ContractTypes.Loan:     throw new CustomError ("Loan contracts not supported yet!");
             case ContractTypes.Freeform: throw new CustomError ("Freeform contracts not supported yet!");
             default:                     throw new CustomError ("Unknown contract type to accept!");
         }
