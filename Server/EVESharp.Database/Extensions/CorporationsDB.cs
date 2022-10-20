@@ -229,6 +229,18 @@ public static class CorporationsDB
         );
     }
 
+    public static bool InvItemsLockedAnyAtStation (this IDatabase Database, int stationID, int corporationID)
+    {
+        return 0 < Database.Scalar <long> (
+            "InvItemsLockedAnyAtStation",
+            new Dictionary <string, object> ()
+            {
+                {"_corporationID", corporationID},
+                {"_stationID", stationID}
+            }
+        );
+    }
+
     public static (int itemID, int corporationID, int stationID) InvItemsLockedRemove (this IDatabase Database, int voteCaseID)
     {
         return Database.Scalar<int, int, int> (

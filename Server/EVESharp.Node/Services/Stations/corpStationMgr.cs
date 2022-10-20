@@ -22,6 +22,7 @@ using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Corporations;
+using EVESharp.EVE.Notifications.Inventory;
 using EVESharp.EVE.Notifications.Wallet;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
@@ -121,7 +122,7 @@ public class corpStationMgr : ClientBoundService
                     OfficeFolderID = (int) officeFolderID,
                 }
             );
-
+        
         // notify everyone in station that the office folder doesn't exist anymore
         Notifications.NotifyStation (stationID, new OnOfficeRentalChanged (corporationID, null, null));
     }
@@ -242,10 +243,68 @@ public class corpStationMgr : ClientBoundService
         if (ItemRanges.IsNPCCorporationID (call.Session.CorporationID))
             return false;
 
-        // TODO: PROPERLY IMPLEMENT THIS ONE (check for impounded offices)
-        return false;
+        return Database.CrpOfficesGetAtStation (call.Session.CorporationID, call.Session.StationID, true, out int _);
     }
 
+    [MustHaveCorporationRole(CorporationRole.Director)]
+    public PyDecimal GetQuoteForGettingCorpJunkBack (ServiceCall call)
+    {
+        return 0.5 * GetQuoteForRentingAnOffice (call);
+    }
+
+    [MustBeInStation]
+    [MustHaveCorporationRole(typeof(CrpJunkOnlyAvailableToDirector), CorporationRole.Director)]
+    public PyDataType PayForReturnOfCorpJunk (ServiceCall call, PyDecimal expectedCost)
+    {
+        // ensure there's an impounded office here
+        if (Database.CrpOfficesGetAtStation (call.Session.CorporationID, call.Session.StationID, true, out int officeFolderID) == false)
+            throw new CrpAccessDenied ("There's no impounded office in this station");
+        if (expectedCost != GetQuoteForGettingCorpJunkBack (call))
+            throw new CrpJunkPriceChanged ();
+
+        // check if there's any locked item inside this impounded office and prevent the player from doing anything if there is
+        if (Database.InvItemsLockedAnyAtStation (call.Session.StationID, call.Session.CorporationID) == true)
+            throw new CrpJunkContainsLockedItem ();
+        
+        // TODO: THIS MIGHT NEED CHANGES WHEN POS ARE SUPPORTED?
+        Station station = this.Items.GetStaticStation (call.Session.StationID);
+        
+        using (IWallet corporationWallet = Wallets.AcquireWallet (call.Session.CorporationID, call.Session.CorpAccountKey, true))
+        {
+            corporationWallet.EnsureEnoughBalance (expectedCost);
+            corporationWallet.CreateJournalRecord (
+                MarketReference.ReleaseOfImpoundedProperty, call.Session.CorporationID, station.OwnerID, station.ID, -expectedCost
+            );
+        }
+        
+        // now take all the items from the impounded office and move them to player's hangar
+        OfficeFolder folder = this.Items.LoadItem <OfficeFolder> (officeFolderID);
+
+        foreach ((int _, ItemEntity item) in folder.Items)
+        {
+            item.OwnerID    = call.Session.CharacterID;
+            item.LocationID = call.Session.StationID;
+            item.Flag       = Flags.Hangar;
+
+            folder.RemoveItem (item);
+
+            Items.MetaInventories.OnItemLoaded (item);
+
+            item.Persist ();
+            
+            Notifications.NotifyCharacter (
+                item.OwnerID, OnItemChange.BuildNewItemChange (item)
+            );
+        }
+        
+        // folder does not have anything in it anymore, destroy it
+        folder.Destroy ();
+        // remove the office folder from the database
+        Database.CrpOfficeDestroyOrImpound (folder.ID);
+
+        return null;
+    }
+    
     [MustBeInStation]
     public PyTuple GetCorporateStationInfo (ServiceCall call)
     {
