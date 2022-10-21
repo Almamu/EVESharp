@@ -2,6 +2,7 @@
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Packets.Complex;
 using EVESharp.Types;
 using EVESharp.Types.Collections;

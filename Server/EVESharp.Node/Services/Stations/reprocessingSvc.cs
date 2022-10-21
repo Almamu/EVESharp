@@ -9,6 +9,7 @@ using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.jumpCloneSvc;
 using EVESharp.EVE.Exceptions.reprocessingSvc;
@@ -46,7 +47,7 @@ public class reprocessingSvc : ClientBoundService
         {TypeID.Spodumain, TypeID.SpodumainProcessing},
         {TypeID.Veldspar, TypeID.VeldsparProcessing}
     };
-    private readonly Corporation   mCorporation;
+    private readonly double        mTaxRate;
     private readonly ItemInventory mInventory;
     private readonly Station       mStation;
     public override  AccessLevel   AccessLevel => AccessLevel.None;
@@ -57,13 +58,15 @@ public class reprocessingSvc : ClientBoundService
     private StandingDB          StandingDB         { get; }
     private ReprocessingDB      ReprocessingDB     { get; }
     private IDogmaNotifications DogmaNotifications { get; }
-    private IDatabase Database           { get; }
+    private IDatabase           Database           { get; }
+    private IDogmaItems         DogmaItems         { get; }
 
     public reprocessingSvc
     (
         ReprocessingDB      reprocessingDb, StandingDB standingDb, IItems items, IBoundServiceManager manager, IDogmaNotifications dogmaNotifications,
         IDatabase database,
-        ISolarSystems       solarSystems
+        ISolarSystems       solarSystems,
+        IDogmaItems dogmaItems
     ) : base (manager)
     {
         ReprocessingDB     = reprocessingDb;
@@ -72,22 +75,25 @@ public class reprocessingSvc : ClientBoundService
         DogmaNotifications = dogmaNotifications;
         Database           = database;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
     }
 
     protected reprocessingSvc
     (
-        ReprocessingDB       reprocessingDb, StandingDB          standingDb, Corporation corporation, Station station, ItemInventory inventory, IItems items,
-        IBoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems
+        ReprocessingDB       reprocessingDb, StandingDB          standingDb, Station station, ItemInventory inventory, IItems items,
+        IBoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems, IDogmaItems dogmaItems
     ) : base (manager, session, inventory.ID)
     {
         ReprocessingDB     = reprocessingDb;
         StandingDB         = standingDb;
-        this.mCorporation  = corporation;
         this.mStation      = station;
         this.mInventory    = inventory;
         Items              = items;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
+        
+        // TODO: LOAD TAXRATE FOR THE CORPORATION
     }
 
     private double CalculateCombinedYield (Character character)
@@ -123,9 +129,9 @@ public class reprocessingSvc : ClientBoundService
         return Math.Min (efficiency, 1.0f);
     }
 
-    private double CalculateTax (double standing)
+    private double CalculateTax (int corporationID, double standing)
     {
-        return Math.Max (0.0f, this.mCorporation.TaxRate - 0.75 / 100.0 * standing);
+        return Math.Max (0.0f, Database.CrpGetTaxRate (corporationID) - 0.75 / 100.0 * standing);
     }
 
     private double GetStanding (Character character)
@@ -144,7 +150,6 @@ public class reprocessingSvc : ClientBoundService
     [MustBeInStation]
     public PyDataType GetReprocessingInfo (ServiceCall call)
     {
-        int       stationID = call.Session.StationID;
         Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
 
         double standing = this.GetStanding (character);
@@ -155,7 +160,7 @@ public class reprocessingSvc : ClientBoundService
             ["combinedyield"] = this.CalculateCombinedYield (character),
             ["wetake"] = new PyList (2)
             {
-                [0] = this.CalculateTax (standing),
+                [0] = this.CalculateTax (call.Session.CorporationID, standing),
                 [1] = standing
             }
         };
@@ -170,6 +175,7 @@ public class reprocessingSvc : ClientBoundService
         int quantityToProcess = item.Quantity - leftovers;
 
         List <ReprocessingDB.Recoverables> recoverablesList = ReprocessingDB.GetRecoverables (item.Type.ID);
+        double taxRate = Database.CrpGetTaxRate (character.CorporationID);
 
         Rowset recoverables = new Rowset (
             new PyList <PyString> (4)
@@ -192,8 +198,8 @@ public class reprocessingSvc : ClientBoundService
                 {
                     [0] = recoverable.TypeID,
                     [1] = (1.0 - efficiency) * ratio,
-                    [2] = efficiency * this.mCorporation.TaxRate * ratio,
-                    [3] = efficiency * (1.0 - this.mCorporation.TaxRate) * ratio
+                    [2] = efficiency * taxRate * ratio,
+                    [3] = efficiency * (1.0 - taxRate) * ratio
                 }
             );
         }
@@ -242,6 +248,7 @@ public class reprocessingSvc : ClientBoundService
         int quantityToProcess = item.Quantity - leftovers;
 
         List <ReprocessingDB.Recoverables> recoverablesList = ReprocessingDB.GetRecoverables (item.Type.ID);
+        double taxRate = Database.CrpGetTaxRate (character.CorporationID);
 
         foreach (ReprocessingDB.Recoverables recoverable in recoverablesList)
         {
@@ -249,7 +256,7 @@ public class reprocessingSvc : ClientBoundService
 
             double efficiency = this.CalculateEfficiency (character, recoverable.TypeID);
 
-            int quantityForClient = (int) (efficiency * (1.0 - this.mCorporation.TaxRate) * ratio);
+            int quantityForClient = (int) (efficiency * (1.0 - taxRate) * ratio);
 
             // create the new item
             ItemEntity newItem = this.Items.CreateSimpleItem (
@@ -274,11 +281,9 @@ public class reprocessingSvc : ClientBoundService
 
             // reprocess the item
             this.Reprocess (character, item, call.Session);
-            int oldLocationID = item.LocationID;
-            // finally remove the item from the inventories
-            this.Items.DestroyItem (item);
-            // notify the client about the item being destroyed
-            this.DogmaNotifications.QueueMultiEvent (character.ID, OnItemChange.BuildLocationChange (item, oldLocationID));
+
+            // destroy the item
+            DogmaItems.DestroyItem (item);
         }
 
         return null;
@@ -302,14 +307,12 @@ public class reprocessingSvc : ClientBoundService
         if (station.ID != call.Session.StationID)
             throw new CanOnlyDoInStations ();
 
-        Corporation corporation = this.Items.GetItem <Corporation> (station.OwnerID);
-
-        ItemInventory inventory =
-            this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
+        // load the inventory from dogma
+        ItemInventory inventory = DogmaItems.LoadInventory (station.ID, call.Session.CharacterID);
 
         return new reprocessingSvc (
-            ReprocessingDB, StandingDB, corporation, station, inventory, this.Items, BoundServiceManager, this.DogmaNotifications,
-            call.Session, this.SolarSystems
+            ReprocessingDB, StandingDB, station, inventory, this.Items, BoundServiceManager, this.DogmaNotifications,
+            call.Session, this.SolarSystems, DogmaItems
         );
     }
 }

@@ -198,6 +198,11 @@ public abstract class ItemEntity : IDisposable
     public virtual bool HasPosition => this.X is not null && this.Y is not null && this.Z is not null;
     public         bool HadName     { get; }
     public         bool HadPosition { get; }
+    
+    /// <summary>
+    /// The item inventory this item is in (if any)
+    /// </summary>
+    public ItemInventory Parent { get; set; }
 
     public ItemEntity (Item info)
     {

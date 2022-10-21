@@ -244,4 +244,22 @@ public static class ItemDB
                 );
         }
     }
+
+    public static IEnumerable <int> InvItemsGetAtLocationForOwner (this IDatabase Database, int locationID, int ownerID)
+    {
+        DbDataReader reader = Database.SelectProcedure (
+            "InvItemsGetAtLocationForOwner",
+            new Dictionary <string, object> ()
+            {
+                {"_locationID", locationID},
+                {"_ownerID", ownerID}
+            }
+        );
+
+        using (reader)
+        {
+            while (reader.Read () == true)
+                yield return reader.GetInt32 (0);
+        }
+    }
 }

@@ -12,6 +12,7 @@ using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.repairSvc;
 using EVESharp.EVE.Market;
@@ -44,13 +45,14 @@ public class repairSvc : ClientBoundService
     private          INotificationSender Notifications      { get; }
     private          IWallets            Wallets            { get; }
     private          IDogmaNotifications DogmaNotifications { get; }
-    private          IDatabase Database           { get; }
+    private          IDatabase           Database           { get; }
+    private          IDogmaItems         DogmaItems         { get; }
 
     public repairSvc
     (
         RepairDB      repairDb,     MarketDB             marketDb, InsuranceDB insuranceDb, INotificationSender notificationSender,
         IItems        items,        IBoundServiceManager manager,  IWallets    wallets,     IDogmaNotifications dogmaNotifications,
-        ISolarSystems solarSystems, IDatabase  database
+        ISolarSystems solarSystems, IDatabase  database, IDogmaItems dogmaItems
     ) : base (manager)
     {
         Items              = items;
@@ -62,12 +64,14 @@ public class repairSvc : ClientBoundService
         DogmaNotifications = dogmaNotifications;
         Database           = database;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
     }
 
     protected repairSvc
     (
         RepairDB      repairDb,  MarketDB marketDb, InsuranceDB          insuranceDb, INotificationSender notificationSender,
-        ItemInventory inventory, IItems   items,    IBoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session
+        ItemInventory inventory, IItems   items,    IBoundServiceManager manager,     IWallets wallets, IDogmaNotifications dogmaNotifications, Session session,
+        IDogmaItems dogmaItems
     ) : base (manager, session, inventory.ID)
     {
         this.mInventory         = inventory;
@@ -78,6 +82,7 @@ public class repairSvc : ClientBoundService
         Notifications           = notificationSender;
         this.Wallets            = wallets;
         this.DogmaNotifications = dogmaNotifications;
+        DogmaItems              = dogmaItems;
     }
 
     public PyDataType GetDamageReports (ServiceCall call, PyList itemIDs)
@@ -87,7 +92,7 @@ public class repairSvc : ClientBoundService
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
         {
             // ensure the given item is in the list
-            if (this.mInventory.Items.TryGetValue (itemID, out ItemEntity item) == false)
+            if (this.mInventory.Items.TryGetValue (itemID, out ItemEntity item) == false || item.Flag != Flags.Hangar)
                 continue;
 
             Rowset quote = new Rowset (
@@ -181,7 +186,7 @@ public class repairSvc : ClientBoundService
             foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
             {
                 // ensure the given item is in the list
-                if (this.mInventory.Items.TryGetValue (itemID, out ItemEntity item) == false)
+                if (this.mInventory.Items.TryGetValue (itemID, out ItemEntity item) == false || item.Flag != Flags.Hangar)
                     continue;
 
                 // calculate how much to fix it
@@ -314,10 +319,7 @@ public class repairSvc : ClientBoundService
                     // if the item is in a rig slot, destroy it
                     if (itemInInventory.IsInRigSlot ())
                     {
-                        Flags oldFlag = itemInInventory.Flag;
-                        this.Items.DestroyItem (itemInInventory);
-                        // notify the client about the change
-                        this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
+                        DogmaItems.DestroyItem (itemInInventory);
                     }
                     else
                     {
@@ -370,12 +372,12 @@ public class repairSvc : ClientBoundService
         if (station.ID != call.Session.StationID)
             throw new CanOnlyDoInStations ();
 
-        ItemInventory inventory =
-            this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (station, call.Session.CharacterID, Flags.Hangar);
+        // load an inventory from dogma
+        ItemInventory inventory = DogmaItems.LoadInventory (station.ID, call.Session.CharacterID);
 
         return new repairSvc (
             RepairDB, MarketDB, InsuranceDB, Notifications, inventory, this.Items, BoundServiceManager,
-            this.Wallets, this.DogmaNotifications, call.Session
+            this.Wallets, this.DogmaNotifications, call.Session, DogmaItems
         );
     }
 }

@@ -1,105 +1,80 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using EVESharp.Database;
+using EVESharp.Database.Extensions;
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 
 namespace EVESharp.Node.Data.Inventory;
 
-public class MetaInventories : Dictionary <int, Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>>>, IMetaInventories
+public class MetaInventories : IMetaInventories
 {
     /// <summary>
-    /// Event fired when a new meta inventory is created
+    /// All the registered inventories
     /// </summary>
-    public IMetaInventories.MetaInventoryItemEvent OnMetaInventoryCreated { get; set; }
+    private Dictionary <int, Dictionary <int, ItemInventoryByOwnerID>> mInventories = new Dictionary <int, Dictionary <int, ItemInventoryByOwnerID>> ();
 
-    private Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>> MetaInventoriesByOwner { get; } =
-        new Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>> ();
+    private IDatabase Database { get; }
+    private IItems    Items    { get; }
+    
+    public event Action <ItemInventoryByOwnerID> OnMetaInventoryCreated;
 
-    public ItemInventory RegisterMetaInventoryForOwnerID (ItemInventory inventory, int ownerID, Flags flag)
+    public MetaInventories (IDatabase database, IItems items)
     {
-        lock (this)
-        lock (this.MetaInventoriesByOwner)
+        Items    = items;
+        Database = database;
+    }
+
+    public ItemInventoryByOwnerID Create (ItemInventory inventory, int ownerID)
+    {
+        lock (this.mInventories)
         {
-            // ensure the indexes already exists in the dictionary
-            this.TryAdd (inventory.ID, new Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>> ());
-            this.MetaInventoriesByOwner.TryAdd (ownerID, new Dictionary <Flags, ItemInventoryByOwnerID> ());
+            if (this.mInventories.TryGetValue (inventory.ID, out Dictionary <int, ItemInventoryByOwnerID> byOwners) == false)
+                byOwners = this.mInventories [inventory.ID] = new Dictionary <int, ItemInventoryByOwnerID> ();
+            if (byOwners.TryGetValue (ownerID, out ItemInventoryByOwnerID ownerInventory) == true)
+                return ownerInventory;
+        
+            ownerInventory = byOwners [ownerID] = new ItemInventoryByOwnerID (ownerID, inventory);
 
-            if (this [inventory.ID].TryGetValue (ownerID, out Dictionary <Flags, ItemInventoryByOwnerID> inventories) == false)
-                this [inventory.ID] [ownerID] = inventories = new Dictionary <Flags, ItemInventoryByOwnerID> ();
+            // setup the load/unload events to load the right data
+            ownerInventory.OnInventoryLoad   += OnMetaInventoryLoad;
+            ownerInventory.OnInventoryUnload += this.OnMetaInventoryUnload;
+            
+            OnMetaInventoryCreated?.Invoke (ownerInventory);
 
-            // only create a new meta inventory if there is none already registered for that owner in that location for that flag
-            if (inventories.TryGetValue (flag, out ItemInventoryByOwnerID metaInventory) == false)
-            {
-                metaInventory = new ItemInventoryByOwnerID (ownerID, flag, inventory);
-
-                this [inventory.ID] [ownerID] [flag]         = metaInventory;
-                this.MetaInventoriesByOwner [ownerID] [flag] = metaInventory;
-
-                // fire the creation event
-                this.OnMetaInventoryCreated?.Invoke (metaInventory);
-            }
-
-            return metaInventory;
+            return ownerInventory;
         }
     }
 
-    public Dictionary <Flags, ItemInventoryByOwnerID> GetOwnerInventories (int ownerID)
+    public bool TryGetInventoryForOwner (int locationID, int ownerID, out ItemInventoryByOwnerID inventory)
     {
-        lock (this.MetaInventoriesByOwner)
+        inventory = null;
+
+        lock (this.mInventories)
         {
-            return this.MetaInventoriesByOwner [ownerID];
+            return this.mInventories.TryGetValue (locationID, out Dictionary <int, ItemInventoryByOwnerID> inventories) == true &&
+                   inventories.TryGetValue (ownerID, out inventory) == true;
         }
     }
 
-    public void FreeOwnerInventories (int ownerID)
+    private ConcurrentDictionary <int, ItemEntity> OnMetaInventoryLoad (ItemInventory inventory)
     {
-        lock (this)
-        {
-            Dictionary <Flags, ItemInventoryByOwnerID> metaInventories = this.GetOwnerInventories (ownerID);
+        ConcurrentDictionary <int, ItemEntity> result = new ConcurrentDictionary <int, ItemEntity> ();
 
-            foreach ((Flags flag, ItemInventoryByOwnerID metaInventory) in metaInventories)
-                // unload off the MetaInventories list
-                this [metaInventory.ID].Remove (ownerID);
+        foreach (int itemID in Database.InvItemsGetAtLocationForOwner (inventory.ID, inventory.OwnerID))
+        {
+            ItemEntity item = result [itemID] = Items.LoadItem (itemID);
+            item.Parent     = inventory;
         }
 
-        // free the list of inventories by owner for that owner too
-        lock (this.MetaInventoriesByOwner)
-        {
-            this.MetaInventoriesByOwner.Remove (ownerID);
-        }
+        return result;
     }
 
-    public bool GetOwnerInventoryAtLocation (int locationID, int ownerID, Flags flag, out ItemInventoryByOwnerID inventory)
+    private void OnMetaInventoryUnload (ItemInventory inventory)
     {
-        lock (this)
-        {
-            inventory = null;
-
-            // get the inventory by it's current flag or by the none flag (used by global inventories)
-            return this.TryGetValue (locationID, out Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>> inventoriesByOwner) &&
-                   inventoriesByOwner.TryGetValue (ownerID, out Dictionary <Flags, ItemInventoryByOwnerID> ownerInventoriesByFlag) &&
-                   (ownerInventoriesByFlag.TryGetValue (flag, out inventory) || ownerInventoriesByFlag.TryGetValue (Flags.None, out inventory));
-        }
-    }
-
-    public void OnItemLoaded (ItemEntity item)
-    {
-        if (this.GetOwnerInventoryAtLocation (item.LocationID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID inventory))
-            inventory.AddItem (item);
-    }
-
-    public void OnItemDestroyed (ItemEntity item)
-    {
-        if (this.GetOwnerInventoryAtLocation (item.LocationID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID inventory))
-            inventory.RemoveItem (item);
-    }
-
-    public void OnItemMoved (ItemEntity item, int oldLocationID, int newLocationID, Flags oldFlag, Flags newFlag)
-    {
-        if (this.GetOwnerInventoryAtLocation (oldLocationID, item.OwnerID, oldFlag, out ItemInventoryByOwnerID origin))
-            origin.RemoveItem (item);
-
-        if (this.GetOwnerInventoryAtLocation (newLocationID, item.OwnerID, newFlag, out ItemInventoryByOwnerID destination))
-            destination.AddItem (item);
+        if (inventory.ContentsLoaded == false)
+            return;
     }
 }

@@ -36,26 +36,13 @@ public class BoundInventory : ClientBoundService
     private          INotificationSender Notifications      { get; }
     private          IDogmaNotifications DogmaNotifications { get; }
     private          EffectsManager      EffectsManager     { get; }
-
-    public BoundInventory
-    (
-        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager manager, Session session
-    ) : base (manager, session, item.ID)
-    {
-        EffectsManager     = effectsManager;
-        this.mInventory    = item;
-        this.mFlag         = Flags.None;
-        ItemDB             = itemDB;
-        Items              = items;
-        Notifications      = notificationSender;
-        DogmaNotifications = dogmaNotifications;
-    }
-
+    private          IDogmaItems         DogmaItems         { get; }
+    
     public BoundInventory
     (
         ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, Flags flag, IItems items,
-        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager manager, Session session
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager manager, Session session,
+        IDogmaItems dogmaItems
     ) : base (manager, session, item.ID)
     {
         EffectsManager     = effectsManager;
@@ -65,6 +52,24 @@ public class BoundInventory : ClientBoundService
         Items              = items;
         Notifications      = notificationSender;
         DogmaNotifications = dogmaNotifications;
+        DogmaItems         = dogmaItems;
+    }
+
+    public BoundInventory
+    (
+        ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, IItems items,
+        INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager manager, Session session,
+        IDogmaItems dogmaItems
+    ) : base (manager, session, item.ID)
+    {
+        EffectsManager     = effectsManager;
+        this.mInventory    = item;
+        this.mFlag         = Flags.None;
+        ItemDB             = itemDB;
+        Items              = items;
+        Notifications      = notificationSender;
+        DogmaNotifications = dogmaNotifications;
+        DogmaItems         = dogmaItems;
     }
 
     public PyDataType List (ServiceCall call)
@@ -116,11 +121,11 @@ public class BoundInventory : ClientBoundService
             throw new CustomError ("You cannot move items into this hangar");
 
         // perform checks only on cargo
-        if (this.mInventory is Ship ship && flag == Flags.Cargo)
+        if (flag == Flags.Cargo)
         {
             // check destination cargo
             double currentVolume =
-                ship.Items.Sum (x => x.Value.Flag != flag ? 0.0 : x.Value.Quantity * x.Value.Attributes [AttributeTypes.volume]);
+                this.mInventory.Items.Sum (x => x.Value.Flag != flag ? 0.0 : x.Value.Quantity * x.Value.Attributes [AttributeTypes.volume]);
 
             double newVolume = item.Attributes [AttributeTypes.volume] * quantityToMove + currentVolume;
             double maxVolume = this.mInventory.Attributes [AttributeTypes.capacity];
@@ -272,11 +277,6 @@ public class BoundInventory : ClientBoundService
 
     private void MoveItemHere (ItemEntity item, Flags newFlag, Session session, int quantity = 0)
     {
-        // get the old location stored as it'll be used in the notifications
-        int   oldLocation = item.LocationID;
-        Flags oldFlag     = item.Flag;
-        int   oldOwnerID  = item.OwnerID;
-
         // rig slots cannot be moved
         if (item.IsInRigSlot ())
             throw new CannotRemoveUpgradeManually ();
@@ -358,185 +358,13 @@ public class BoundInventory : ClientBoundService
         // special situation, if the new location is a module slot ensure the item is a singleton (TODO: HANDLE CHARGES TOO)
         if (newFlag.IsModule ())
         {
-            ShipModule module = null;
-
-            if (item is ShipModule shipModule)
-                module = shipModule;
-
-            if (item.Quantity == 1)
-            {
-                // remove item off the old inventory if required
-                if (this.Items.TryGetItem (item.LocationID, out ItemInventory inventory))
-                    inventory.RemoveItem (item);
-
-                OnItemChange changes = new OnItemChange (item);
-
-                if (item.Singleton == false)
-                    changes.AddChange (ItemChange.Singleton, item.Singleton);
-
-                if (item.OwnerID != this.mInventory.OwnerID)
-                    changes.AddChange (ItemChange.OwnerID, item.OwnerID);
-
-                item.LocationID = this.mInventory.ID;
-                item.Flag       = newFlag;
-                item.Singleton  = true;
-                // update the owner ID to ensure the item stays visible (for example when moving from corp's deliveries to player's hangar)
-                item.OwnerID = this.mInventory.OwnerID;
-
-                changes
-                    .AddChange (ItemChange.LocationID, oldLocation)
-                    .AddChange (ItemChange.Flag,       (int) oldFlag);
-
-                // notify the character about the change
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
-
-                // notify the old owner if it changed
-                if (item.OwnerID != oldOwnerID)
-                    Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
-
-                // update meta inventories too
-                this.Items.MetaInventories.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
-
-                // finally persist the item changes
-                item.Persist ();
-            }
-            else
-            {
-                // item is not a singleton, create a new item, decrease quantity and send notifications
-                ItemEntity newItem = this.Items.CreateSimpleItem (
-                    item.Type, this.mInventory.OwnerID, this.mInventory.ID, newFlag, 1, false,
-                    true
-                );
-
-                item.Quantity -= 1;
-
-                OnItemChange quantityChange = OnItemChange.BuildQuantityChange (item, item.Quantity + 1);
-                // notify the character about the change in quantity
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
-
-                // notify the old owner if it changed
-                if (item.OwnerID != oldOwnerID)
-                    Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
-
-                // notify the new owner on the new item
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange (newItem, Flags.None, 0));
-
-                item.Persist ();
-
-                // replace reference so the following code handle things properly
-                item = newItem;
-
-                if (item is ShipModule shipModule2)
-                    module = shipModule2;
-            }
-
-            ItemEffects effects = EffectsManager.GetForItem (module, session);
-
-            try
-            {
-                // apply all the passive effects (this also blocks the item fitting if the initialization fails)
-                effects?.ApplyPassiveEffects (session);
-                // extra check, ensure that the character has the required skills
-            }
-            catch (UserError)
-            {
-                // ensure that the passive effects that got applied already are removed from the item
-                effects?.StopApplyingPassiveEffects (session);
-
-                int   newOldLocation = item.LocationID;
-                Flags newOldFlag     = item.Flag;
-                int   newOldOwnerID  = item.OwnerID;
-
-                // now undo the whole thing
-                item.LocationID = oldLocation;
-                item.Flag       = oldFlag;
-                item.OwnerID    = oldOwnerID;
-
-                OnItemChange locationChange = OnItemChange.BuildLocationChange (item, newOldFlag, newOldLocation);
-
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, locationChange);
-
-                // notify the owners again
-                if (item.OwnerID != newOldOwnerID)
-                    Notifications.NotifyOwnerAtLocation (newOldOwnerID, session.LocationID, locationChange.AddChange (ItemChange.OwnerID, newOldOwnerID));
-
-                throw;
-            }
-
-            // ensure the new inventory knows
-            this.mInventory.AddItem (item);
-
-            module?.Persist ();
-
-            // put the module online after fitting it as long as it's a normal module
-            if (module?.IsRigSlot () == false)
-                effects?.ApplyEffect ("online", session);
+            DogmaItems.FitInto (
+                item, this.mInventory.ID, this.mInventory.OwnerID, newFlag, session
+            );
         }
         else
         {
-            // zero quantity means move the whole stack
-            if (quantity == 0 || item.Quantity == quantity)
-            {
-                // remove item off the old inventory if required
-                if (this.Items.TryGetItem (item.LocationID, out ItemInventory inventory))
-                    inventory.RemoveItem (item);
-
-                OnItemChange changes = new OnItemChange (item);
-
-                if (item.OwnerID != this.mInventory.OwnerID)
-                    changes.AddChange (ItemChange.OwnerID, item.OwnerID);
-
-                changes
-                    .AddChange (ItemChange.LocationID, item.LocationID)
-                    .AddChange (ItemChange.Flag,       (int) item.Flag);
-
-                // set the new location for the item
-                item.LocationID = this.mInventory.ID;
-                item.Flag       = newFlag;
-                item.OwnerID    = this.mInventory.OwnerID;
-
-                // notify the old owner
-                if (oldOwnerID != item.OwnerID)
-                    Notifications.NotifyOwnerAtLocation (oldOwnerID, session.LocationID, changes);
-
-                // notify the new owner
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, changes);
-                // update meta inventories too
-                this.Items.MetaInventories.OnItemMoved (item, oldLocation, this.mInventory.ID, oldFlag, newFlag);
-
-                // ensure the new inventory knows
-                this.mInventory.AddItem (item);
-            }
-            else
-            {
-                // a specified quantity means move only that quantity, so the easiest way is to decrement the stack
-                // and create a new item in the correct place
-                // item is not a singleton, create a new item, decrease quantity and send notifications
-                ItemEntity newItem = this.Items.CreateSimpleItem (
-                    item.Type, this.mInventory.OwnerID, this.mInventory.ID, newFlag, quantity, item.Contraband, item.Singleton
-                );
-
-                item.Quantity -= quantity;
-
-                OnItemChange quantityChange = OnItemChange.BuildQuantityChange (item, item.Quantity + quantity);
-                // notify the character about the change in quantity
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
-
-                // notify the old owner if it changed
-                if (item.OwnerID != oldOwnerID)
-                    Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, quantityChange);
-
-                // notify the new owner on the new item
-                Notifications.NotifyOwnerAtLocation (item.OwnerID, session.LocationID, OnItemChange.BuildLocationChange (newItem, Flags.None, 0));
-
-                item.Persist ();
-
-                // replace reference so the following code handle things properly
-                item = newItem;
-            }
-
-            // finally persist the item changes
-            item.Persist ();
+            DogmaItems.SplitStack (item, quantity == 0 ? item.Quantity : quantity, this.mInventory.ID, this.mInventory.OwnerID, newFlag);
         }
     }
 
@@ -612,8 +440,6 @@ public class BoundInventory : ClientBoundService
 
     public PyDataType MultiMerge (ServiceCall call, PyList merges)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
         foreach (PyTuple merge in merges.GetEnumerable <PyTuple> ())
         {
             if (merge [0] is PyInteger == false || merge [1] is PyInteger == false || merge [2] is PyInteger == false)
@@ -622,41 +448,12 @@ public class BoundInventory : ClientBoundService
             PyInteger fromItemID = merge [0] as PyInteger;
             PyInteger toItemID   = merge [1] as PyInteger;
             PyInteger quantity   = merge [2] as PyInteger;
-
-            if (this.mInventory.Items.TryGetValue (toItemID, out ItemEntity toItem) == false)
-                continue;
-
-            ItemEntity fromItem = this.Items.GetItem (fromItemID);
-
-            // ignore singleton items
-            if (fromItem.Singleton || toItem.Singleton)
-                continue;
-
-            // ignore items that are not the same type
-            if (fromItem.Type.ID != toItem.Type.ID)
-                continue;
-
-            // if we're fully merging two stacks, just remove one item
-            if (quantity == fromItem.Quantity)
-            {
-                int oldLocationID = fromItem.LocationID;
-                // remove the item
-                this.Items.DestroyItem (fromItem);
-                // notify the client about the item too
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (fromItem, oldLocationID));
-            }
-            else
-            {
-                // change the item's quantity
-                fromItem.Quantity -= quantity;
-                // notify the client about the change
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (fromItem, fromItem.Quantity + quantity));
-                fromItem.Persist ();
-            }
-
-            toItem.Quantity += quantity;
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (toItem, toItem.Quantity - quantity));
-            toItem.Persist ();
+            
+            DogmaItems.Merge (
+                Items.LoadItem (toItemID),
+                Items.LoadItem (fromItemID),
+                quantity
+            );
         }
 
         return null;
@@ -669,8 +466,6 @@ public class BoundInventory : ClientBoundService
 
     private void StackAll (ServiceCall call, Flags locationFlag)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
         // TODO: ADD CONSTRAINTS CHECKS FOR THE LOCATIONFLAG
         foreach ((int firstItemID, ItemEntity firstItem) in this.mInventory.Items)
         {
@@ -681,32 +476,13 @@ public class BoundInventory : ClientBoundService
             foreach ((int secondItemID, ItemEntity secondItem) in this.mInventory.Items)
             {
                 // ignore the same itemID as they cannot really be merged
-                if (firstItemID == secondItemID)
+                if (firstItemID == secondItemID || secondItem.Flag != locationFlag)
                     continue;
-
-                // ignore the item if it's singleton
-                if (secondItem.Singleton || secondItem.Flag != locationFlag)
-                    continue;
-
-                // ignore the item check if they're not the same type ID
                 if (firstItem.Type.ID != secondItem.Type.ID)
                     continue;
 
-                int oldQuantity = secondItem.Quantity;
-                // add the quantity of the first item to the second
-                secondItem.Quantity += firstItem.Quantity;
-                // also create the notification for the user
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (secondItem, oldQuantity));
-                this.Items.DestroyItem (firstItem);
-
-                // notify the client about the item too
-                this.DogmaNotifications.QueueMultiEvent (
-                    callerCharacterID, OnItemChange.BuildLocationChange (firstItem, firstItem.Flag, secondItem.LocationID)
-                );
-
-                // ensure the second item is saved to database too
-                secondItem.Persist ();
-
+                DogmaItems.Merge (firstItem, secondItem);
+                
                 // finally break this loop as the merge was already done
                 break;
             }
@@ -737,14 +513,14 @@ public class BoundInventory : ClientBoundService
     (
         ItemDB              itemDB,             EffectsManager      effectsManager,     ItemInventory        item, Flags flag, IItems items,
         INotificationSender notificationSender, IDogmaNotifications dogmaNotifications, IBoundServiceManager boundServiceManager, Session session,
-        invbroker creator
+        invbroker creator, IDogmaItems dogmaItems
     )
     {
         // create an instance of the inventory service and bind it to the item data
         // bind the service
         BoundInventory instance = new BoundInventory (
             itemDB, effectsManager, item, flag, items, notificationSender, dogmaNotifications,
-            boundServiceManager, session
+            boundServiceManager, session, dogmaItems
         );
 
         int boundID = boundServiceManager.BindService (instance);
@@ -783,15 +559,8 @@ public class BoundInventory : ClientBoundService
             // disable passive effects
             EffectsManager.GetForItem (module, call.Session).StopApplyingPassiveEffects (call.Session);
 
-        int   oldLocationID = item.LocationID;
-        Flags oldFlag       = item.Flag;
-
-        // destroy the rig
-        this.Items.DestroyItem (item);
-
-        // notify the client about the change
-        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
-
+        DogmaItems.DestroyItem (item);
+        
         return null;
     }
 

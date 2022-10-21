@@ -28,9 +28,22 @@ public interface IItems
     public IBloodlines        Bloodlines        { get; }
     public IFactions          Factions          { get; }
     public IExpressions       Expressions       { get; }
-    
-    public IMetaInventories MetaInventories { get; }
-    
+
+    /// <summary>
+    /// Event fired when a new item is loaded
+    /// </summary>
+    public event Action <ItemEntity> Loaded;
+
+    /// <summary>
+    /// Event fired when an item is unloaded
+    /// </summary>
+    public event Action <ItemEntity> Unloaded;
+
+    /// <summary>
+    /// Event fired when an item is destroyed
+    /// </summary>
+    public event Action <ItemEntity> Destroyed;
+
     public EVESystem                     OwnerBank         { get; }
     public EVESystem                     LocationSystem    { get; }
     public EVESystem                     LocationRecycler  { get; }
@@ -119,9 +132,12 @@ public interface IItems
     /// <exception cref="ArgumentOutOfRangeException">If the id is not a solar system</exception>
     SolarSystem GetStaticSolarSystem (int solarSystemID);
 
-    ConcurrentDictionary <int, ItemEntity> LoadItemsLocatedAt (ItemEntity        location, Flags ignoreFlag = Flags.None);
-    ConcurrentDictionary <int, ItemEntity> LoadItemsLocatedAtByOwner (ItemEntity location, int   ownerID, Flags itemFlag);
-    bool                   IsItemLoaded (int                     itemID);
+    /// <summary>
+    /// Checks if the given item is already loaded
+    /// </summary>
+    /// <param name="itemID"></param>
+    /// <returns></returns>
+    bool IsItemLoaded (int itemID);
 
     ItemEntity CreateSimpleItem (
         Type type,               int  owner, int location, Flags flag, int quantity = 1,
@@ -151,6 +167,4 @@ public interface IItems
     void  UnloadItem (int                                      itemID);
     void  DestroyItem (ItemEntity                              item);
     void  DestroyItems (ConcurrentDictionary <int, ItemEntity> items);
-    void  DestroyItems (Dictionary <int, ItemEntity>           items);
-    void DestroyItems (List <ItemEntity> items);
 }

@@ -30,7 +30,7 @@ namespace EVESharp.EVE.Data.Inventory.Items;
 
 public abstract class ItemInventory : ItemEntity
 {
-    public delegate ConcurrentDictionary <int, ItemEntity> InventoryLoadEventHandler (ItemInventory inventory, Flags ignoreFlags);
+    public delegate ConcurrentDictionary <int, ItemEntity> InventoryLoadEventHandler (ItemInventory inventory);
 
     public delegate void InventoryUnloadEventHandler (ItemInventory inventory);
 
@@ -82,7 +82,7 @@ public abstract class ItemInventory : ItemEntity
         lock (this)
         {
             // ensure the list exists if no handler is there yet
-            this.Items          = this.OnInventoryLoad?.Invoke (this, ignoreFlags) ?? new ConcurrentDictionary <int, ItemEntity> ();
+            this.Items          = this.OnInventoryLoad?.Invoke (this) ?? new ConcurrentDictionary <int, ItemEntity> ();
             this.ContentsLoaded = true;
         }
     }
@@ -109,6 +109,7 @@ public abstract class ItemInventory : ItemEntity
         lock (this.Items)
         {
             this.Items [item.ID] = item;
+            item.Parent          = this;
         }
     }
 
@@ -119,7 +120,8 @@ public abstract class ItemInventory : ItemEntity
 
         lock (this.Items)
         {
-            this.Items.TryRemove (item.ID, out _);
+            if (this.Items.TryRemove (item.ID, out _) == true)
+                item.Parent = null;
         }
     }
 

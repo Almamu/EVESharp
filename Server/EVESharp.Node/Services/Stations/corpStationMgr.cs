@@ -13,6 +13,7 @@ using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.corpStationMgr;
@@ -46,13 +47,14 @@ public class corpStationMgr : ClientBoundService
     private         IWallets            Wallets       { get; }
     private         IConstants          Constants     { get; }
     private         INotificationSender Notifications { get; }
-    private         IDatabase Database      { get; }
+    private         IDatabase           Database      { get; }
+    private         IDogmaItems         DogmaItems    { get; }
 
     public corpStationMgr
     (
         StationDB            stationDb, INotificationSender notificationSender, IItems              items,    IConstants constants,
         IBoundServiceManager manager,   ISolarSystems solarSystems, IWallets            wallets,            IDatabase database, ItemDB     itemDB,
-        IClusterManager cluster
+        IClusterManager cluster, IDogmaItems dogmaItems
     ) : base (manager)
     {
         StationDB     = stationDb;
@@ -63,6 +65,7 @@ public class corpStationMgr : ClientBoundService
         Database      = database;
         SolarSystems  = solarSystems;
         ItemDB        = itemDB;
+        DogmaItems    = dogmaItems;
 
         cluster.ClusterTimerTick += this.PerformTimedEvents;
     }
@@ -71,7 +74,8 @@ public class corpStationMgr : ClientBoundService
     protected corpStationMgr
     (
         StationDB            stationDb, INotificationSender notificationSender, IItems  items,   IConstants constants,
-        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB, IDatabase database
+        IBoundServiceManager manager,   IWallets            wallets,            Session session, ItemDB     itemDB, IDatabase database,
+        IDogmaItems dogmaItems
     ) : base (manager, session, 0)
     {
         StationDB     = stationDb;
@@ -81,6 +85,7 @@ public class corpStationMgr : ClientBoundService
         this.Wallets  = wallets;
         ItemDB        = itemDB;
         Database      = database;
+        DogmaItems    = dogmaItems;
     }
 
     /// <summary>
@@ -282,19 +287,7 @@ public class corpStationMgr : ClientBoundService
 
         foreach ((int _, ItemEntity item) in folder.Items)
         {
-            item.OwnerID    = call.Session.CharacterID;
-            item.LocationID = call.Session.StationID;
-            item.Flag       = Flags.Hangar;
-
-            folder.RemoveItem (item);
-
-            Items.MetaInventories.OnItemLoaded (item);
-
-            item.Persist ();
-            
-            Notifications.NotifyCharacter (
-                item.OwnerID, OnItemChange.BuildNewItemChange (item)
-            );
+            DogmaItems.MoveItem (item, call.Session.StationID, call.Session.CharacterID, Flags.Hangar);
         }
         
         // folder does not have anything in it anymore, destroy it
@@ -486,7 +479,7 @@ public class corpStationMgr : ClientBoundService
 
         return new corpStationMgr (
             StationDB, Notifications, this.Items, Constants, BoundServiceManager, this.Wallets,
-            call.Session, this.ItemDB, this.Database
+            call.Session, this.ItemDB, this.Database, DogmaItems
         );
     }
 }

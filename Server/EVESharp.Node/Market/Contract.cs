@@ -10,6 +10,7 @@ using EVESharp.Database.Market;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.contractMgr;
 using EVESharp.EVE.Market;
@@ -50,6 +51,10 @@ public class Contract : IContract
     /// Access to the dogma notifications
     /// </summary>
     private IDogmaNotifications DogmaNotifications { get; }
+    /// <summary>
+    /// Access to the dogma items management
+    /// </summary>
+    private IDogmaItems DogmaItems { get; }
     /// <summary>
     /// Contains the database information fetched for this contract
     /// </summary>
@@ -265,76 +270,15 @@ public class Contract : IContract
         {
             ItemEntity loadedItem = Items.LoadItem (item.ItemID, out bool loadRequired);
 
-            if (loadedItem.Quantity == quantity)
-            {
-                // remove the item from the meta inventories
-                Items.MetaInventories.OnItemDestroyed (loadedItem);
-                // the item can be moved directly
-                loadedItem.LocationID = Items.LocationRecycler.ID;
-                // notify the old owner that the item got destroyed
-                DogmaNotifications.QueueMultiEvent (
-                    acceptorID, OnItemChange.BuildLocationChange (loadedItem, this.StartStationID)
-                );
-                // now move the item to the final place
-                loadedItem.LocationID = this.StartStationID;
-                loadedItem.OwnerID    = contractCreator;
-                // notify the new owner
-                DogmaNotifications.QueueMultiEvent (
-                    contractCreator, OnItemChange.BuildNewItemChange (loadedItem)
-                );
-                // finally re-add it to the meta inventories
-                // TODO: ADD SUPPORT FOR REFERENCE COUNTING ITEMS!
-                Items.MetaInventories.OnItemLoaded (loadedItem);
-            }
-            else
-            {
-                // the item is not completely moved, so update quantities and create a new one for destination
-                loadedItem.Quantity -= quantity;
-                
-                DogmaNotifications.QueueMultiEvent (
-                    acceptorID, OnItemChange.BuildQuantityChange (loadedItem, loadedItem.Quantity + quantity)
-                );
-                
-                // create the destination item for the new owner
-                ItemEntity newItem = Items.CreateSimpleItem (
-                    loadedItem.Type, contractCreator, loadedItem.LocationID,
-                    Flags.Hangar, quantity, false, loadedItem.Singleton
-                );
-                
-                // notify the new owner about the new item
-                DogmaNotifications.QueueMultiEvent (
-                    contractCreator, OnItemChange.BuildNewItemChange (newItem)
-                );
-                
-                // finally unload the item
-                // TODO: ADD SUPPORT FOR REFERENCE COUNTING ITEMS!
-                Items.UnloadItem (newItem);
-            }
-
-            loadedItem.Persist ();
-
-            if (loadRequired)
-                Items.UnloadItem (loadedItem);
+            DogmaItems.SplitStack (loadedItem, quantity, StartStationID, contractCreator, ForCorp ? Flags.CorpMarket : Flags.Hangar);
         }
         
         // now move the items to the new owner's 
         foreach ((int typeID, int quantity, int? itemID) in Lock.ConGetItems (ID, 1))
         {
-            ItemEntity loadedItem = Items.LoadItem ((int) itemID, out bool loadRequired);
+            ItemEntity loadedItem = Items.LoadItem ((int) itemID);
 
-            loadedItem.LocationID = this.StartStationID;
-            loadedItem.OwnerID    = acceptorID;
-
-            DogmaNotifications.QueueMultiEvent (
-                acceptorID, OnItemChange.BuildLocationChange (loadedItem, CrateID)
-            );
-            
-            loadedItem.Persist ();
-            
-            // finally unload the item
-            // TODO: ADD SUPPORT FOR REFERENCE COUNTING ITEMS!
-            if (loadRequired)
-                Items.UnloadItem (loadedItem);
+            DogmaItems.MoveItem (loadedItem, StartStationID, acceptorID, ForCorp ? Flags.CorpMarket : Flags.Hangar);
         }
 
         Status        = ContractStatus.Finished;
@@ -344,13 +288,7 @@ public class Contract : IContract
     private void AcceptCourierContract (int acceptorID)
     {
         // move the crate into the player's inventory
-        Container crate = Items.LoadItem <Container> (CrateID, out bool loadRequired);
-
-        Items.MetaInventories.OnItemDestroyed (crate);
-
-        crate.LocationID = this.StartStationID;
-        crate.OwnerID    = acceptorID;
-        crate.Flag       = Flags.Hangar;
+        Container crate = Items.LoadItem <Container> (CrateID);
 
         foreach ((int _, ItemEntity item) in crate.Items)
         {
@@ -359,18 +297,7 @@ public class Contract : IContract
             item.Persist ();
         }
         
-        DogmaNotifications.QueueMultiEvent (
-            acceptorID, OnItemChange.BuildNewItemChange (crate)
-        );
-        
-        crate.Persist ();
-
-        Items.MetaInventories.OnItemLoaded (crate);
-            
-        // finally unload the item
-        // TODO: ADD SUPPORT FOR REFERENCE COUNTING ITEMS!
-        /*if (loadRequired)
-            Items.UnloadItem (crate);*/
+        DogmaItems.MoveItem (crate, StartStationID, acceptorID, ForCorp ? Flags.CorpMarket : Flags.Hangar);
 
         Status = ContractStatus.InProgress;
     }
@@ -381,20 +308,9 @@ public class Contract : IContract
         Container crate = Items.LoadItem <Container> (CrateID, out bool loadRequired);
 
         foreach ((int _, ItemEntity item) in crate.Items)
-        {
-            item.LocationID = StartStationID;
-            item.OwnerID    = acceptorID;
-            item.Flag       = Flags.Hangar;
-            item.Persist ();
+            DogmaItems.MoveItem (item, StartStationID, acceptorID, ForCorp ? Flags.CorpMarket : Flags.Hangar);
 
-            Items.MetaInventories.OnItemMoved (item, crate.ID, StartStationID, Flags.Hangar, Flags.Hangar);
-            
-            DogmaNotifications.QueueMultiEvent (
-                acceptorID, OnItemChange.BuildNewItemChange (item)
-            );
-        }
-
-        crate.Destroy ();
+        DogmaItems.DestroyItem (crate);
 
         Status = ContractStatus.InProgress;
     }

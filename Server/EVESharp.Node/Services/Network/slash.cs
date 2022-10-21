@@ -12,6 +12,7 @@ using EVESharp.Database.Old;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions.slash;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Network.Services;
@@ -36,15 +37,16 @@ public class slash : Service
     private         ITypes              Types              => this.Items.Types;
     private         IItems              Items              { get; }
     private         ILogger             Log                { get; }
-    private         OldCharacterDB         CharacterDB        { get; }
+    private         OldCharacterDB      CharacterDB        { get; }
     private         INotificationSender Notifications      { get; }
     private         IWallets            Wallets            { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
+    private         IDogmaItems         DogmaItems         { get; }
 
     public slash
     (
         ILogger             logger, IItems items, OldCharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
-        IDogmaNotifications dogmaNotifications
+        IDogmaNotifications dogmaNotifications, IDogmaItems dogmaItems
     )
     {
         Log                     = logger;
@@ -53,6 +55,7 @@ public class slash : Service
         Notifications           = notificationSender;
         this.Wallets            = wallets;
         this.DogmaNotifications = dogmaNotifications;
+        this.DogmaItems         = dogmaItems;
 
         // register commands
         this.mCommands ["create"]     = this.CreateCmd;
@@ -162,16 +165,7 @@ public class slash : Service
             throw new SlashError ("The specified typeID doesn't exist");
 
         // create a new item with the correct locationID
-        Station   location  = this.Items.GetStaticStation (call.Session.StationID);
-        Character character = this.Items.GetItem <Character> (call.Session.CharacterID);
-
-        Type       itemType = this.Types [typeID];
-        ItemEntity item     = this.Items.CreateSimpleItem (itemType, character, location, Flags.Hangar, quantity);
-
-        item.Persist ();
-
-        // send client a notification so they can display the item in the hangar
-        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (item));
+        DogmaItems.CreateItem <ItemEntity> (Types [typeID], call.Session.CharacterID, call.Session.StationID, Flags.Hangar, quantity);
     }
 
     private static int ParseIntegerThatMightBeDecimal (string value)

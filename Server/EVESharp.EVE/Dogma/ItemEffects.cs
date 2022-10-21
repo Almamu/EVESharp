@@ -87,12 +87,13 @@ public class ItemEffects
             // create the environment for this run
             Environment env = new Environment
             {
-                Character   = character,
-                Self        = this.Module,
-                Ship        = ship,
-                Target      = null,
-                Session     = session,
-                ItemFactory = this.ItemFactory
+                Character          = character,
+                Self               = this.Module,
+                Ship               = ship,
+                Target             = null,
+                Session            = session,
+                ItemFactory        = this.ItemFactory,
+                DogmaNotifications = this.DogmaNotifications,
             };
 
             Opcode opcode = new Interpreter.Interpreter (env).Run (effect.PreExpression.VMCode);
@@ -158,12 +159,13 @@ public class ItemEffects
         // create the environment for this run
         Environment env = new Environment
         {
-            Character   = character,
-            Self        = this.Module,
-            Ship        = ship,
-            Target      = null,
-            Session     = session,
-            ItemFactory = this.ItemFactory
+            Character          = character,
+            Self               = this.Module,
+            Ship               = ship,
+            Target             = null,
+            Session            = session,
+            ItemFactory        = this.ItemFactory,
+            DogmaNotifications = DogmaNotifications,
         };
 
         Opcode opcode = new Interpreter.Interpreter (env).Run (effect.PostExpression.VMCode);

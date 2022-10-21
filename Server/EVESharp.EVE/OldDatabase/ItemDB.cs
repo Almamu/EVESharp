@@ -349,25 +349,6 @@ public class ItemDB : DatabaseAccessor
         }
     }
 
-    public IEnumerable <int> LoadItemsLocatedAtByOwner (int locationID, int ownerID, Flags itemFlag)
-    {
-        DbDataReader reader = this.Database.Select (
-            "SELECT itemID FROM invItems WHERE locationID = @locationID AND ownerID = @ownerID AND flag = @flag",
-            new Dictionary <string, object>
-            {
-                {"@locationID", locationID},
-                {"@ownerID", ownerID},
-                {"@flag", (int) itemFlag}
-            }
-        );
-
-        using (reader)
-        {
-            while (reader.Read ())
-                yield return reader.GetInt32 (0);
-        }
-    }
-
     public SolarSystem LoadSolarSystem (Item item)
     {
         DbDataReader reader = this.Database.Select (

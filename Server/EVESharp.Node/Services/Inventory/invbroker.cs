@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using EVESharp.Database;
 using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
@@ -9,6 +10,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
@@ -46,11 +48,13 @@ public class invbroker : ClientBoundService
     private EffectsManager      EffectsManager     { get; }
     private IDatabase           Database           { get; }
     public  invbroker           Parent             { get; }
+    private IDogmaItems         DogmaItems         { get; }
 
     public invbroker
     (
         ItemDB              itemDB,             EffectsManager       effectsManager, IItems items, INotificationSender notificationSender,
-        IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        IDatabase database, ISolarSystems       solarSystems
+        IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        IDatabase database, ISolarSystems       solarSystems,
+        IDogmaItems dogmaItems
     ) : base (manager)
     {
         EffectsManager     = effectsManager;
@@ -60,13 +64,14 @@ public class invbroker : ClientBoundService
         DogmaNotifications = dogmaNotifications;
         Database           = database;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
     }
 
     private invbroker
     (
         ItemDB              itemDB,             EffectsManager       effectsManager, IItems items, INotificationSender notificationSender,
         IDogmaNotifications dogmaNotifications, IBoundServiceManager manager,        int    objectID, Session             session, ISolarSystems solarSystems,
-        invbroker parent
+        invbroker parent, IDogmaItems dogmaItems
     ) : base (manager, session, objectID)
     {
         EffectsManager     = effectsManager;
@@ -77,57 +82,62 @@ public class invbroker : ClientBoundService
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
         this.Parent        = parent;
+        DogmaItems         = dogmaItems;
     }
 
-    private ItemInventory CheckInventoryBeforeLoading (ItemEntity inventoryItem)
+    private PySubStruct BindInventory (ItemInventory inventory, Session session, Flags flag)
     {
-        // also make sure it's a container
-        if (inventoryItem is ItemInventory == false)
-            throw new ItemNotContainer (inventoryItem.ID);
-
-        // extra check, ensure it's a singleton if not a station
-        if (inventoryItem.Type.Group.ID != (int) GroupID.Station && inventoryItem.Singleton == false)
-            throw new AssembleCCFirst ();
-
-        return (ItemInventory) inventoryItem;
-    }
-
-    private PySubStruct BindInventory (ItemInventory inventoryItem, int ownerID, Session session, Flags flag)
-    {
-        // TODO: ENSURE THAT THE PLAYER HAS ACCESS TO THESE INVENTORIES, SPECIALLY OFFICES
-        ItemInventory inventory = inventoryItem;
-
-        // create a meta inventory only if required
-        if (inventoryItem is not Ship && inventoryItem is not Character && inventoryItem is not OfficeFolder)
-            inventory = this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
-        
         // create an instance of the inventory service and bind it to the item data
         return BoundInventory.BindInventory (
             ItemDB, EffectsManager, inventory, flag, this.Items, Notifications, this.DogmaNotifications,
-            BoundServiceManager, session, this
+            BoundServiceManager, session, this, DogmaItems
         );
     }
 
     public PySubStruct GetInventoryFromId (ServiceCall call, PyInteger itemID, PyInteger one)
     {
-        int        ownerID       = call.Session.CharacterID;
-        ItemEntity inventoryItem = this.Items.LoadItem (itemID);
+        ItemEntity item = Items.LoadItem (itemID);
+        ItemInventory inventory = null;
 
-        if (inventoryItem is not Station)
-            ownerID = inventoryItem.OwnerID;
+        if (item is Station)
+        {
+            inventory = DogmaItems.LoadInventory (itemID, call.Session.CharacterID);
+        }
+        else if (item is OfficeFolder officeFolder)
+        {
+            // ensure the player has permissions to access this
+            if (officeFolder.OwnerID != call.Session.CorporationID)
+                throw new CrpAccessDenied ("Cannot access this inventory");
+            
+            inventory = officeFolder;
+        }
+        else if (item is Character character)
+        {
+            if (character.ID != call.Session.CharacterID)
+                throw new CrpAccessDenied ("Cannot access this inventory");
+            
+            inventory = character;
+        }
+        else if (item is Ship ship)
+        {
+            if (ship.OwnerID != call.Session.CharacterID)
+                throw new CrpAccessDenied ("Cannot access this inventory");
 
-        return this.BindInventory (
-            this.CheckInventoryBeforeLoading (inventoryItem),
-            ownerID,
-            call.Session, Flags.None
-        );
+            inventory = ship;
+        }
+        else
+        {
+            throw new InvalidDataException ("Unknown item type on GetInventoryFromId");
+        }
+
+        return BindInventory (inventory, call.Session, Flags.None);
     }
 
     public PySubStruct GetInventory (ServiceCall call, PyInteger containerID, PyInteger origOwnerID)
     {
         int ownerID = call.Session.CharacterID;
 
-        Flags flag = Flags.None;
+        Flags flag;
 
         switch ((int) containerID)
         {
@@ -167,45 +177,25 @@ public class invbroker : ClientBoundService
                     throw new CrpAccessDenied (MLS.UI_CORP_ACCESSDENIED14);
                 break;
 
-            default: throw new CustomError ($"Trying to open container ID ({containerID.Value}) is not supported");
+            default:
+                throw new CustomError ($"Trying to open container ID ({containerID.Value}) is not supported");
         }
 
-        // these inventories are usually meta
-
-        // get the inventory item first
-        ItemInventory inventoryItem = this.Items.LoadItem <ItemInventory> (this.mObjectID);
-
-        // create a metainventory for it
-        ItemInventory metaInventory = this.Items.MetaInventories.RegisterMetaInventoryForOwnerID (inventoryItem, ownerID, flag);
-
-        // TODO: CREATE DIFFERENT OBJECTS FOR HANDLING DIFFERENT CONTAINERS
-        return this.BindInventory (
-            this.CheckInventoryBeforeLoading (metaInventory),
-            ownerID,
-            call.Session, flag
-        );
+        // load the inventory
+        ItemInventory inventory = DogmaItems.LoadInventory (this.mObjectID, ownerID);
+        
+        return BindInventory (inventory, call.Session, flag);
     }
 
     public PyDataType TrashItems (ServiceCall call, PyList itemIDs, PyInteger stationID)
     {
-        int callerCharacterID = call.Session.CharacterID;
-
         foreach (PyInteger itemID in itemIDs.GetEnumerable <PyInteger> ())
         {
             // do not trash the active ship
             if (itemID == call.Session.ShipID)
                 throw new CantMoveActiveShip ();
 
-            ItemEntity item = this.Items.GetItem (itemID);
-            // store it's location id
-            int   oldLocation = item.LocationID;
-            Flags oldFlag     = item.Flag;
-            // remove the item off the ItemManager
-            this.Items.DestroyItem (item);
-            // notify the client of the change
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocation));
-            // TODO: CHECK IF THE ITEM HAS ANY META INVENTORY AND/OR BOUND SERVICE
-            // TODO: AND FREE THOSE TOO SO THE ITEMS CAN BE REMOVED OFF THE DATABASE
+            DogmaItems.DestroyItem (Items.GetItem (itemID));
         }
 
         return null;
@@ -227,14 +217,10 @@ public class invbroker : ClientBoundService
         // notify the owner of the item
         Notifications.NotifyOwner (item.OwnerID, OnCfgDataChanged.BuildItemLabelChange (item));
 
-        // TODO: CHECK IF ITEM BELONGS TO CORP AND NOTIFY CHARACTERS IN THIS NODE?
         return null;
     }
 
-    public PyDataType AssembleCargoContainer
-    (
-        ServiceCall call, PyInteger containerID, PyDataType ignored, PyDecimal ignored2
-    )
+    public PyDataType AssembleCargoContainer (ServiceCall call, PyInteger containerID, PyDataType ignored, PyDecimal ignored2)
     {
         ItemEntity item = this.Items.GetItem (containerID);
 
@@ -266,20 +252,14 @@ public class invbroker : ClientBoundService
         return null;
     }
 
-    public PyDataType DeliverToCorpHangar
-    (
-        ServiceCall call, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag
-    )
+    public PyDataType DeliverToCorpHangar (ServiceCall call, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID, PyInteger deliverToFlag)
     {
         // TODO: DETERMINE IF THIS FUNCTION HAS TO BE IMPLEMENTED
         // LIVE CCP SERVER DOES NOT SUPPORT IT, EVEN THO THE MENU OPTION IS SHOWN TO THE USER
         return null;
     }
 
-    public PyDataType DeliverToCorpMember
-    (
-        ServiceCall call, PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID
-    )
+    public PyDataType DeliverToCorpMember (ServiceCall call, PyInteger memberID, PyInteger stationID, PyList itemIDs, PyDataType quantity, PyInteger ownerID)
     {
         return null;
     }
@@ -301,7 +281,7 @@ public class invbroker : ClientBoundService
 
         return new invbroker (
             ItemDB, EffectsManager, this.Items, Notifications, this.DogmaNotifications, BoundServiceManager, bindParams.ObjectID,
-            call.Session, this.SolarSystems, this
+            call.Session, this.SolarSystems, this, DogmaItems
         );
     }
 }

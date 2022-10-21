@@ -11,6 +11,7 @@ using EVESharp.EVE;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.character;
 using EVESharp.EVE.Exceptions.skillMgr;
@@ -42,12 +43,13 @@ public class skillMgr : ClientBoundService
     private         IDogmaNotifications DogmaNotifications { get; }
     private         Timer <int>         NextSkillTimer     { get; set; }
     private         Timer <int>         ReSpecTimer        { get; set; }
-    private         IDatabase Database           { get; }
+    private         IDatabase           Database           { get; }
+    private         IDogmaItems         DogmaItems         { get; }
 
     public skillMgr
     (
         SkillDB              db,      IItems  items,  ITimers             timers,   IDogmaNotifications dogmaNotifications,
-        IBoundServiceManager manager, ILogger logger, IDatabase database, ISolarSystems       solarSystems
+        IBoundServiceManager manager, ILogger logger, IDatabase database, ISolarSystems       solarSystems, IDogmaItems dogmaItems
     ) : base (manager)
     {
         DB                 = db;
@@ -57,12 +59,14 @@ public class skillMgr : ClientBoundService
         Log                = logger;
         Database           = database;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
     }
 
     protected skillMgr
     (
         SkillDB              db,      IItems  items,  ITimers timers,  IDogmaNotifications dogmaNotifications,
-        IBoundServiceManager manager, ILogger logger, Session session, ISolarSystems       solarSystems
+        IBoundServiceManager manager, ILogger logger, Session session, ISolarSystems       solarSystems,
+        IDogmaItems dogmaItems
     ) : base (manager, session, session.CharacterID)
     {
         DB                 = db;
@@ -72,6 +76,7 @@ public class skillMgr : ClientBoundService
         Character          = this.Items.GetItem <Character> (ObjectID);
         Log                = logger;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
 
         this.InitializeCharacter ();
     }
@@ -756,12 +761,8 @@ public class skillMgr : ClientBoundService
         if (Character.Items.TryGetValue (itemID, out ItemEntity item) == false)
             throw new CustomError ("This implant is not in your brain!");
 
-        // now destroy the item
-        this.Items.DestroyItem (item);
-
-        // notify the change
-        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, Character.ID));
-
+        DogmaItems.DestroyItem (item);
+        
         return null;
     }
 
@@ -775,6 +776,6 @@ public class skillMgr : ClientBoundService
         if (this.MachoResolveObject (call, bindParams) != BoundServiceManager.MachoNet.NodeID)
             throw new CustomError ("Trying to bind an object that does not belong to us!");
 
-        return new skillMgr (DB, this.Items, Timers, this.DogmaNotifications, BoundServiceManager, Log, call.Session, this.SolarSystems);
+        return new skillMgr (DB, this.Items, Timers, this.DogmaNotifications, BoundServiceManager, Log, call.Session, this.SolarSystems, DogmaItems);
     }
 }

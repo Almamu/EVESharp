@@ -13,6 +13,7 @@ using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Data.Messages;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Exceptions.inventory;
@@ -44,18 +45,19 @@ public class marketProxy : Service
     private ICacheStorage       CacheStorage       { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
-    private IDatabase Database           { get; }
+    private IDatabase           Database           { get; }
     private IConstants          Constants          { get; }
     private ISolarSystems       SolarSystems       { get; }
     private INotificationSender Notifications      { get; }
     private IWallets            Wallets            { get; }
     private IDogmaNotifications DogmaNotifications { get; }
+    private IDogmaItems         DogmaItems         { get; }
 
     public marketProxy
     (
         MarketDB db, OldCharacterDB characterDB, IDatabase database, IItems items, ICacheStorage cacheStorage,
         IConstants constants, INotificationSender notificationSender, IWallets wallets, IDogmaNotifications dogmaNotifications, IClusterManager clusterManager,
-        ISolarSystems solarSystems
+        ISolarSystems solarSystems, IDogmaItems dogmaItems
     )
     {
         DB                 = db;
@@ -68,6 +70,7 @@ public class marketProxy : Service
         this.Wallets       = wallets;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
 
         clusterManager.ClusterTimerTick += this.PerformTimedEvents;
     }
@@ -405,10 +408,7 @@ public class marketProxy : Service
 
             if (entry.Quantity == 0)
             {
-                // item has to be destroyed
-                this.Items.DestroyItem (item);
-                // notify item destroyal
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (item, entry.LocationID));
+                DogmaItems.DestroyItem (item);
             }
             else
             {

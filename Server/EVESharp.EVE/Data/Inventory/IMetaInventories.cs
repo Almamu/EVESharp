@@ -1,21 +1,31 @@
+using System;
 using System.Collections.Generic;
 using EVESharp.Database.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 
 namespace EVESharp.EVE.Data.Inventory;
 
-public interface IMetaInventories : IDictionary <int, Dictionary <int, Dictionary <Flags, ItemInventoryByOwnerID>>>
+public interface IMetaInventories
 {
-    public delegate void MetaInventoryItemEvent (ItemInventoryByOwnerID metaInventory);
     /// <summary>
     /// Event fired when a new meta inventory is created
     /// </summary>
-    public MetaInventoryItemEvent OnMetaInventoryCreated { get; set; }
-    ItemInventory                              RegisterMetaInventoryForOwnerID (ItemInventory inventory, int ownerID, Flags flag);
-    Dictionary <Flags, ItemInventoryByOwnerID> GetOwnerInventories (int                       ownerID);
-    void                                       FreeOwnerInventories (int                      ownerID);
-    bool                                       GetOwnerInventoryAtLocation (int               locationID, int ownerID, Flags flag, out ItemInventoryByOwnerID inventory);
-    void                                       OnItemLoaded (ItemEntity                       item);
-    void                                       OnItemDestroyed (ItemEntity                    item);
-    void OnItemMoved (ItemEntity item, int oldLocationID, int newLocationID, Flags oldFlag, Flags newFlag);
+    public event Action <ItemInventoryByOwnerID> OnMetaInventoryCreated;
+
+    /// <summary>
+    /// Creates a new meta inventory for the given real inventory and owner
+    /// </summary>
+    /// <param name="inventory"></param>
+    /// <param name="ownerID"></param>
+    /// <returns></returns>
+    ItemInventoryByOwnerID Create (ItemInventory inventory, int ownerID);
+
+    /// <summary>
+    /// Searches the meta inventories and provides access to the requested inventory if possible
+    /// </summary>
+    /// <param name="locationID"></param>
+    /// <param name="ownerID"></param>
+    /// <param name="inventory"></param>
+    /// <returns></returns>
+    public bool TryGetInventoryForOwner (int locationID, int ownerID, out ItemInventoryByOwnerID inventory);
 }

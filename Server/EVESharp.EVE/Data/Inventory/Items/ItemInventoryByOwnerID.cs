@@ -13,12 +13,10 @@ public class ItemInventoryByOwnerID : ItemInventory
         set => this.mOwnerID = value;
     }
 
-    public Flags InventoryFlag { get; }
 
-    public ItemInventoryByOwnerID (int ownerID, Flags flag, ItemInventory from) : base (from)
+    public ItemInventoryByOwnerID (int ownerID, ItemInventory from) : base (from)
     {
         this.mOwnerID      = ownerID;
-        this.InventoryFlag = flag;
     }
 
     public override void Persist ()

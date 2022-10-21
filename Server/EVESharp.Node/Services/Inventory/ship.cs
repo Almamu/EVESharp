@@ -6,6 +6,7 @@ using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.ship;
 using EVESharp.EVE.Network.Services;
@@ -28,12 +29,13 @@ public class ship : ClientBoundService
     private         ISolarSystems       SolarSystems       { get; }
     private         ISessionManager     SessionManager     { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
-    private         IDatabase Database           { get; }
+    private         IDatabase           Database           { get; }
+    private         IDogmaItems         DogmaItems         { get; }
 
     public ship
     (
         IItems        items, IBoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, IDatabase database,
-        ISolarSystems solarSystems
+        ISolarSystems solarSystems, IDogmaItems dogmaItems
     ) : base (manager)
     {
         Items              = items;
@@ -41,12 +43,13 @@ public class ship : ClientBoundService
         DogmaNotifications = dogmaNotifications;
         Database           = database;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
     }
 
     protected ship
     (
         ItemEntity location, IItems items, IBoundServiceManager manager, ISessionManager sessionManager, IDogmaNotifications dogmaNotifications, Session session,
-        ISolarSystems solarSystems
+        ISolarSystems solarSystems, IDogmaItems dogmaItems
     ) : base (manager, session, location.ID)
     {
         Location           = location;
@@ -54,6 +57,7 @@ public class ship : ClientBoundService
         SessionManager     = sessionManager;
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
+        DogmaItems         = dogmaItems;
     }
 
     public PyInteger LeaveShip (ServiceCall call)
@@ -119,13 +123,8 @@ public class ship : ClientBoundService
         currentShip.RemoveItem (character);
 
         if (currentShip.Type.ID == (int) TypeID.Capsule)
-        {
-            // destroy the pod from the database
-            this.Items.DestroyItem (currentShip);
-            // notify the player of the item change
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (currentShip, Location.ID));
-        }
-
+            DogmaItems.DestroyItem (currentShip);
+        
         return null;
     }
 
@@ -209,6 +208,6 @@ public class ship : ClientBoundService
         if (location.Type.Group.ID != bindParams.ExtraValue)
             throw new CustomError ("Location and group do not match");
 
-        return new ship (location, this.Items, BoundServiceManager, SessionManager, this.DogmaNotifications, call.Session, this.SolarSystems);
+        return new ship (location, this.Items, BoundServiceManager, SessionManager, this.DogmaNotifications, call.Session, this.SolarSystems, DogmaItems);
     }
 }

@@ -146,7 +146,7 @@ public class corpRegistry : MultiClientBoundService
         // remove old ads that do not apply anymore
         Database.CrpAdsHousekeeping (currentTime);
 
-        // TODO: SUPPORT ITEM UNLOCKING WHEN VOTES DON'T PASS
+        // TODO: SEND EVEMAILS WITH THE RESULTS
         foreach ((int corporationID, int voteCaseID, int parameter, int voteType, double rate) in Database.CrpVotesGetAffectedByHousekeeping (currentTime))
         {
             int newStatus = 2;
@@ -1855,6 +1855,7 @@ public class corpRegistry : MultiClientBoundService
             'MAIL_TEMPLATE_CEO_ROLES_REVOKED_SUBJECT': (2424457,
                                                         u'CEO roles revoked'),*/
 
+        // TODO: SEND MAILS TO THE MAILINGLIST
         // check if the character is trying to run for CEO and ensure only if he belongs to the same corporation that can be done
         if (type == (int) CorporationVotes.CEO && call.Session.CorporationID != corporationID)
             throw new CantRunForCEOAtTheMoment ();

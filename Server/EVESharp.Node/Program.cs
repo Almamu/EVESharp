@@ -41,6 +41,7 @@ using EVESharp.EVE;
 using EVESharp.EVE.Accounts;
 using EVESharp.EVE.Corporations;
 using EVESharp.EVE.Data.Inventory;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Market;
 using EVESharp.EVE.Messages.Processor;
 using EVESharp.EVE.Messages.Queue;
@@ -245,6 +246,7 @@ internal class Program
         container.Register <IAudit, Audit> (Lifestyle.Singleton);
         container.Register <IShares, Shares> (Lifestyle.Singleton);
         container.Register <IContracts, Contracts> (Lifestyle.Singleton);
+        container.Register <IDogmaItems, DogmaItems> (Lifestyle.Singleton);
 
         // register the database accessors dependencies
         container.Register <OldCharacterDB> (Lifestyle.Singleton);

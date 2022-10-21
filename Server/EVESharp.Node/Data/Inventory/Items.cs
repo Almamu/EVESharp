@@ -67,7 +67,6 @@ public class Items : IItems
     public IBloodlines         Bloodlines         { get; }
     public IFactions           Factions           { get; }
     public IExpressions        Expressions        { get; }
-    public IMetaInventories    MetaInventories    { get; }
     public IDogmaNotifications DogmaNotifications { get; }
     public ItemDB              ItemDB             { get; }
     public OldCharacterDB      CharacterDB        { get; }
@@ -88,9 +87,15 @@ public class Items : IItems
 
     protected IDatabase Database { get; }
 
+    public event Action <ItemEntity> Loaded;
+
+    public event Action <ItemEntity> Unloaded;
+
+    public event Action <ItemEntity> Destroyed;
+
     public Items
     (
-        ILogger      logger,      IMachoNet     machoNet,     IDatabase database, IConstants constants, IMetaInventories metaInventories,
+        ILogger      logger,      IMachoNet     machoNet,     IDatabase database, IConstants constants,
         IExpressions expressions, ItemDB        itemDB,       OldCharacterDB characterDB, InsuranceDB insuranceDB, SkillDB skillDB, CorporationDB corporationDB,
         IAttributes  attributes,  IGroups       groups,       ICategories categories, ITypes types, IAncestries ancestries, IBloodlines bloodlines,
         IStations    stations,    ISolarSystems solarSystems, IFactions factions, IDefaultAttributes defaultAttributes, IDogmaNotifications dogmaNotifications
@@ -101,9 +106,7 @@ public class Items : IItems
         this.Database                               =  database;
         this.MachoNet                               =  machoNet;
         this.Constants                              =  constants;
-        this.MetaInventories                        =  metaInventories;
         this.Expressions                            =  expressions;
-        this.MetaInventories.OnMetaInventoryCreated += this.OnMetaInventoryCreated;
         this.ItemDB                                 =  itemDB;
         this.CharacterDB                            =  characterDB;
         this.InsuranceDB                            =  insuranceDB;
@@ -343,12 +346,11 @@ public class Items : IItems
             if (this.TryGetItem (item.LocationID, out ItemEntity location) && location is ItemInventory inventory)
                 inventory.AddItem (wrapperItem);
 
-            // notify the meta inventory manager about the new item only if the item is user-generated
-            if (ItemRanges.IsStaticData (item.ID) == false)
-                this.MetaInventories.OnItemLoaded (wrapperItem);
-
             // ensure the item is in the loaded list
             this.mItemList.Add (item.ID, wrapperItem);
+            
+            // fire the loaded event
+            this.Loaded?.Invoke (wrapperItem);
 
             // subscribe to item's events and return the item
             return this.SubscribeToEvents (wrapperItem);
@@ -364,17 +366,7 @@ public class Items : IItems
 
         return result;
     }
-
-    public ConcurrentDictionary <int, ItemEntity> LoadItemsLocatedAtByOwner (ItemEntity location, int ownerID, Flags itemFlag)
-    {
-        ConcurrentDictionary <int, ItemEntity> result = new ConcurrentDictionary <int, ItemEntity> ();
-
-        foreach (int itemID in this.ItemDB.LoadItemsLocatedAtByOwner (location.ID, ownerID, itemFlag))
-            result [itemID] = this.LoadItem (itemID);
-
-        return result;
-    }
-
+    
     public bool IsItemLoaded (int itemID)
     {
         lock (this)
@@ -596,13 +588,12 @@ public class Items : IItems
     {
         lock (this)
         {
-            // first ensure there's no meta inventory holding this item hostage
-            if (this.MetaInventories.GetOwnerInventoryAtLocation (item.ID, item.OwnerID, item.Flag, out ItemInventoryByOwnerID _))
-                return;
-
             if (this.mItemList.Remove (item.ID) == false)
                 return;
 
+            // fire the unload event
+            this.Unloaded?.Invoke (item);
+            
             // dispose of it
             item.Dispose ();
         }
@@ -624,17 +615,9 @@ public class Items : IItems
             if (this.mItemList.Remove (item.ID) == false)
                 throw new ArgumentException ("Cannot destroy an item that was not loaded by this item manager");
 
-            // ensure the meta inventories know this item is not there anymore
-            this.MetaInventories.OnItemDestroyed (item);
-
-            // make sure the location it's at knows the item is no more
-            if (this.TryGetItem (item.LocationID, out ItemEntity location) && location is ItemInventory inventory)
-                inventory.RemoveItem (item);
-
-            // set the item to the recycler location just in case something has a reference to it somewhere
-            item.LocationID = this.LocationRecycler.ID;
-            // item.Flag = ItemFlags.None;
-
+            // fire the unload event
+            this.Destroyed?.Invoke (item);
+            
             // finally remove the item off the database
             item.Destroy ();
         }
@@ -673,12 +656,9 @@ public class Items : IItems
         return this.CharacterDB.LoadSkillQueue (character, skillQueue);
     }
 
-    private ConcurrentDictionary <int, ItemEntity> OnInventoryLoad (ItemInventory inventory, Flags ignoreFlags)
+    private ConcurrentDictionary <int, ItemEntity> OnInventoryLoad (ItemInventory inventory)
     {
-        if (inventory is ItemInventoryByOwnerID byOwner)
-            return this.LoadItemsLocatedAtByOwner (byOwner, byOwner.OwnerID, byOwner.InventoryFlag);
-
-        return this.LoadItemsLocatedAt (inventory, ignoreFlags);
+        return this.LoadItemsLocatedAt (inventory);
     }
 
     private void OnInventoryUnload (ItemInventory inventory)
@@ -755,19 +735,7 @@ public class Items : IItems
         foreach ((int _, ItemEntity item) in items)
             this.DestroyItem (item);
     }
-
-    public void DestroyItems (Dictionary <int, ItemEntity> items)
-    {
-        foreach ((int _, ItemEntity item) in items)
-            this.DestroyItem (item);
-    }
-
-    public void DestroyItems (List <ItemEntity> items)
-    {
-        foreach (ItemEntity item in items)
-            this.DestroyItem (item);
-    }
-
+    
     private void PersistAlliance (Alliance alliance)
     {
         // update the alliance information

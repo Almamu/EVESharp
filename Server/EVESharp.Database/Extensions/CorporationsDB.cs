@@ -298,4 +298,15 @@ public static class CorporationsDB
             return true;
         }
     }
+
+    public static double CrpGetTaxRate (this IDatabase Database, int corporationID)
+    {
+        return Database.Scalar <double> (
+            "CrpGetTaxRate",
+            new Dictionary <string, object> ()
+            {
+                {"_corporationID", corporationID}
+            }
+        );
+    }
 }
