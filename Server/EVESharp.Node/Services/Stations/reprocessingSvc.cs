@@ -81,7 +81,8 @@ public class reprocessingSvc : ClientBoundService
     protected reprocessingSvc
     (
         ReprocessingDB       reprocessingDb, StandingDB          standingDb, Station station, ItemInventory inventory, IItems items,
-        IBoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems, IDogmaItems dogmaItems
+        IBoundServiceManager manager,        IDogmaNotifications dogmaNotifications, Session session, ISolarSystems solarSystems, IDogmaItems dogmaItems,
+        IDatabase database
     ) : base (manager, session, inventory.ID)
     {
         ReprocessingDB     = reprocessingDb;
@@ -92,7 +93,8 @@ public class reprocessingSvc : ClientBoundService
         DogmaNotifications = dogmaNotifications;
         SolarSystems       = solarSystems;
         DogmaItems         = dogmaItems;
-        
+        Database           = database;
+
         // TODO: LOAD TAXRATE FOR THE CORPORATION
     }
 
@@ -307,7 +309,7 @@ public class reprocessingSvc : ClientBoundService
 
         return new reprocessingSvc (
             ReprocessingDB, StandingDB, station, inventory, this.Items, BoundServiceManager, this.DogmaNotifications,
-            call.Session, this.SolarSystems, DogmaItems
+            call.Session, this.SolarSystems, DogmaItems, Database
         );
     }
 }
