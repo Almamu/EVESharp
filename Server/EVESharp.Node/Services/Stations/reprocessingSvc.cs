@@ -100,8 +100,8 @@ public class reprocessingSvc : ClientBoundService
     {
         // there's no implants that affect the reprocessing of anything
         double efficiency = 0.375
-                            * (1 + 0.02 * character.GetSkillLevel (TypeID.Refining))
-                            * (1 + 0.04 * character.GetSkillLevel (TypeID.RefineryEfficiency));
+                            * (1 + (0.02 * character.GetSkillLevel (TypeID.Refining)))
+                            * (1 + (0.04 * character.GetSkillLevel (TypeID.RefineryEfficiency)));
 
         efficiency += this.mStation.ReprocessingEfficiency;
 
@@ -113,15 +113,15 @@ public class reprocessingSvc : ClientBoundService
     {
         // there's no implants that affect the reprocessing of anything
         double efficiency = 0.375
-                            * (1 + 0.02 * character.GetSkillLevel (TypeID.Refining))
-                            * (1 + 0.04 * character.GetSkillLevel (TypeID.RefineryEfficiency));
+                            * (1 + (0.02 * character.GetSkillLevel (TypeID.Refining)))
+                            * (1 + (0.04 * character.GetSkillLevel (TypeID.RefineryEfficiency)));
 
         // check what mineral it is and calculate it's efficiency (there's skills that modify the outcome) 
         if (sOreTypeIDtoProcessingSkillTypeID.TryGetValue ((TypeID) typeID, out TypeID skillType) == false)
             skillType = TypeID.ScrapmetalProcessing;
 
         // 5% increase by the specific metal skill
-        efficiency *= 1 + 0.05 * character.GetSkillLevel (skillType);
+        efficiency *= 1 + (0.05 * character.GetSkillLevel (skillType));
         // finally take into account station's efficienfy
         efficiency += this.mStation.ReprocessingEfficiency;
 
@@ -131,7 +131,7 @@ public class reprocessingSvc : ClientBoundService
 
     private double CalculateTax (int corporationID, double standing)
     {
-        return Math.Max (0.0f, Database.CrpGetTaxRate (corporationID) - 0.75 / 100.0 * standing);
+        return Math.Max (0.0f, Database.CrpGetTaxRate (corporationID) - (0.75 / 100.0 * standing));
     }
 
     private double GetStanding (Character character)

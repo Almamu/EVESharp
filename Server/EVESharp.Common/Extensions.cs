@@ -5,7 +5,6 @@ namespace EVESharp.Common;
 
 public static class Extensions
 {
-
     /// <summary>
     /// Reads an extended size indicator from the stream. These indicators can be 1 or 5 bytes wide.
     /// If the first byte is 0xFF the next 4 bytes are read as those indicate the actual value

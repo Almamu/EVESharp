@@ -27,7 +27,6 @@ public class Contracts : IContracts
         Wallets            = wallets;
         Notifications      = notificationSender;
         DogmaNotifications = dogmaNotifications;
-
     }
     
     public IContract AcquireContract (int contractID)

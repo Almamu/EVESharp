@@ -970,8 +970,8 @@ public class corpRegistry : MultiClientBoundService
         int megacorpManagementLevel = (int) ceo.GetSkillLevel (TypeID.MegacorpManagement); // adds +50 members per level
         int sovereigntyLevel        = (int) ceo.GetSkillLevel (TypeID.Sovereignty); // adds +1000 members per level
 
-        maximumMembers = corporationManagementLevel * 10 + empireControlLevel * 200 +
-                         megacorpManagementLevel * 50 + sovereigntyLevel * 1000;
+        maximumMembers = (corporationManagementLevel * 10) + (empireControlLevel * 200) +
+                         (megacorpManagementLevel * 50) + (sovereigntyLevel * 1000);
 
         allowedRaceIDs = ethnicRelationsLevel > 0 ? 63 : Ancestries [ceo.AncestryID].Bloodline.RaceID;
     }
@@ -1437,7 +1437,7 @@ public class corpRegistry : MultiClientBoundService
     {
         Station station           = this.Items.GetStaticStation (stationID);
         int     callerCharacterID = call.Session.CharacterID;
-        long    price             = CorporationAdvertisementFlatFee + CorporationAdvertisementDailyRate * days;
+        long    price             = CorporationAdvertisementFlatFee + (CorporationAdvertisementDailyRate * days);
 
         // TODO: ENSURE stationID MATCHES ONE OF OUR OFFICES FOR THE ADVERT TO BE CREATED
         // get the current wallet and check if there's enough money on it

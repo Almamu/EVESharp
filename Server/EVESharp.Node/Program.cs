@@ -176,7 +176,6 @@ internal class Program
                     name = sourceContext.ToString ();
 
                 return !configuration.Logging.EnableChannels.Contains (name);
-
             }
         );
 

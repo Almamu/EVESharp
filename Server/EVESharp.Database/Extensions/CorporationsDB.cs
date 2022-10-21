@@ -147,49 +147,49 @@ public static class CorporationsDB
 
     public static bool CrpVotesIsExpired (this IDatabase Database, int voteCaseID)
     {
-        return 1 == Database.Scalar<int> (
+        return Database.Scalar<int> (
             "CrpVotesIsExpired",
             new Dictionary <string, object> ()
             {
                 {"_voteCaseID", voteCaseID},
                 {"_currentTime", DateTime.Now.ToFileTimeUtc ()}
             }
-        );
+        ) == 1;
     }
 
     public static bool CrpVotesHasEnded (this IDatabase Database, int voteCaseID)
     {
-        return 1 == Database.Scalar <int> (
+        return Database.Scalar <int> (
             "CrpVotesHasEnded",
             new Dictionary <string, object> ()
             {
                 {"_voteCaseID", voteCaseID},
                 {"_currentTime", DateTime.Now.ToFileTimeUtc ()}
             }
-        );
+        ) == 1;
     }
 
     public static bool CrpVotesExists (this IDatabase Database, int voteCaseID)
     {
-        return 1 == Database.Scalar <int> (
+        return Database.Scalar <int> (
             "CrpVotesExists",
             new Dictionary<string, object> ()
             {
                 {"_voteCaseID", voteCaseID}
             }
-        );
+        ) == 1;
     }
 
     public static bool CrpVotesHasVoted (this IDatabase Database, int voteCaseID, int characterID)
     {
-        return 0 < Database.Scalar<int> (
+        return Database.Scalar<int> (
             "CrpVotesHasVoted",
             new Dictionary <string, object> ()
             {
                 {"_voteCaseID", voteCaseID},
                 {"_characterID", characterID}
             }
-        );
+        ) > 0;
     }
 
     public static PyList <PyInteger> InvItemsLockedGetLocations (this IDatabase Database, int corporationID)
@@ -231,14 +231,14 @@ public static class CorporationsDB
 
     public static bool InvItemsLockedAnyAtStation (this IDatabase Database, int stationID, int corporationID)
     {
-        return 0 < Database.Scalar <long> (
+        return Database.Scalar <long> (
             "InvItemsLockedAnyAtStation",
             new Dictionary <string, object> ()
             {
                 {"_corporationID", corporationID},
                 {"_stationID", stationID}
             }
-        );
+        ) > 0;
     }
 
     public static (int itemID, int corporationID, int stationID) InvItemsLockedRemove (this IDatabase Database, int voteCaseID)

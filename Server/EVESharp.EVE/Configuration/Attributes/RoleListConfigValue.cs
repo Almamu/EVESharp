@@ -28,6 +28,5 @@ public class RoleListConfigValue : TransformConfigValue
         return result;
     })
     {
-        
     }
 }

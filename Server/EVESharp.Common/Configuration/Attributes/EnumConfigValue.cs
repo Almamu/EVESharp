@@ -10,6 +10,5 @@ public class EnumConfigValue : TransformConfigValue
         return Enum.Parse (enumType, value, true);
     })
     {
-        
     }
 }

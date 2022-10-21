@@ -372,8 +372,7 @@ public class Character : ItemInventory
 
         if (this.InjectedSkillsByTypeID.TryGetValue ((int) TypeID.Learning, out Skill learningSkill))
             skillLearningLevel = learningSkill.Level;
-
-
+        
         return Database.EVEMath.Skills.GetSkillPointsPerMinute (
             this.Attributes [skill.PrimaryAttribute.Integer],
             this.Attributes [skill.SecondaryAttribute.Integer],

@@ -12,8 +12,8 @@ public static class Skills
 
     public static double GetSkillPointsPerMinute (double primarySpPerMin, double secondarySpPerMin, int learningLevel, double currentSkillpoints)
     {
-        double spPerMin = primarySpPerMin + secondarySpPerMin / 2.0f;
-        spPerMin = spPerMin * (1.0f + 0.02f * learningLevel);
+        double spPerMin = primarySpPerMin + (secondarySpPerMin / 2.0f);
+        spPerMin = spPerMin * (1.0f + (0.02f * learningLevel));
 
         if (currentSkillpoints < 1600000.0f)
             spPerMin = spPerMin * 2.0f;

@@ -221,7 +221,7 @@ public class contractMgr : Service
         if (forCorp == false)
         {
             // check limits for the character
-            long maximumContracts = 1 + 4 * character.GetSkillLevel (TypeID.Contracting);
+            long maximumContracts = 1 + (4 * character.GetSkillLevel (TypeID.Contracting));
 
             if (maximumContracts <= DB.GetOutstandingContractsCountForPlayer (callerCharacterID))
                 throw new ConTooManyContractsMax (maximumContracts);
@@ -517,5 +517,4 @@ public class contractMgr : Service
         // TODO: IMPLEMENT THIS!
         return null;
     }
-
 }

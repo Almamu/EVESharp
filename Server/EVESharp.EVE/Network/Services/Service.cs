@@ -101,7 +101,6 @@ public abstract class Service
         }
 
         return false;
-
     }
 
     /// <summary>

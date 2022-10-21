@@ -8,7 +8,6 @@ namespace EVESharp.Database.Extensions;
 
 public static class CharacterDB
 {
-
     /// <summary>
     /// Sets when the character's stasis timer started (if any)
     /// </summary>

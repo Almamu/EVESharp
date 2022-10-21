@@ -45,12 +45,10 @@ public static class AttributeDB
     {
         // sort the attributes by maxAttributeID so the simple attributes are loaded first
         // and then the complex ones that are related to other attributes
-        ;
-        
         using (DbDataReader reader = Database.Select (
-                "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID FROM dgmAttributeTypes ORDER BY maxAttributeID ASC"
-            )
-        )
+                   "SELECT attributeID, attributeName, attributeCategory, description, maxAttributeID, attributeIdx, graphicID, chargeRechargeTimeID, defaultValue, published, displayName, unitID, stackable, highIsGood, categoryID FROM dgmAttributeTypes ORDER BY maxAttributeID ASC"
+               )
+              )
         {
             Dictionary <int, AttributeType> result = new Dictionary <int, AttributeType> ();
 

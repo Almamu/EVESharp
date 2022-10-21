@@ -207,7 +207,7 @@ public class Attribute
                     break;
 
                 case Association.PostPercent:
-                    attribute *= 1.0 + modifier.Value / 100.0;
+                    attribute *= 1.0 + (modifier.Value / 100.0);
                     break;
 
                 case Association.AddRate:

@@ -9,7 +9,6 @@ public class MustNotHaveSessionValue : CallValidator
 {
     public string Key { get; }
 
-
     public MustNotHaveSessionValue (string key, Type exception = null)
     {
         this.Key       = key;

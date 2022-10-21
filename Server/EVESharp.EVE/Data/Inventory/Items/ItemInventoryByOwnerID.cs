@@ -12,8 +12,7 @@ public class ItemInventoryByOwnerID : ItemInventory
         get => this.mOwnerID;
         set => this.mOwnerID = value;
     }
-
-
+    
     public ItemInventoryByOwnerID (int ownerID, ItemInventory from) : base (from)
     {
         this.mOwnerID      = ownerID;

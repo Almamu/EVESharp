@@ -141,9 +141,9 @@ public class NodeInstance
         this.MachoNet.MessageProcessor = this.mMessageProcessor;
         
         // register the node in the cluster
-        this.ClusterManager.RegisterNode ().Wait ();;
+        this.ClusterManager.RegisterNode ().Wait ();
         // connect to the proxy
-        this.ClusterManager.EstablishConnectionWithProxies ().Wait ();;
+        this.ClusterManager.EstablishConnectionWithProxies ().Wait ();
     }
 
     /// <summary>

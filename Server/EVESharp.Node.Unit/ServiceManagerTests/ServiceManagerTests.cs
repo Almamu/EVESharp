@@ -127,17 +127,14 @@ public class ServiceManagerTests
         Assert.Throws <UnauthorizedCallException <string>> (() =>
         {
             ServiceManager.ServiceCall ("LocationService", "Call", GenerateServiceCall (new Session ()));
-            
         });
         Assert.Throws <UnauthorizedCallException <string>> (() =>
         {
             ServiceManager.ServiceCall ("StationService", "Call", GenerateServiceCall (new Session ()));
-            
         });
         Assert.Throws <UnauthorizedCallException <string>> (() =>
         {
             ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session ()));
-            
         });
     }
 

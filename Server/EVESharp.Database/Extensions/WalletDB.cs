@@ -116,8 +116,7 @@ public static class WalletDB
             }
         );
     }
-
-
+    
     /// <summary>
     /// Obtains the keymap list for the wallet, ready for the EVE Client
     /// </summary>

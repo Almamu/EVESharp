@@ -13,7 +13,6 @@ public class OnMachoObjectDisconnect : ClientNotification
     public PyInteger ClientID    { get; }
     public PyString  ReferenceID { get; }
     
-    
     public OnMachoObjectDisconnect (PyString objectID, PyInteger clientID, PyString referenceID) : base (NOTIFICATION_NAME)
     {
         this.ObjectID    = objectID;

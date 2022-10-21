@@ -54,8 +54,7 @@ public class DogmaItems : IDogmaItems
 
         return newItem as T;
     }
-
-
+    
     public T CreateItem <T> (Type type, int ownerID, int locationID, Flags flag, int quantity = 1, bool singleton = false, bool contraband = false) where T : ItemEntity
     {
         if (this.TryFindInventory (locationID, ownerID, out ItemInventory location) == false)
