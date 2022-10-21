@@ -248,6 +248,8 @@ public class repairSvc : ClientBoundService
 
             wallet.CreateJournalRecord (MarketReference.RepairBill, station.OwnerID, null, -(iskRepairValue - quantityLeft));
         }
+        
+        // TODO: SEND DAMAGE ATTRIBUTE CHANGE NOTIFICATION?
 
         return null;
     }
@@ -323,23 +325,13 @@ public class repairSvc : ClientBoundService
                     }
                     else
                     {
-                        Flags oldFlag = itemInInventory.Flag;
-                        // update item's location
-                        itemInInventory.LocationID = entry.LocationID;
-                        itemInInventory.Flag       = Flags.Hangar;
-
-                        // notify the client about the change
-                        this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildLocationChange (itemInInventory, oldFlag, entry.ItemID));
-                        // save the item
-                        itemInInventory.Persist ();
+                        DogmaItems.MoveItem (itemInInventory, entry.LocationID, Flags.Hangar);
                     }
                 }
             }
 
-            // update the singleton flag too
-            item.Singleton = false;
-            this.DogmaNotifications.QueueMultiEvent (characterID, OnItemChange.BuildSingletonChange (item, true));
-
+            DogmaItems.SetSingleton (item, false);
+            
             // load was required, the item is not needed anymore
             if (loadRequired)
                 this.Items.UnloadItem (item);

@@ -1,6 +1,7 @@
 using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.EVE.Data.Inventory.Items;
+using EVESharp.EVE.Data.Inventory.Items.Types;
 using EVESharp.EVE.Sessions;
 
 namespace EVESharp.EVE.Dogma;
@@ -81,7 +82,7 @@ public interface IDogmaItems
     /// <param name="singleton"></param>
     /// <param name="contraband"></param>
     T CreateItem <T> (string itemName, Type type, int ownerID, int locationID, Flags flag, int quantity = 1, bool singleton = false, bool contraband = false) where T : ItemEntity;
-    
+
     /// <summary>
     /// Loads a new inventory into dogma for it's usage
     /// </summary>
@@ -213,6 +214,13 @@ public interface IDogmaItems
     /// <param name="slot"></param>
     /// <param name="session"></param>
     void FitInto (ItemEntity item, int locationID, int ownerID, Flags slot, Session session);
+
+    /// <summary>
+    /// Updates the singleton value for the given item
+    /// </summary>
+    /// <param name="item"></param>
+    /// <param name="newSingleton"></param>
+    void SetSingleton (ItemEntity item, bool newSingleton);
 
     /// <summary>
     /// Merges two items

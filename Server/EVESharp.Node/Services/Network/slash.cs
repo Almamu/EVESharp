@@ -38,6 +38,7 @@ public class slash : Service
     private         IItems              Items              { get; }
     private         ILogger             Log                { get; }
     private         OldCharacterDB      CharacterDB        { get; }
+    private         SkillDB             SkillDB            { get; }
     private         INotificationSender Notifications      { get; }
     private         IWallets            Wallets            { get; }
     private         IDogmaNotifications DogmaNotifications { get; }
@@ -46,7 +47,7 @@ public class slash : Service
     public slash
     (
         ILogger             logger, IItems items, OldCharacterDB characterDB, INotificationSender notificationSender, IWallets wallets,
-        IDogmaNotifications dogmaNotifications, IDogmaItems dogmaItems
+        IDogmaNotifications dogmaNotifications, IDogmaItems dogmaItems, SkillDB skillDB
     )
     {
         Log                     = logger;
@@ -56,6 +57,7 @@ public class slash : Service
         this.Wallets            = wallets;
         this.DogmaNotifications = dogmaNotifications;
         this.DogmaItems         = dogmaItems;
+        this.SkillDB            = skillDB;
 
         // register commands
         this.mCommands ["create"]     = this.CreateCmd;
@@ -215,14 +217,17 @@ public class slash : Service
                 }
                 else
                 {
-                    // skill not injected, create it, inject and done
-                    Skill skill = this.Items.CreateSkill (
-                        type, character, level,
-                        SkillHistoryReason.GMGiveSkill
+                    Skill skill = DogmaItems.CreateItem <Skill> (type, character, character, Flags.Skill, 1, true);
+                    skill.Level = level;
+                    skill.Persist ();
+                    
+                    DogmaNotifications.NotifyAttributeChange (character.ID, AttributeTypes.skillLevel, skill);
+                    DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
+                    
+                    // add the skill history record too
+                    SkillDB.CreateSkillHistoryRecord (
+                        type, character, SkillHistoryReason.GMGiveSkill, skill.GetSkillPointsForLevel (level)
                     );
-
-                    this.DogmaNotifications.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
-                    this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
                 }
         }
         else
@@ -234,22 +239,27 @@ public class slash : Service
             if (injectedSkills.ContainsKey (skillTypeID))
             {
                 Skill skill = injectedSkills [skillTypeID];
-
                 skill.Level = level;
                 skill.Persist ();
+                
                 this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillStartTraining (skill));
                 this.DogmaNotifications.NotifyAttributeChange (character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
                 this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillTrained (skill));
             }
             else
             {
-                // skill not injected, create it, inject and done
-                Skill skill = this.Items.CreateSkill (
-                    this.Types [skillTypeID], character, level,
-                    SkillHistoryReason.GMGiveSkill
+                Skill skill = DogmaItems.CreateItem <Skill> (Types [skillTypeID], character, character, Flags.Skill, 1, true);
+                skill.Level = level;
+                skill.Persist ();
+                    
+                DogmaNotifications.NotifyAttributeChange (character.ID, AttributeTypes.skillLevel, skill);
+                DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
+                    
+                // add the skill history record too
+                SkillDB.CreateSkillHistoryRecord (
+                    Types [skillTypeID], character, SkillHistoryReason.GMGiveSkill, skill.GetSkillPointsForLevel (level)
                 );
-
-                this.DogmaNotifications.QueueMultiEvent (character.ID, OnItemChange.BuildNewItemChange (skill));
+                
                 this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
             }
         }

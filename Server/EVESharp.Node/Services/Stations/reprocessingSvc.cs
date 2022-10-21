@@ -258,14 +258,9 @@ public class reprocessingSvc : ClientBoundService
 
             int quantityForClient = (int) (efficiency * (1.0 - taxRate) * ratio);
 
-            // create the new item
-            ItemEntity newItem = this.Items.CreateSimpleItem (
-                this.Types [recoverable.TypeID], character, this.mStation,
-                Flags.Hangar, quantityForClient
+            DogmaItems.CreateItem <ItemEntity> (
+                Types [recoverable.TypeID], character.ID, this.mStation, Flags.Hangar, quantityForClient
             );
-
-            // notify the client about the new item
-            this.DogmaNotifications.QueueMultiEvent (session.CharacterID, OnItemChange.BuildNewItemChange (newItem));
         }
     }
 

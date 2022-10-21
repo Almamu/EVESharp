@@ -11,6 +11,7 @@ using EVESharp.Database.Types;
 using EVESharp.EVE.Data.Inventory;
 using EVESharp.EVE.Data.Inventory.Items;
 using EVESharp.EVE.Data.Inventory.Items.Types;
+using EVESharp.EVE.Dogma;
 using EVESharp.EVE.Dogma.Interpreter.Opcodes;
 using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.contractMgr;
@@ -21,6 +22,7 @@ using EVESharp.EVE.Notifications;
 using EVESharp.EVE.Notifications.Contracts;
 using EVESharp.EVE.Sessions;
 using EVESharp.EVE.Types;
+using EVESharp.Node.Dogma;
 using EVESharp.Node.Notifications.Nodes.Inventory;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
@@ -34,7 +36,6 @@ public class contractMgr : Service
 {
     public override AccessLevel AccessLevel => AccessLevel.Station;
 
-    // TODO: THE TYPEID FOR THE BOX IS 24445
     private ContractDB          DB                 { get; }
     private ItemDB              ItemDB             { get; }
     private MarketDB            MarketDB           { get; }
@@ -46,13 +47,15 @@ public class contractMgr : Service
     private IWallets            Wallets            { get; }
     private IDogmaNotifications DogmaNotifications { get; }
     private IContracts          Contracts          { get; }
+    private IDogmaItems         DogmaItems         { get; }
 
     private int CourierMaxVolume;
 
     public contractMgr
     (
         ContractDB db,      ItemDB              itemDB, MarketDB marketDB, OldCharacterDB characterDB, IItems items, INotificationSender notificationSender,
-        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems, IContracts contracts, IConstants constants
+        IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems, IContracts contracts, IConstants constants,
+        IDogmaItems dogmaItems
     )
     {
         DB                    = db;
@@ -65,6 +68,7 @@ public class contractMgr : Service
         DogmaNotifications    = dogmaNotifications;
         SolarSystems          = solarSystems;
         Contracts             = contracts;
+        DogmaItems            = dogmaItems;
         this.CourierMaxVolume = constants.ContractCourierMaxVolume;
     }
 
@@ -168,12 +172,8 @@ public class contractMgr : Service
 
             ItemEntity entity = this.Items.LoadItem (itemID, out bool loadRequired);
 
-            entity.LocationID = contract.CrateID;
-            entity.Persist ();
-
-            // notify the character
-            Notifications.NotifyCharacter (ownerID, EVE.Notifications.Inventory.OnItemChange.BuildLocationChange (entity, station.ID));
-
+            DogmaItems.MoveItem (entity, contract.CrateID);
+            
             if (loadRequired)
                 this.Items.UnloadItem (entity);
         }

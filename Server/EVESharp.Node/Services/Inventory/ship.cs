@@ -65,23 +65,14 @@ public class ship : ClientBoundService
         int callerCharacterID = call.Session.CharacterID;
 
         Character character = this.Items.GetItem <Character> (callerCharacterID);
-        // get the item type
-        Type capsuleType = this.Types [TypeID.Capsule];
         // create a pod for this character
-        ItemInventory capsule = this.Items.CreateShip (capsuleType, Location, character);
-        // update capsule's name
-        capsule.Name = character.Name + "'s Capsule";
-        // change character's location to the pod
-        character.LocationID = capsule.ID;
-        // notify the client about the item changes
-        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (capsule, Flags.Capsule, this.Items.LocationRecycler.ID));
-        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, call.Session.ShipID));
+        ItemInventory capsule = DogmaItems.CreateItem <ItemInventory> (
+            character.Name + "'s Capsule", Types [TypeID.Capsule], character.ID, Location.ID, Flags.Hangar, 1, true
+        );
+        // move the character into the new capsule
+        DogmaItems.MoveItem (character, capsule.ID, Flags.Pilot);
         // notify the client
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = capsule.ID});
-
-        // persist changes!
-        capsule.Persist ();
-        character.Persist ();
 
         // TODO: CHECKS FOR IN-SPACE LEAVING!
 
@@ -108,19 +99,11 @@ public class ship : ClientBoundService
         // check skills required to board the given ship
         newShip.EnsureOwnership (callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
         newShip.CheckPrerequisites (character);
-
+        
         // move the character into this new ship
-        newShip.AddItem (character);
-        character.LocationID = newShip.ID;
+        DogmaItems.MoveItem (character, newShip.ID, Flags.Pilot);
         // finally update the session
         SessionManager.PerformSessionUpdate (Session.CHAR_ID, callerCharacterID, new Session {ShipID = newShip.ID});
-        // notify the client about the change in location
-        this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildLocationChange (character, Flags.Pilot, currentShip.ID));
-
-        character.Persist ();
-
-        // ensure the character is not removed when the capsule is removed
-        currentShip.RemoveItem (character);
 
         if (currentShip.Type.ID == (int) TypeID.Capsule)
             DogmaItems.DestroyItem (currentShip);
@@ -139,8 +122,6 @@ public class ship : ClientBoundService
         if (this.Items.TryGetItem (itemID, out Ship ship) == false)
             throw new CustomError ("Ships not loaded for player and hangar!");
 
-        Character character = this.Items.GetItem <Character> (callerCharacterID);
-
         if (ship.OwnerID != callerCharacterID)
             throw new AssembleOwnShipsOnly (ship.OwnerID);
 
@@ -148,31 +129,11 @@ public class ship : ClientBoundService
         if (ship.Singleton)
             return new ShipAlreadyAssembled (ship.Type);
 
-        // first split the stack
-        if (ship.Quantity > 1)
-        {
-            // subtract one off the stack
-            ship.Quantity -= 1;
-            ship.Persist ();
-            // notify the quantity change
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (ship, ship.Quantity + 1));
-
-            // create the new item in the database
-            Station station = this.Items.GetStaticStation (stationID);
-            ship = this.Items.CreateShip (ship.Type, station, character);
-            // notify the new item
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildNewItemChange (ship));
-        }
-        else
-        {
-            // stack of one, simple as changing the singleton flag
-            ship.Singleton = true;
-            this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildSingletonChange (ship, false));
-        }
-
-        // save the ship
-        ship.Persist ();
-
+        // split the stack first
+        ItemEntity split = DogmaItems.SplitStack (ship, 1);
+        // update the singleton
+        DogmaItems.SetSingleton (split, true);
+        
         return null;
     }
 

@@ -368,15 +368,12 @@ public class marketProxy : Service
                     order.AccountID
                 );
 
-                // create the new item that will be used by the player
-                ItemEntity item = this.Items.CreateSimpleItem (
-                    this.Types [typeID], orderOwnerID, stationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, quantityToSell
+                ItemEntity item = DogmaItems.CreateItem <ItemEntity> (
+                    Types [typeID], orderOwnerID, stationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, quantityToSell
                 );
 
                 // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
                 this.Items.UnloadItem (item);
-                
-                Notifications.NotifyCharacter (item.OwnerID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
             }
 
             // ensure we do not sell more than we have
@@ -404,21 +401,13 @@ public class marketProxy : Service
         // load the items here and send proper notifications
         foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
         {
-            ItemEntity item = this.Items.LoadItem (entry.ItemID);
+            ItemEntity item  = this.Items.LoadItem (entry.ItemID, out bool loadRequired);
+            ItemEntity split = DogmaItems.SplitStack (item, entry.OriginalQuantity - entry.Quantity);
 
-            if (entry.Quantity == 0)
-            {
-                DogmaItems.DestroyItem (item);
-            }
-            else
-            {
-                // just a quantity change
-                item.Quantity = entry.Quantity;
-                // notify the client
-                this.DogmaNotifications.QueueMultiEvent (callerCharacterID, OnItemChange.BuildQuantityChange (item, entry.OriginalQuantity));
-                // unload the item if it's not needed
-                this.Items.UnloadItem (item);
-            }
+            DogmaItems.DestroyItem (split);
+
+            if (loadRequired && split != item)
+                Items.UnloadItem (item);
         }
     }
 

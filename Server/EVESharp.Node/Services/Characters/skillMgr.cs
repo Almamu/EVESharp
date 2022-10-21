@@ -117,15 +117,14 @@ public class skillMgr : ClientBoundService
             {
                 // ensure the skill is marked as trained and that they have the correct values stored
                 entry.Skill.Level      = entry.TargetLevel;
-                entry.Skill.Flag       = Flags.Skill;
                 entry.Skill.ExpiryTime = 0;
-
+                
+                DogmaItems.MoveItem (entry.Skill, Flags.Skill);
+                
                 // add the skill to the list of trained skills for the big notification
                 skillTypeIDs.Add (entry.Skill.Type.ID);
                 toRemove.Add (entry);
 
-                // update it's location in the client if needed
-                this.DogmaNotifications.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
                 // also notify attribute changes
                 this.DogmaNotifications.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, entry.Skill);
             }
@@ -185,18 +184,18 @@ public class skillMgr : ClientBoundService
     {
         Skill skill = Character.Items [itemID] as Skill;
 
-        // set the skill to the proper flag and set the correct attributes
-        skill.Flag       = Flags.Skill;
-        skill.Level      = skill.Level + 1;
-        skill.ExpiryTime = 0;
-
-        // make sure the client is aware of the new item's status
-        this.DogmaNotifications.QueueMultiEvent (Character.ID, OnItemChange.BuildLocationChange (skill, Flags.SkillInTraining));
-        // also notify attribute changes
+        // setup the skill data
+        skill.Level      += 1;
+        skill.ExpiryTime =  0;
+        
+        // notify the attribute changes
         this.DogmaNotifications.NotifyAttributeChange (Character.ID, new [] {AttributeTypes.skillPoints, AttributeTypes.skillLevel}, skill);
+        
+        // finally move the item
+        DogmaItems.MoveItem (skill, Flags.Skill);
+        
+        // send OnSkillTrained so the player receives a nice popup
         this.DogmaNotifications.QueueMultiEvent (Character.ID, new OnSkillTrained (skill));
-
-        skill.Persist ();
 
         // create history entry
         DB.CreateSkillHistoryRecord (skill.Type, Character, SkillHistoryReason.SkillTrainingComplete, skill.Points);
@@ -256,45 +255,17 @@ public class skillMgr : ClientBoundService
                 // check if the character already has this skill injected
                 if (Character.InjectedSkillsByTypeID.ContainsKey (skill.Type.ID))
                     throw new CharacterAlreadyKnowsSkill (skill.Type);
-
-                // is this a stack of skills?
-                if (skill.Quantity > 1)
-                {
-                    // add one of the skill into the character's brain
-                    Skill newStack = this.Items.CreateSkill (skill.Type, Character, 0, SkillHistoryReason.None);
-
-                    // subtract one from the quantity
-                    skill.Quantity -= 1;
-
-                    // save to database
-                    skill.Persist ();
-
-                    // finally notify the client
-                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildQuantityChange (skill, skill.Quantity + 1));
-                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildNewItemChange (newStack));
-                }
-                else
-                {
-                    // store old values for the notification
-                    int   oldLocationID = skill.LocationID;
-                    Flags oldFlag       = skill.Flag;
-
-                    // now set the new values
-                    skill.LocationID = Character.ID;
-                    skill.Flag       = Flags.Skill;
-                    skill.Level      = 0;
-                    skill.Singleton  = true;
-
-                    // ensure the character has the skill in his/her brain
-                    Character.AddItem (skill);
-
-                    // ensure the changes are saved
-                    skill.Persist ();
-
-                    // notify the character of the change in the item
-                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (skill, oldFlag, oldLocationID));
-                    this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildSingletonChange (skill, false));
-                }
+                
+                // split the item and plug it into the character's brain
+                Skill injectedSkill = DogmaItems.SplitStack (
+                    skill, 1, Character.ID, Character.ID, Flags.Skill
+                ) as Skill;
+                // ensure it's singleton
+                DogmaItems.SetSingleton (injectedSkill, true);
+                // ensure the skill level is saved
+                injectedSkill.Level = 0;
+                // save changes
+                injectedSkill.Persist ();
             }
             catch (CharacterAlreadyKnowsSkill)
             {
@@ -341,10 +312,10 @@ public class skillMgr : ClientBoundService
 
             foreach (Character.SkillQueueEntry entry in Character.SkillQueue)
             {
-                entry.Skill.Flag = Flags.Skill;
-
-                this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (entry.Skill, Flags.SkillInTraining));
-
+                entry.Skill.ExpiryTime = 0;
+                
+                DogmaItems.MoveItem (entry.Skill, Flags.Skill);
+                
                 // send notification of skill training stopped
                 this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, new OnSkillTrainingStopped (entry.Skill));
 
@@ -353,9 +324,6 @@ public class skillMgr : ClientBoundService
                     entry.Skill.Type, Character, SkillHistoryReason.SkillTrainingCancelled,
                     entry.Skill.Points
                 );
-
-                entry.Skill.ExpiryTime = 0;
-                entry.Skill.Persist ();
             }
 
             Character.SkillQueue.Clear ();
@@ -388,12 +356,10 @@ public class skillMgr : ClientBoundService
             TimeSpan duration = TimeSpan.FromMinutes (skillPointsLeft / Character.GetSkillPointsPerMinute (skill));
 
             DateTime expiryTime = startDateTime + duration;
-
+            
             skill.ExpiryTime = expiryTime.ToFileTimeUtc ();
-            skill.Flag       = Flags.SkillInTraining;
-
-            this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (skill, Flags.Skill));
-
+            DogmaItems.MoveItem (skill, Flags.SkillInTraining);
+            
             startDateTime = expiryTime;
 
             // skill added to the queue, persist the character to ensure all the changes are saved
@@ -719,39 +685,10 @@ public class skillMgr : ClientBoundService
 
         // check ownership and skills required to plug in the implant
         item.CheckPrerequisites (Character);
-
-        // separate the item if there's more than one
-        if (item.Quantity > 1)
-        {
-            item.Quantity--;
-
-            // notify the client of the stack change
-            this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildQuantityChange (item, item.Quantity + 1));
-
-            // save the item to the database
-            item.Persist ();
-
-            // create the new item with a default location and flag
-            // this way the item location change notification is only needed once
-            item = this.Items.CreateSimpleItem (
-                item.Type, item.OwnerID, 0,
-                Flags.None, 1, item.Contraband, item.Singleton
-            );
-        }
-
-        int   oldLocationID = item.LocationID;
-        Flags oldFlag       = item.Flag;
-
-        item.LocationID = Character.ID;
-        item.Flag       = Flags.Implant;
-
-        this.DogmaNotifications.QueueMultiEvent (call.Session.CharacterID, OnItemChange.BuildLocationChange (item, oldFlag, oldLocationID));
-
-        // add the item to the inventory it belongs
-        Character.AddItem (item);
-
-        // persist item changes to database
-        item.Persist ();
+        
+        // move the item into the character's implant slots and set the singleton value
+        DogmaItems.SplitStack (item, 1, Flags.Implant);
+        DogmaItems.SetSingleton (item, true);
 
         return null;
     }

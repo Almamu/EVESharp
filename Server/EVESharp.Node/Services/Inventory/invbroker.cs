@@ -240,14 +240,7 @@ public class invbroker : ClientBoundService
             default: throw new ItemNotContainer (containerID);
         }
 
-        bool oldSingleton = item.Singleton;
-
-        // update singleton
-        item.Singleton = true;
-        item.Persist ();
-
-        // notify the client
-        this.DogmaNotifications.QueueMultiEvent (item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton));
+        DogmaItems.SetSingleton (item, true);
 
         return null;
     }

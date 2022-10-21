@@ -51,7 +51,7 @@ public class ClusterManager : IClusterManager
 
     private void StartClusterTimer ()
     {
-        this.ClusterTimer = this.Timers.EnqueueTimer <object?> (TimeSpan.FromMinutes (5), this.RunClusterTimerThread, null);
+        this.ClusterTimer = this.Timers.EnqueueTimer <object?> (TimeSpan.FromMinutes (2), this.RunClusterTimerThread, null);
     }
 
     /// <summary>

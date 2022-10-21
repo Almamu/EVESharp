@@ -540,6 +540,20 @@ public class DogmaItems : IDogmaItems
             effects?.ApplyEffect ("online", session);
     }
     
+    public void SetSingleton (ItemEntity item, bool newSingleton)
+    {
+        if (item.Singleton == newSingleton)
+            return;
+
+        bool oldSingleton = item.Singleton;
+
+        item.Singleton = newSingleton;
+        
+        DogmaNotifications.QueueMultiEvent (
+            item.OwnerID, OnItemChange.BuildSingletonChange (item, oldSingleton)
+        );
+    }
+    
     public bool Merge (ItemEntity into, ItemEntity from)
     {
         if (into.Singleton || from.Singleton)
