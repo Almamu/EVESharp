@@ -6,7 +6,7 @@
 	<a href="https://www.codefactor.io/repository/github/almamu/evesharp"><img src="https://img.shields.io/codefactor/grade/github/Almamu/EVESharp" /></a>
 	<a href="https://github.com/Almamu/EVESharp/graphs/commit-activity"><img src="https://img.shields.io/github/commit-activity/w/Almamu/EVESharp" /></a>
 	<a href="https://github.com/Almamu/EVESharp/graphs/contributors"><img src="https://img.shields.io/github/contributors/Almamu/EVESharp" /></a>
-	<a href="https://discord.gg/fTfAREYxbz"><img src="https://img.shields.io/discord/165291219205881856" /></a>
+	<a href="https://discord.gg/pSyEVg2M"><img src="https://img.shields.io/discord/165291219205881856" /></a>
 	<a href="https://github.com/Almamu/EVESharp/issues"><img src="https://img.shields.io/github/issues-raw/Almamu/EVESharp" /></a>
 	<a href="https://github.com/Almamu/EVESharp/issues?q=is%3Aissue+is%3Aopen+label%3A%22helpwanted%22"><img src="https://img.shields.io/github/issues/Almamu/EVESharp/helpwanted?color=green" alt="help wanted"></a>
 </p>
