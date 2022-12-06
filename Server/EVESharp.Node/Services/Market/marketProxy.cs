@@ -372,8 +372,9 @@ public class marketProxy : Service
                     Types [typeID], orderOwnerID, stationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, quantityToSell
                 );
 
-                // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                this.Items.UnloadItem (item);
+                // no inventory holding this reference, can safely be unloaded
+                if (item.Parent is null)
+                    this.Items.UnloadItem (item);
             }
 
             // ensure we do not sell more than we have
@@ -401,12 +402,12 @@ public class marketProxy : Service
         // load the items here and send proper notifications
         foreach ((int _, MarketDB.ItemQuantityEntry entry) in items)
         {
-            ItemEntity item  = this.Items.LoadItem (entry.ItemID, out bool loadRequired);
+            ItemEntity item  = this.Items.LoadItem (entry.ItemID);
             ItemEntity split = DogmaItems.SplitStack (item, entry.OriginalQuantity - entry.Quantity);
 
             DogmaItems.DestroyItem (split);
 
-            if (loadRequired && split != item)
+            if (item.Parent is null && split != item)
                 Items.UnloadItem (item);
         }
     }
@@ -561,8 +562,8 @@ public class marketProxy : Service
                     this.Types [typeID], wallet.OwnerID, stationID, wallet.OwnerID == character.CorporationID ? Flags.CorpMarket : Flags.Hangar, quantityToBuy
                 );
 
-                // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-                this.Items.UnloadItem (item);
+                if (item.Parent is null)
+                    this.Items.UnloadItem (item);
                 
                 Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
             }
@@ -734,8 +735,8 @@ public class marketProxy : Service
                 this.Types [order.TypeID], orderOwnerID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
             );
 
-            // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-            this.Items.UnloadItem (item);
+            if (item.Parent is null)
+                this.Items.UnloadItem (item);
             
             Notifications.NotifyCharacter (character.ID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
         }
@@ -889,8 +890,8 @@ public class marketProxy : Service
             this.Types [order.TypeID], order.CharacterID, order.LocationID, order.IsCorp ? Flags.CorpMarket : Flags.Hangar, order.UnitsLeft
         );
 
-        // immediately unload it, if it has to be loaded the OnItemUpdate notification will take care of that
-        this.Items.UnloadItem (item);
+        if (item.Parent is null)
+            this.Items.UnloadItem (item);
         
         Notifications.NotifyCharacter (order.CharacterID, OnItemChange.BuildLocationChange (item, this.Items.LocationMarket.ID));
 

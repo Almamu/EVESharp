@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using EVESharp.Database;
 using EVESharp.Database.Configuration;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Types;
 using EVESharp.Database.Market;
@@ -170,11 +171,11 @@ public class contractMgr : Service
             PyList <PyInteger> itemEntry = itemEntryList.GetEnumerable <PyInteger> ();
             PyInteger          itemID    = itemEntry [0];
 
-            ItemEntity entity = this.Items.LoadItem (itemID, out bool loadRequired);
+            ItemEntity entity = this.Items.LoadItem (itemID);
 
             DogmaItems.MoveItem (entity, contract.CrateID);
             
-            if (loadRequired)
+            if (entity.Parent is null)
                 this.Items.UnloadItem (entity);
         }
     }
@@ -224,13 +225,15 @@ public class contractMgr : Service
             long maximumContracts = 1 + (4 * character.GetSkillLevel (TypeID.Contracting));
 
             if (maximumContracts <= DB.GetOutstandingContractsCountForPlayer (callerCharacterID))
-                throw new ConTooManyContractsMax (maximumContracts);
+                throw new ConTooManyContracts (maximumContracts);
         }
         else
         {
             throw new CustomError ("Not supported yet!");
         }
 
+        // TODO: CHECK FOR MAXIMUM AMOUNT OF ITEMS IN CONTRACT ConTooManyItems
+        
         Station station = this.Items.GetStaticStation (startStationID);
         
         // take reward from the character
@@ -243,6 +246,10 @@ public class contractMgr : Service
             }
         }
 
+        // TODO: CHECK FOR NO ITEMS ON SPECIFIC TYPES OF CONTRACTS ConNoItems
+        // TODO: CHECK FOR NO LOANED ITEMS OR ISK FOR LOAN CONTRACTS ConNothingLoaned
+        // TODO: CHECK FOR PASSWORD-PROTECTED CONTAINERS ConPasswordProtectedContainer
+        
         // named payload contains itemList, flag, requestItemTypeList and forCorp
         using (IContract contract = Contracts.CreateContract (
                    call.Session.CharacterID,
@@ -309,6 +316,8 @@ public class contractMgr : Service
         filters.TryGetValue ("type",           out PyInteger type);
         filters.TryGetValue ("description",    out PyString description);
 
+        // TODO: CHECK REGION ConWrongRegion
+        
         if (priceMax < 0 || priceMin < 0 || priceMax < priceMin)
             throw new ConMinMaxPriceError ();
 
@@ -351,8 +360,10 @@ public class contractMgr : Service
     {
         int callerCharacterID = call.Session.CharacterID;
 
-        // TODO: Check for regionID ConWrongRegion
+        // TODO: CHECK REGION ConWrongRegion
+        // TODO: ADD CHECK FOR CONTRACTS THAT MIGHT BE ALREADY REMOVED ConContractNotFound
 
+        // TODO: BUILD THIS DATA FROM THE IContract OBJECT
         return KeyVal.FromDictionary (
             new PyDictionary
             {
@@ -365,6 +376,11 @@ public class contractMgr : Service
 
     public PyDataType DeleteContract (ServiceCall call, PyInteger contractID, PyObjectData keyVal)
     {
+        using (IContract contract = Contracts.AcquireContract (contractID))
+        {
+            contract.CheckOwnership (call.Session);
+            contract.Destroy ();
+        }
         // get contract type and status
 
         // get the items back to where they belong (if any)
@@ -380,6 +396,7 @@ public class contractMgr : Service
         PyInteger       flag
     )
     {
+        // TODO: CHECK FOR QUANTITIES ConSplitStackIllegalQty
         return null;
     }
 
@@ -509,6 +526,7 @@ public class contractMgr : Service
 
     public PyDataType FinishAuction (ServiceCall call, PyInteger contractID, PyBool forCorp)
     {
+        // TODO: CHECK OWNERSHIP AND THROW ConNotYourContract IF NEEDED
         return null;
     }
 

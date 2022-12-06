@@ -217,6 +217,7 @@ public class LocalNotificationHandler
 
     private void HandleOnItemUpdate (OnItemChange change)
     {
+        // XXXHACK: THIS IS DEAD CODE FOR NOW
         foreach ((PyInteger itemID, PyDictionary _changes) in change.Updates)
         {
             PyDictionary <PyString, PyTuple> changes = _changes.GetEnumerable <PyString, PyTuple> ();

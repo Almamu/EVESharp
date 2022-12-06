@@ -76,38 +76,28 @@ public class dogmaIM : ClientBoundService
         if (ship is null)
             throw new CustomError ($"Cannot get information for ship {call.Session.ShipID}");
 
-        try
+        // ensure the player can use this ship
+        ship.EnsureOwnership (callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
+
+        ItemInfo itemInfo = new ItemInfo ();
+
+        itemInfo.AddRow (ship.ID, ship.GetEntityRow (), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime ());
+
+        foreach ((int _, ItemEntity item) in ship.Items)
         {
-            // ensure the player can use this ship
-            ship.EnsureOwnership (callerCharacterID, call.Session.CorporationID, call.Session.CorporationRole, true);
+            if (item.IsInModuleSlot () == false && item.IsInRigSlot () == false)
+                continue;
 
-            ItemInfo itemInfo = new ItemInfo ();
-
-            itemInfo.AddRow (ship.ID, ship.GetEntityRow (), ship.GetEffects (), ship.Attributes, DateTime.UtcNow.ToFileTime ());
-
-            foreach ((int _, ItemEntity item) in ship.Items)
-            {
-                if (item.IsInModuleSlot () == false && item.IsInRigSlot () == false)
-                    continue;
-
-                itemInfo.AddRow (
-                    item.ID,
-                    item.GetEntityRow (),
-                    item.GetEffects (),
-                    item.Attributes,
-                    DateTime.UtcNow.ToFileTime ()
-                );
-            }
-
-            return itemInfo;
+            itemInfo.AddRow (
+                item.ID,
+                item.GetEntityRow (),
+                item.GetEffects (),
+                item.Attributes,
+                DateTime.UtcNow.ToFileTime ()
+            );
         }
-        catch (Exception)
-        {
-            // there was an exception, the ship has to be unloaded as it's not going to be used anymore
-            this.Items.UnloadItem (ship);
 
-            throw;
-        }
+        return itemInfo;
     }
 
     public PyDataType CharGetInfo (ServiceCall call)

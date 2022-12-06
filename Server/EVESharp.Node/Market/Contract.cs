@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EVESharp.Database;
+using EVESharp.Database.Corporations;
 using EVESharp.Database.Extensions;
 using EVESharp.Database.Inventory;
 using EVESharp.Database.Inventory.Categories;
@@ -114,6 +115,9 @@ public class Contract : IContract
         this.Wallets            = wallets;
         this.Notifications      = notificationSender;
         this.DogmaNotifications = dogmaNotifications;
+
+        if (this.mInformation is null)
+            throw new ConContractNotFound ();
     }
 
     public void CreateCrate ()
@@ -159,20 +163,12 @@ public class Contract : IContract
     {
         Lock.ConAddItem (ID, typeID, quantity, 0, null);
     }
-
-    /// <summary>
-    /// Returns the information about the maximum bid placed
-    /// </summary>
-    /// <returns></returns>
+    
     private (int bidderID, int amount, int walletKey) GetMaximumBid ()
     {
         return Lock.ConGetMaximumBid (ID);
     }
-
-    /// <summary>
-    /// Returns the ids of players that are going to be outbid by the next bid placed
-    /// </summary>
-    /// <returns></returns>
+    
     private PyList <PyInteger> GetOutbids ()
     {
         return Lock.ConGetOutbids (ID);
@@ -221,6 +217,16 @@ public class Contract : IContract
         }
 
         return bidID;
+    }
+
+    public void CheckOwnership (Session session)
+    {
+        if (ForCorp == false && IssuerID != session.CharacterID)
+            throw new ConNotYourContract ();
+        if (ForCorp == true && IssuerCorpID != session.CorporationID)
+            throw new ConNotYourContract ();
+        if (ForCorp == true && CorporationRole.ContractManager.Is (session.CorporationRole) == false)
+            throw new ConCorpContractRoleMissing ();
     }
 
     private List <(RequestedContractItem item, int quantity)> ValidateRequestedItems (int locationID, int ownerID)
@@ -313,6 +319,16 @@ public class Contract : IContract
         DogmaItems.DestroyItem (crate);
 
         Status = ContractStatus.InProgress;
+        
+        // TODO: ON FINISHING THIS CONTRACT THERE'S SOME CHECKS REQUIRED:
+        // TODO: ConReturnItemMissingShip CHECK FOR THE SAME SHIP WITH THE SAME ITEM
+        // TODO: ConReturnItemsCurrentShip CHECK THE SHIP IS NOT BOARDED RIGHT NOW
+        // TODO: ConReturnItemsDamaged NO DAMAGE ON ITEMS
+        // TODO: ConReturnItemsMissing ANY OF THE ITEMS ARE MISSING
+        // TODO: ConReturnItemsMissingNonSingleton SINGLETON STATUS FOR SPECIFIC ITEMS
+        // TODO: ConReturnItemsStacked ENSURE STACKS ARE THE SAME SIZE (WHY THO? JUST CHECKING FOR QUANTITIES LIKE WE DO IN CONTRACT CREATION SHOULD BE FINE)
+        // TODO: ConReturnItemsWrong WHEN A SHIP HAS MORE ITEMS THAN IT INITIALLY HAD
+        
     }
 
     public void Accept (Session session, bool forCorp)
@@ -321,6 +337,8 @@ public class Contract : IContract
             throw new ConContractNotOutstanding ();
         if (ExpireTime < DateTime.Now.ToFileTimeUtc ())
             throw new ConContractExpired ();
+        // TODO: CHECK FOR SAME ACCEPTOR ConContractSameIssuerAndAcceptor
+        // TODO: CHECK FOR ContractManager ROLE FOR CORPORATIONS ConCorpContractRoleMissing
 
         // TODO: CHECK FOR PERMISSIONS FOR ACCEPTING CONTRACTS FOR CORPORATION
         int acceptorID = forCorp ? session.CorporationID : session.CharacterID;
@@ -343,6 +361,9 @@ public class Contract : IContract
             default:                     throw new CustomError ("Unknown contract type to accept!");
         }
         
+        // TODO: FINISHING A COURIER CONTRACT SHOULD CHECK FOR CRATE IN ENDSTATIONID AND THROW ConCrateNotFound IF NOT FOUND
+        // TODO: SHOULD ALSO CHECK CRATE ITEMS AND THROW ConCrateNotFound IF THEY DON'T MATCH, IS THIS REALLY NEEDED?
+        
         AcceptorID   = session.CharacterID;
         AcceptedDate = DateTime.Now.ToFileTimeUtc ();
         
@@ -356,6 +377,9 @@ public class Contract : IContract
     
     public void Destroy ()
     {
+        if (Status != ContractStatus.Outstanding)
+            throw new ConContractNotOutstanding ();
+        
         Lock.ConDestroy (ID);
 
         // finally dispose of the contract as it's not needed

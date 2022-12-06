@@ -310,8 +310,8 @@ public class repairSvc : ClientBoundService
         {
             if (entry.Singleton == false)
                 continue;
-
-            ItemEntity item = this.Items.LoadItem (entry.ItemID, out bool loadRequired);
+            if (Items.TryGetItem (entry.ItemID, out ItemEntity item) == false)
+                continue;
 
             // the item is an inventory, take everything out!
             if (item is ItemInventory inventory)
@@ -331,11 +331,6 @@ public class repairSvc : ClientBoundService
             }
 
             DogmaItems.SetSingleton (item, false);
-            
-            // load was required, the item is not needed anymore
-            if (loadRequired)
-                this.Items.UnloadItem (item);
-
             // finally repackage the item
             RepairDB.RepackageItem (entry.ItemID, entry.LocationID);
             // remove any insurance contract for the ship

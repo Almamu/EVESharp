@@ -85,7 +85,7 @@ public class Items : IItems
     public EVESystem  LocationTemp     { get; private set; }
     public ItemEntity OwnerSCC         { get; private set; }
 
-    protected IDatabase Database { get; }
+    private IDatabase Database { get; }
 
     public event Action <ItemEntity> Loaded;
 
@@ -641,14 +641,8 @@ public class Items : IItems
     private void SubscribeToInventoryEvents (ItemInventory inventory)
     {
         // extra events for inventories
-        inventory.OnInventoryLoad   += this.OnInventoryLoad;
-        inventory.OnInventoryUnload += this.OnInventoryUnload;
-    }
-
-    private void OnMetaInventoryCreated (ItemInventoryByOwnerID metaInventory)
-    {
-        // subscribe to the inventory events
-        this.SubscribeToInventoryEvents (metaInventory);
+        inventory.OnInventoryLoad   = this.OnInventoryLoad;
+        inventory.OnInventoryUnload = this.OnInventoryUnload;
     }
 
     private List <Character.SkillQueueEntry> OnSkillQueueLoad (Character character, Dictionary <int, Skill> skillQueue)

@@ -39,7 +39,7 @@ public class MetaInventories : IMetaInventories
             ownerInventory = byOwners [ownerID] = new ItemInventoryByOwnerID (ownerID, inventory);
 
             // setup the load/unload events to load the right data
-            ownerInventory.OnInventoryLoad   += OnMetaInventoryLoad;
+            ownerInventory.OnInventoryLoad   += this.OnMetaInventoryLoad;
             ownerInventory.OnInventoryUnload += this.OnMetaInventoryUnload;
             
             OnMetaInventoryCreated?.Invoke (ownerInventory);
@@ -76,5 +76,8 @@ public class MetaInventories : IMetaInventories
     {
         if (inventory.ContentsLoaded == false)
             return;
+
+        foreach ((int _, ItemEntity item) in inventory.Items)
+            Items.UnloadItem (item);
     }
 }

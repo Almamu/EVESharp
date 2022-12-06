@@ -52,6 +52,12 @@ public interface IContract : IDisposable
     public ulong PlaceBid (int quantity, Session session, bool forCorp);
 
     /// <summary>
+    /// Ensures that the given session has permissions to modify this contract
+    /// </summary>
+    /// <param name="session"></param>
+    public void CheckOwnership (Session session);
+    
+    /// <summary>
     /// Accepts the contract and handles all the item movement that has to happen
     /// </summary>
     /// <param name="session"></param>
