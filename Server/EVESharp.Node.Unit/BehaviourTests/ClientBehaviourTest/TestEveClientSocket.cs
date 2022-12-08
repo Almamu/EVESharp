@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using EVESharp.EVE.Network.Sockets;
 using EVESharp.Types;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest;
 
 public class TestEveClientSocket : EVESocket
 {

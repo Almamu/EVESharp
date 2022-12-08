@@ -1,9 +1,8 @@
-using System;
 using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
 using Serilog;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest;
 
 public class TestMachoServerTransport : MachoServerTransport
 {

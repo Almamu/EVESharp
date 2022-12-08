@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace EVESharp.Node.Unit;
 
-public class Tests
+public class ItemAttributeArithmeticTests
 {
     private const int    FIRST_VALUE_INT     = 50;
     private const int    SECOND_VALUE_INT    = 20;

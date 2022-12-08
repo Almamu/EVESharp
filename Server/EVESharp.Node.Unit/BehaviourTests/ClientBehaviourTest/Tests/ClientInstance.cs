@@ -8,7 +8,7 @@ using EVESharp.Types.Collections;
 using NUnit.Framework;
 using TestExtensions;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest.Tests;
 
 public class ClientInstance
 {

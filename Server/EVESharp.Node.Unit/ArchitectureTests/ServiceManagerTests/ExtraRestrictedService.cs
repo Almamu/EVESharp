@@ -4,7 +4,7 @@ using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.Types;
 
-namespace EVESharp.Node.Unit.ServiceManagerTests;
+namespace EVESharp.Node.Unit.ArchitectureTests.ServiceManagerTests;
 
 [MustBeCharacter]
 public class ExtraRestrictedService : Service

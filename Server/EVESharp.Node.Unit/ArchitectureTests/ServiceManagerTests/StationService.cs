@@ -1,7 +1,7 @@
 using EVESharp.EVE.Network.Services;
 using EVESharp.Types;
 
-namespace EVESharp.Node.Unit.ServiceManagerTests;
+namespace EVESharp.Node.Unit.ArchitectureTests.ServiceManagerTests;
 
 public class StationService : Service
 {

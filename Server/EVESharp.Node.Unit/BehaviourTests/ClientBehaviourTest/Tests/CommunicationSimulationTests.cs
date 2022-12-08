@@ -1,42 +1,10 @@
-using System.Net.Http;
-using EVESharp.Common.Configuration;
-using EVESharp.EVE.Accounts;
-using EVESharp.EVE.Data.Inventory;
-using EVESharp.EVE.Messages.Processor;
-using EVESharp.EVE.Network;
-using EVESharp.EVE.Network.Messages;
-using EVESharp.EVE.Notifications;
-using EVESharp.Node.Accounts;
-using EVESharp.Node.Configuration;
-using EVESharp.Node.Server.Shared.Helpers;
-using EVESharp.Node.Server.Single.Messages;
-using EVESharp.Node.Sessions;
-using EVESharp.Node.Unit.Utils;
-using HarmonyLib;
-using Moq;
 using NUnit.Framework;
-using Serilog.Core;
-using MachoNet = EVESharp.Node.Server.Single.MachoNet;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest.Tests;
 
 [TestFixture]
 public class CommunicationSimulationTests
 {
-    private readonly Harmony mHarmony = new Harmony ("SingleInstanceTests");
-    
-    [SetUp]
-    public void SetUp ()
-    {
-        this.mHarmony.Setup (typeof (HarmonyPatches));
-    }
-
-    [TearDown]
-    public void TearDown ()
-    {
-        this.mHarmony.UnpatchAll ();
-    }
-
     [Test]
     public void MultipleMachoNetStartupTest ()
     {

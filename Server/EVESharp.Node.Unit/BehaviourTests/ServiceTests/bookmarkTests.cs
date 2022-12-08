@@ -15,7 +15,7 @@ using HarmonyLib;
 using Moq;
 using NUnit.Framework;
 
-namespace EVESharp.Node.Unit.ServiceTests;
+namespace EVESharp.Node.Unit.BehaviourTests.ServiceTests;
 
 [TestFixture]
 public class bookmarkTests
@@ -90,22 +90,22 @@ public class bookmarkTests
             .Returns (this.mItem)
             .Verifiable();
 
-        mRemoteServiceManagerMock
+        this.mRemoteServiceManagerMock
             .Setup (x => x.SendServiceCall (
-                It.Is<Session>(v => v == this.mSession),
-                It.Is<string>(v => v == "addressbook"),
-                It.Is<string>(v => v == "OnBookmarkAdd"),
-                It.IsAny<PyTuple>(),
-                It.IsAny<PyDictionary> (),
-                It.IsAny<Action <RemoteCall, PyDataType>>(),
-                It.IsAny<Action <RemoteCall>> (),
-                It.IsAny<object>(),
-                It.IsAny<int>()
-            ))
+                        It.Is<Session>(v => v == this.mSession),
+                        It.Is<string>(v => v == "addressbook"),
+                        It.Is<string>(v => v == "OnBookmarkAdd"),
+                        It.IsAny<PyTuple>(),
+                        It.IsAny<PyDictionary> (),
+                        It.IsAny<Action <RemoteCall, PyDataType>>(),
+                        It.IsAny<Action <RemoteCall>> (),
+                        It.IsAny<object>(),
+                        It.IsAny<int>()
+                    ))
             .Verifiable();
 
         // create mocks
-        this.mBookmarkSvc = new bookmark (mDatabaseMock.Object, mItemsMock.Object, mRemoteServiceManagerMock.Object);
+        this.mBookmarkSvc = new bookmark (this.mDatabaseMock.Object, this.mItemsMock.Object, this.mRemoteServiceManagerMock.Object);
     }
 
     [TearDown]

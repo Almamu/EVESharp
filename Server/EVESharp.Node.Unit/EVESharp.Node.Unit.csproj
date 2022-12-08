@@ -20,4 +20,9 @@
         <ProjectReference Include="..\EVESharp.Node\EVESharp.Node.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="ArchitectureTests" />
+      <Folder Include="BehaviourTests" />
+    </ItemGroup>
+
 </Project>

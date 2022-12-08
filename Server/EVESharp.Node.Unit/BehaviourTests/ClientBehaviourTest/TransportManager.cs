@@ -5,7 +5,7 @@ using EVESharp.EVE.Network;
 using EVESharp.EVE.Network.Transports;
 using Serilog;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest;
 
 /// <summary>
 /// Custom transport manager for client behaviour tests
@@ -17,7 +17,7 @@ public class TransportManager : Server.Shared.Transports.TransportManager
 
     public override MachoServerTransport OpenServerTransport (IMachoNet machoNet, MachoNet configuration)
     {
-        return this.ServerTransport = new TestMachoServerTransport (configuration.Port, machoNet, Log.ForContext <TestMachoServerTransport> ());
+        return this.ServerTransport = new TestMachoServerTransport (configuration.Port, machoNet, this.Log.ForContext <TestMachoServerTransport> ());
     }
 
     public override IMachoTransport OpenNewTransport (IMachoNet machoNet, string ip, ushort port)

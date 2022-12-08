@@ -1,6 +1,6 @@
 using EVESharp.Node.Services;
 
-namespace EVESharp.Node.Unit.ServiceManagerTests;
+namespace EVESharp.Node.Unit.ArchitectureTests.ServiceManagerTests;
 
 public class TestingServiceManager : ServiceManager
 {

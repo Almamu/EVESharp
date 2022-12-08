@@ -8,10 +8,9 @@ public static class Sessions
     
     public static Session CreateSession ()
     {
-        Session session = new Session ();
-
-        session.CharacterID = CHARACTERID; 
-        
-        return session;
+        return new Session
+        {
+            CharacterID = CHARACTERID
+        };
     }
 }

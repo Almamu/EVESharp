@@ -7,14 +7,12 @@ using EVESharp.EVE.Exceptions;
 using EVESharp.EVE.Exceptions.corpRegistry;
 using EVESharp.EVE.Network.Services;
 using EVESharp.EVE.Network.Services.Exceptions;
-using EVESharp.EVE.Packets.Exceptions;
 using EVESharp.EVE.Sessions;
-using EVESharp.Node.Services;
 using EVESharp.Types;
 using EVESharp.Types.Collections;
 using NUnit.Framework;
 
-namespace EVESharp.Node.Unit.ServiceManagerTests;
+namespace EVESharp.Node.Unit.ArchitectureTests.ServiceManagerTests;
 
 public class ServiceManagerTests
 {
@@ -71,11 +69,11 @@ public class ServiceManagerTests
     [Test]
     public void ServiceManagerCall ()
     {
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "NormalCall",    GenerateServiceCall (5)),       0);
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "OverridenCall", GenerateServiceCall (5)),       0);
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "OverridenCall", GenerateServiceCall (5, 3)),    1);
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "DefaultCall",   GenerateServiceCall (0)),       0);
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "DefaultCall",   GenerateServiceCall (1, 2, 3)), 1);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (SVC, "NormalCall",    GenerateServiceCall (5)),    0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (SVC, "OverridenCall", GenerateServiceCall (5)),    0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (SVC, "OverridenCall", GenerateServiceCall (5, 3)), 1);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (SVC, "DefaultCall",   GenerateServiceCall (0)),    0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (SVC,         "DefaultCall",   GenerateServiceCall (1, 2, 3)), 1);
     }
 
     [Test]
@@ -84,12 +82,12 @@ public class ServiceManagerTests
         ServiceCall baseCall = GenerateServiceCall (0);
 
         // ensure the default value is used
-        Assert.IsNull (ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall));
+        Assert.IsNull (this.ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall));
         // perform different changes and see what happens
         baseCall.NamedPayload ["name"] = SVC;
-        AssertResult <PyString> (ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall), SVC);
+        this.AssertResult <PyString> (this.ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall), SVC);
         baseCall.NamedPayload ["ignored"] = 100;
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall), 100);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (SVC, "NamedPayload", baseCall), 100);
     }
 
     private static IEnumerable ValidCallsGenerator ()
@@ -110,15 +108,15 @@ public class ServiceManagerTests
     [TestCaseSource(nameof(ValidCallsGenerator))]
     public void ValidServiceCalls_Test (Session session, string method, PyInteger expected)
     {
-        AssertResult (ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session)), expected);
+        this.AssertResult (this.ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session)), expected);
     }
 
     [Test]
     public void ValidServiceCalls_AccessType ()
     {
-        AssertResult <PyInteger> (ServiceManager.ServiceCall ("LocationService",    "Call", GenerateServiceCall (new Session() {LocationID    = 10})), 0);
-        AssertResult <PyInteger> (ServiceManager.ServiceCall ("StationService",     "Call", GenerateServiceCall (new Session() {StationID     = 10})), 0);
-        AssertResult <PyInteger> (ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session() {SolarSystemID = 10})), 0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall ("LocationService",    "Call", GenerateServiceCall (new Session() {LocationID    = 10})), 0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall ("StationService",     "Call", GenerateServiceCall (new Session() {StationID     = 10})), 0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session() {SolarSystemID = 10})), 0);
     }
 
     [Test]
@@ -126,15 +124,15 @@ public class ServiceManagerTests
     {
         Assert.Throws <UnauthorizedCallException <string>> (() =>
         {
-            ServiceManager.ServiceCall ("LocationService", "Call", GenerateServiceCall (new Session ()));
+            this.ServiceManager.ServiceCall ("LocationService", "Call", GenerateServiceCall (new Session ()));
         });
         Assert.Throws <UnauthorizedCallException <string>> (() =>
         {
-            ServiceManager.ServiceCall ("StationService", "Call", GenerateServiceCall (new Session ()));
+            this.ServiceManager.ServiceCall ("StationService", "Call", GenerateServiceCall (new Session ()));
         });
         Assert.Throws <UnauthorizedCallException <string>> (() =>
         {
-            ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session ()));
+            this.ServiceManager.ServiceCall ("SolarSystemService", "Call", GenerateServiceCall (new Session ()));
         });
     }
 
@@ -156,7 +154,7 @@ public class ServiceManagerTests
     {
         CrpAccessDenied ex = Assert.Throws <CrpAccessDenied> (() =>
         {
-            ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session));
+            this.ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session));
         });
         
         // extract the message from it
@@ -182,7 +180,7 @@ public class ServiceManagerTests
     {
         Assert.Throws (exception, () =>
         {
-            ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session));
+            this.ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session));
         });
     }
     
@@ -196,7 +194,7 @@ public class ServiceManagerTests
     [TestCaseSource(nameof (InvalidCallsGenerator_NoException))]
     public void InvalidServiceCalls_NoExceptions (Session session, string method)
     {
-        PyDataType result = ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session));
+        PyDataType result = this.ServiceManager.ServiceCall (RESVC, method, GenerateServiceCall (session));
 
         Assert.AreEqual (null, result);
     }
@@ -211,7 +209,7 @@ public class ServiceManagerTests
     [TestCaseSource (nameof (ValidCallsGenerator_Service))]
     public void ValidCalls_Service (Session session, string method)
     {
-        AssertResult <PyInteger> (ServiceManager.ServiceCall (EXSVC, method, GenerateServiceCall (session)), 0);
+        this.AssertResult <PyInteger> (this.ServiceManager.ServiceCall (EXSVC, method, GenerateServiceCall (session)), 0);
     }
 
     public static IEnumerable InvalidCallsGenerator_Service ()
@@ -226,7 +224,7 @@ public class ServiceManagerTests
     {
         Assert.Throws (exception, () =>
         {
-            ServiceManager.ServiceCall (EXSVC, method, GenerateServiceCall (session));
+            this.ServiceManager.ServiceCall (EXSVC, method, GenerateServiceCall (session));
         });
     }
 }

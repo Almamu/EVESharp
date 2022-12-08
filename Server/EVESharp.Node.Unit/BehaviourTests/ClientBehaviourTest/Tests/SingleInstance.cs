@@ -18,7 +18,7 @@ using Moq;
 using Serilog.Core;
 using MachoNet = EVESharp.Node.Server.Single.MachoNet;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest.Tests;
 
 public class SingleInstance
 {

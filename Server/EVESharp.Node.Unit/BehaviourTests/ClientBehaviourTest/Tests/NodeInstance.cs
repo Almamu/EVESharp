@@ -22,7 +22,7 @@ using RichardSzalay.MockHttp;
 using Serilog.Core;
 using MachoNet = EVESharp.Node.Server.Node.MachoNet;
 
-namespace EVESharp.Node.Unit.ClientBehaviourTest.Tests;
+namespace EVESharp.Node.Unit.BehaviourTests.ClientBehaviourTest.Tests;
 
 public class NodeInstance
 {

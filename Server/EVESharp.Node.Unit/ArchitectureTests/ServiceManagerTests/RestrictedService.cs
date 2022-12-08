@@ -7,7 +7,7 @@ using EVESharp.EVE.Network.Services.Validators;
 using EVESharp.EVE.Sessions;
 using EVESharp.Types;
 
-namespace EVESharp.Node.Unit.ServiceManagerTests;
+namespace EVESharp.Node.Unit.ArchitectureTests.ServiceManagerTests;
 
 public class RestrictedService : Service
 {
