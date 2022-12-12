@@ -4,7 +4,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <Company />
         <Product>eveCommon</Product>
-        <LangVersion>10</LangVersion>
+        <LangVersion>11</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
