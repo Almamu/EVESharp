@@ -33,5 +33,7 @@ public interface IConstants
     public Constant AllianceMembershipCost => this [Constants.allianceMembershipCost];
 
     public Constant ContractCourierMaxVolume => this [Constants.conCourierMaxVolume];
+    public Constant ContractBidMinimum        => this [Constants.conBidMinimum];
+
 #endregion
 }
