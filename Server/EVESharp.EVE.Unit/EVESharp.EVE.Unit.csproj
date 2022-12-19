@@ -6,7 +6,7 @@
 
         <IsPackable>false</IsPackable>
 
-        <LangVersion>11</LangVersion>
+        <LangVersion>10</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>

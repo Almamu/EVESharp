@@ -5,7 +5,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <Company />
         <Product>eveNode</Product>
-        <LangVersion>11</LangVersion>
+        <LangVersion>10</LangVersion>
         <Nullable>disable</Nullable>
     </PropertyGroup>
 

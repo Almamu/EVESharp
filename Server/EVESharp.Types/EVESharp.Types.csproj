@@ -4,7 +4,7 @@
         <TargetFramework>net6.0</TargetFramework>
         <Company>Almamu</Company>
         <Product>eveMarshal</Product>
-        <LangVersion>11</LangVersion>
+        <LangVersion>10</LangVersion>
         <Nullable>disable</Nullable>
     </PropertyGroup>
 
