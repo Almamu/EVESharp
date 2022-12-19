@@ -8,4 +8,3 @@ INSERT INTO `eveConstants`(constantID, constantValue)VALUES('corporationAdvertis
  */
 INSERT INTO `eveConstants`(constantID, constantValue)VALUES('medalTaxCorporation', 1000017),('medalCost', 5000000);
 INSERT INTO `eveConstants`(constantID, constantValue)VALUES('warDeclarationCost', 100000000);
-INSERT INTO `eveConstants`(constantID, constantValue)VALUES('conBidMinimum', 1000000);

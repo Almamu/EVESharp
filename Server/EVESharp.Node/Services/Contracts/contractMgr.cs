@@ -38,6 +38,9 @@ public class contractMgr : Service
     public override AccessLevel AccessLevel => AccessLevel.Station;
 
     private ContractDB          DB                 { get; }
+    private ItemDB              ItemDB             { get; }
+    private MarketDB            MarketDB           { get; }
+    private OldCharacterDB      CharacterDB        { get; }
     private IItems              Items              { get; }
     private ITypes              Types              => this.Items.Types;
     private ISolarSystems       SolarSystems       { get; }
@@ -48,16 +51,18 @@ public class contractMgr : Service
     private IDogmaItems         DogmaItems         { get; }
 
     private int CourierMaxVolume;
-    private int MinimumBid;
 
     public contractMgr
     (
-        ContractDB db, IItems items, INotificationSender notificationSender,
+        ContractDB db,      ItemDB              itemDB, MarketDB marketDB, OldCharacterDB characterDB, IItems items, INotificationSender notificationSender,
         IWallets   wallets, IDogmaNotifications dogmaNotifications, ISolarSystems solarSystems, IContracts contracts, IConstants constants,
         IDogmaItems dogmaItems
     )
     {
         DB                    = db;
+        ItemDB                = itemDB;
+        MarketDB              = marketDB;
+        CharacterDB           = characterDB;
         Items                 = items;
         Notifications         = notificationSender;
         this.Wallets          = wallets;
@@ -66,7 +71,6 @@ public class contractMgr : Service
         Contracts             = contracts;
         DogmaItems            = dogmaItems;
         this.CourierMaxVolume = constants.ContractCourierMaxVolume;
-        this.MinimumBid       = constants.ContractBidMinimum;
     }
 
     public PyDataType NumRequiringAttention (ServiceCall call)
@@ -209,9 +213,9 @@ public class contractMgr : Service
 
         if (call.NamedPayload.TryGetValue ("forCorp", out PyBool forCorp) == false)
             forCorp = false;
-
-        if (contractType == (int) ContractTypes.Auction && priceOrStartingBid < this.MinimumBid)
-            throw new ConMinMaxPriceError ();
+        
+        // TODO: CHECK FOR MINIMUM BID PRICE
+        // const_conBidMinimum = 1000000
 
         Character character = this.Items.GetItem <Character> (callerCharacterID);
 

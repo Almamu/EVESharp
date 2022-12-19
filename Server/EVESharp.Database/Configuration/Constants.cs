@@ -39,5 +39,4 @@ public static class Constants
     
     // contract related constants
     public const string conCourierMaxVolume = "conCourierMaxVolume";
-    public const string conBidMinimum       = "conBidMinimum";
 }
