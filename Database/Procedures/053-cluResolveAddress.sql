@@ -14,7 +14,7 @@ BEGIN
     # obtain the lock
     SELECT GET_LOCK (lockName, 0xFFFFFFFF) INTO errno;
     
-    SELECT nodeID INTO _nodeID FROM cluAddresses WHERE `type` = _type AND objectID = _objectID;
+    SELECT nodeID INTO _nodeID FROM cluAddresses WHERE `type` = CONVERT(_type USING utf8mb4) COLLATE utf8mb4_unicode_ci AND objectID = _objectID;
     
     IF _nodeID IS NULL THEN
         # find the new node to take care of the address
