@@ -65,6 +65,7 @@ public class slash : Service
         this.mCommands ["giveskills"] = this.GiveSkillCmd;
         this.mCommands ["giveskill"]  = this.GiveSkillCmd;
         this.mCommands ["giveisk"]    = this.GiveIskCmd;
+        this.mCommands ["load"]       = this.LoadCmd;
     }
 
     private string GetCommandListForClient ()
@@ -263,5 +264,33 @@ public class slash : Service
                 this.DogmaNotifications.QueueMultiEvent (character.ID, new OnSkillInjected ());
             }
         }
+    }
+
+    private void LoadCmd(string[] argv, ServiceCall call)
+    {
+        if (argv.Length < 3)
+            throw new SlashError("load takes at least two arguments");
+
+        int characterID = call.Session.CharacterID;
+
+        string target = argv[1].Trim('"', ' ');
+        int typeID = int.Parse(argv[2]);
+        int quantity = 1;
+
+        if (argv.Length > 3)
+            quantity = int.Parse(argv[3]);
+
+
+        if (target != "me" && target != characterID.ToString())
+            throw new SlashError("load only supports me for now");
+
+        call.Session.EnsureCharacterIsInStation();
+
+        // ensure the typeID exists
+        if (!Types.ContainsKey(typeID))
+            throw new SlashError("The specified typeID doesn't exist");
+
+        // create a new item with the correct locationID
+        DogmaItems.CreateItem<ItemEntity>(Types[typeID], characterID, call.Session.StationID, Flags.Hangar, quantity);
     }
 }
